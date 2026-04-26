@@ -84,8 +84,13 @@ export async function updateSession(request: NextRequest) {
       return supabaseResponse
     }
 
-    if (!user || !hasBrowserSession) {
+    if (!user) {
       return NextResponse.redirect(new URL('/pxadmin/login', request.url))
+    }
+
+    // If we have a user but no marker cookie, set it and continue
+    if (!hasBrowserSession) {
+      supabaseResponse.cookies.set(cookieName, 'session', { path: '/', sameSite: 'lax' })
     }
 
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
@@ -103,11 +108,16 @@ export async function updateSession(request: NextRequest) {
 
   // 3. User Path Logic
   if (!isPublicPath) {
-    if (!user || !hasBrowserSession) {
+    if (!user) {
       return clearAuthCookies(
         withNoStoreHeaders(NextResponse.redirect(getLoginUrl(request))),
         request
       )
+    }
+
+    // If we have a user but no marker cookie, set it and continue
+    if (!hasBrowserSession) {
+      supabaseResponse.cookies.set(cookieName, 'session', { path: '/', sameSite: 'lax' })
     }
 
     if (AUTH_ENTRY_PATHS.has(pathname)) {

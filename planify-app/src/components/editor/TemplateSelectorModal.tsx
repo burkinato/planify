@@ -223,10 +223,10 @@ export function TemplateSelectorModal({
         </div>
 
         {/* ── İçerik alanı ── */}
-        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[280px_1fr_360px]">
+        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[240px_1fr_320px]">
           
           {/* Sol: Filtreler ve Kategoriler */}
-          <div className="hidden lg:flex flex-col border-r border-slate-100 p-6 bg-slate-50/50 overflow-y-auto custom-scrollbar">
+          <div className="hidden lg:flex flex-col border-r border-slate-100 p-5 bg-slate-50/50 overflow-y-auto custom-scrollbar">
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-4 px-2">
                 <Monitor className="w-3.5 h-3.5 text-slate-400" />
@@ -280,7 +280,7 @@ export function TemplateSelectorModal({
                       key={cat}
                       onClick={() => setActiveCategory(cat)}
                       className={cn(
-                        'flex items-center justify-between rounded-xl px-4 py-3.5 text-xs font-bold transition-all group',
+                        'flex items-center justify-between rounded-xl px-3.5 py-3 text-xs font-bold transition-all group',
                         activeCategory === cat
                           ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20 translate-x-1'
                           : 'text-slate-600 hover:bg-white hover:shadow-sm'
@@ -370,7 +370,7 @@ export function TemplateSelectorModal({
           </div>
 
           {/* Sağ: Bilgi ve Önizleme Paneli */}
-          <aside className="hidden lg:flex flex-col border-l border-slate-100 bg-white p-8 overflow-y-auto custom-scrollbar">
+          <aside className="hidden lg:flex flex-col border-l border-slate-100 bg-white p-6 overflow-y-auto custom-scrollbar">
             <div className="flex-1 space-y-10">
               {/* Önizleme Başlığı */}
               <div>

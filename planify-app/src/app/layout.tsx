@@ -43,8 +43,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="tr" className={`dark ${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
-      <body className="antialiased font-sans bg-surface-950 text-slate-200" suppressHydrationWarning>
+    <html lang="tr" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
+      <body className="antialiased font-sans bg-white text-slate-900" suppressHydrationWarning>
         <AuthProvider>
           {children}
         </AuthProvider>
