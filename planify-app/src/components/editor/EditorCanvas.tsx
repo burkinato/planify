@@ -1,0 +1,2106 @@
+'use client';
+
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import type Konva from 'konva';
+import '@/lib/editor/konva-init';
+// Register Konva nodes for react-konva to prevent "Konva has no node with the type X" errors
+import { Stage, Layer, Rect, Line, Text, Group, Circle, Image as KonvaImage, Shape } from 'react-konva';
+import { useEditorStore, useShallow } from '@/store/useEditorStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { SYMBOLS, SNAP_DISTANCE, GRID_SIZE, THEME_CONFIGS, type EditorElement, type EditorTheme } from '@/types/editor';
+import { Layers } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { mergeTemplateState } from '@/lib/editor/templateLayouts';
+import { ISO_SYMBOLS } from '@/lib/editor/isoSymbols';
+import { sanitizeDebugEditorStatePayload } from '@/lib/editor/sanitizeEditorState';
+import {
+  buildWallEndpointUpdates,
+  buildWallMoveUpdates,
+  computeRenderPoints,
+  findWallSnap,
+  wallAngleDegrees,
+  wallLength,
+  wallPoints,
+  type WallElement,
+} from '@/lib/editor/wallGeometry';
+
+interface GridProps {
+  gridVisible: boolean;
+  themeConfig: (typeof THEME_CONFIGS)[EditorTheme];
+  editorTheme: EditorTheme;
+  gridSize: number;
+  size?: number;
+}
+
+type CanvasStageEvent = Konva.KonvaEventObject<MouseEvent>;
+type CanvasWheelEvent = Konva.KonvaEventObject<WheelEvent>;
+type DebugEditorWindow = Window & {
+  __konvaInvalidChildren?: Array<Record<string, unknown>>;
+};
+
+const MemoizedGrid = React.memo(({ gridVisible, themeConfig, editorTheme, gridSize, size = 2000 }: GridProps) => {
+  if (!gridVisible) return null;
+  return (
+    <Group>
+      {Array.from({ length: 81 }).map((_, i) => (
+        <Group key={i}>
+          <Line points={[(i - 40) * gridSize, -size, (i - 40) * gridSize, size]} stroke={themeConfig.grid} strokeWidth={1} opacity={editorTheme === 'blueprint' ? 0.3 : 0.5} />
+          <Line points={[-size, (i - 40) * gridSize, size, (i - 40) * gridSize]} stroke={themeConfig.grid} strokeWidth={1} opacity={editorTheme === 'blueprint' ? 0.3 : 0.5} />
+        </Group>
+      ))}
+    </Group>
+  );
+});
+MemoizedGrid.displayName = 'MemoizedGrid';
+
+let hatchPattern: CanvasPattern | null = null;
+const getHatchPattern = () => {
+  if (typeof window === 'undefined') return null;
+  if (hatchPattern) return hatchPattern;
+  const canvas = document.createElement('canvas');
+  canvas.width = 16;
+  canvas.height = 16;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.strokeStyle = '#cbd5e1'; // slate-300
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, 16);
+    ctx.lineTo(16, 0);
+    // Draw corners to make it tile perfectly
+    ctx.moveTo(-8, 8);
+    ctx.lineTo(8, -8);
+    ctx.moveTo(8, 24);
+    ctx.lineTo(24, 8);
+    ctx.stroke();
+    hatchPattern = ctx.createPattern(canvas, 'repeat');
+  }
+  return hatchPattern;
+};
+
+export function LegendItem({ color, label, type = 'line' }: { color: string; label: string; type?: 'line' | 'dash' | 'bold' }) {
+  return (
+    <div className="flex items-center gap-3 mb-2 animate-slide-right">
+      <div className="w-6 flex items-center justify-center shrink-0">
+        {type === 'line' && <div className="w-full h-0.5 rounded-full" style={{ backgroundColor: color }} />}
+        {type === 'dash' && <div className="w-full h-0.5" style={{ backgroundImage: `linear-gradient(to right, ${color} 50%, transparent 50%)`, backgroundSize: '8px 100%' }} />}
+        {type === 'bold' && <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: color }} />}
+      </div>
+      <span className="text-[9px] font-black uppercase tracking-wider text-surface-900">{label}</span>
+    </div>
+  );
+}
+
+const CustomSymbolImage = ({ src, size, isSelected }: { src: string, size: number, isSelected: boolean }) => {
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  useEffect(() => {
+    const img = new window.Image();
+    img.src = src;
+    img.onload = () => setImage(img);
+  }, [src]);
+
+  const r = size / 2;
+  return (
+    <Group shadowBlur={isSelected ? 0 : 2} shadowOpacity={0.15}>
+      {image && <KonvaImage image={image} width={size} height={size} x={-r} y={-r} />}
+    </Group>
+  );
+};
+
+interface EditorCanvasProps {
+  isPreview: boolean;
+  mobileMenu: string | null;
+  setMobileMenu: (m: 'tools' | 'properties' | null) => void;
+  stageRef: React.RefObject<Konva.Stage | null>;
+  setContainerNode: (node: HTMLDivElement | null) => void;
+}
+
+const WatermarkGroup = ({ width, height, tier }: { width: number; height: number; tier: string }) => {
+  if (tier !== 'free') return null;
+
+  const patternSize = 300;
+  const rows = Math.ceil(height / patternSize) + 1;
+  const cols = Math.ceil(width / patternSize) + 1;
+
+  return (
+    <Group opacity={0.12} listening={false}>
+      {Array.from({ length: rows }).map((_, r) => (
+        Array.from({ length: cols }).map((_, c) => (
+          <Text
+            key={`${r}-${c}`}
+            text="PLANIFY"
+            x={c * patternSize}
+            y={r * patternSize}
+            fontSize={40}
+            fontStyle="900"
+            fill="#64748b"
+            rotation={-45}
+            align="center"
+            verticalAlign="middle"
+            width={patternSize}
+            height={patternSize}
+          />
+        ))
+      ))}
+    </Group>
+  );
+};
+
+export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, setContainerNode }: EditorCanvasProps) {
+  const { profile } = useAuthStore();
+  const subscriptionTier = profile?.subscription_tier || 'free';
+
+  const {
+    elements, layers, tool, zoom, pan, gridVisible, selectedIds, customSymbols,
+    addElement, updateElement, updateElementsBatch, removeElements, setSelectedIds, scaleConfig, setScaleConfig, setTool,
+    editorTheme, setZoom, setPan, activeTemplateLayout, projectTemplate, templateLayoutId, templateState, focusedRegionId, setFocusedRegionId, updateTemplateRegion
+  } = useEditorStore(useShallow((s) => ({
+    elements: s.elements,
+    layers: s.layers,
+    tool: s.tool,
+    zoom: s.zoom,
+    pan: s.pan,
+    gridVisible: s.gridVisible,
+    selectedIds: s.selectedIds,
+    customSymbols: s.customSymbols,
+    addElement: s.addElement,
+    updateElement: s.updateElement,
+    updateElementsBatch: s.updateElementsBatch,
+    removeElements: s.removeElements,
+    setSelectedIds: s.setSelectedIds,
+    scaleConfig: s.scaleConfig,
+    setScaleConfig: s.setScaleConfig,
+    setTool: s.setTool,
+    editorTheme: s.editorTheme,
+    setZoom: s.setZoom,
+    setPan: s.setPan,
+    activeTemplateLayout: s.activeTemplateLayout,
+    projectTemplate: s.projectTemplate,
+    templateLayoutId: s.templateLayoutId,
+    templateState: s.templateState,
+    focusedRegionId: s.focusedRegionId,
+    setFocusedRegionId: s.setFocusedRegionId,
+    updateTemplateRegion: s.updateTemplateRegion,
+  })));
+
+  const themeConfig = THEME_CONFIGS[editorTheme];
+  const stageHostRef = useRef<HTMLDivElement>(null);
+  const infiniteHostRef = useRef<HTMLDivElement>(null);
+  // Middle-mouse pan state
+  const isPanningRef = useRef(false);
+  const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+
+  const [scaleModal, setScaleModal] = useState<{ pixels: number } | null>(null);
+  const [scaleValue, setScaleValue] = useState('1');
+  const lastDebugPayloadRef = useRef<string | null>(null);
+
+  // Dimension input overlay: activated after mouseup on wall/window/door/route
+  const [dimInput, setDimInput] = useState<{
+    screenX: number;
+    screenY: number;
+    frozenLine: number[];    // the mouse-drawn line (before precision override)
+    finalX: number;
+    finalY: number;
+    elementData: Partial<EditorElement>;
+    value: string;
+  } | null>(null);
+  const dimInputRef = useRef<HTMLInputElement>(null);
+  const previousToolRef = useRef(tool);
+
+  // ── Unit helpers ────────────────────────────────────────────────────────
+  const toDisplayUnit = (pixels: number): string => {
+    const meters = pixels / scaleConfig.pixelsPerMeter;
+    if (scaleConfig.unit === 'mm') return (meters * 1000).toFixed(0);
+    if (scaleConfig.unit === 'cm') return (meters * 100).toFixed(1);
+    return meters.toFixed(2);
+  };
+
+  const fromDisplayUnit = (value: string): number => {
+    const v = parseFloat(value);
+    if (isNaN(v) || v <= 0) return 0;
+    if (scaleConfig.unit === 'mm') return (v / 1000) * scaleConfig.pixelsPerMeter;
+    if (scaleConfig.unit === 'cm') return (v / 100) * scaleConfig.pixelsPerMeter;
+    return v * scaleConfig.pixelsPerMeter;
+  };
+
+  const commitDimInput = (overridePixels?: number) => {
+    if (!dimInput) return;
+    const { frozenLine, finalX, finalY, elementData } = dimInput;
+    let pts = frozenLine;
+    if (overridePixels && overridePixels > 0) {
+      const [x1, y1, x2, y2] = frozenLine;
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const currentLen = Math.sqrt(dx * dx + dy * dy);
+      if (currentLen > 0) {
+        const ratio = overridePixels / currentLen;
+        pts = [x1, y1, x1 + dx * ratio, y1 + dy * ratio];
+      }
+    }
+    addElement({ ...elementData, points: pts, x: finalX, y: finalY });
+    setDimInput(null);
+  };
+
+  const visibleLayers = layers.filter(l => l.visible).map(l => l.id);
+  const visibleElements = elements.filter(el => visibleLayers.includes(el.layerId));
+  const wallElements = visibleElements.filter((el): el is WallElement => el.type === 'wall' && !!el.points && el.points.length >= 4);
+
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [currentLine, setCurrentLine] = useState<number[] | null>(null);
+  const [orthoLine, setOrthoLine] = useState<{ axis: 'x' | 'y', pos: number } | null>(null);
+  const [alignLine, setAlignLine] = useState<{ axis: 'x' | 'y', pos: number } | null>(null);
+  const [innerPan, setInnerPan] = useState({ x: 0, y: 0 });
+  const [innerZoom, setInnerZoom] = useState(1);
+  const isInnerPanningRef = useRef(false);
+  const innerPanStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+
+  // Auto-focus dim input when it appears
+  useEffect(() => {
+    if (dimInput && dimInputRef.current) {
+      dimInputRef.current.focus();
+      dimInputRef.current.select();
+    }
+  }, [dimInput]);
+
+  // Dismiss dimInput if tool changes
+  useEffect(() => {
+    if (previousToolRef.current !== tool && dimInput) {
+      const timeoutId = window.setTimeout(() => {
+        commitDimInput();
+        setCurrentLine(null);
+      }, 0);
+      previousToolRef.current = tool;
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    previousToolRef.current = tool;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tool, dimInput]);
+
+  // Track host element dimensions
+  useEffect(() => {
+    const updateDimensions = () => {
+      const host = infiniteHostRef.current;
+      if (!host) return;
+      const drawingRegion = activeTemplateLayout?.layout_json.regions.find((r) => r.type === 'drawing');
+      if (activeTemplateLayout && drawingRegion && stageHostRef.current) {
+        setDimensions({
+          width: Math.max(240, stageHostRef.current.offsetWidth),
+          height: Math.max(180, stageHostRef.current.offsetHeight),
+        });
+      } else {
+        setDimensions({ width: host.offsetWidth, height: host.offsetHeight });
+      }
+    };
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, [activeTemplateLayout]);
+
+  // Infinite canvas: wheel = zoom, middle-mouse = pan
+  useEffect(() => {
+    const host = infiniteHostRef.current;
+    if (!host) return;
+
+    const onWheel = (e: WheelEvent) => {
+      // ── Scrollable element check ──────────────────────────────────────────
+      const target = e.target as HTMLElement;
+
+      const isScrollableEl = (el: HTMLElement | null): boolean => {
+        if (!el) return false;
+        const tag = el.tagName.toLowerCase();
+        if (tag === 'textarea' || tag === 'input') return true;
+        const style = window.getComputedStyle(el);
+        const overflowY = style.overflowY;
+        if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) return true;
+        if (el.parentElement && el !== host) return isScrollableEl(el.parentElement);
+        return false;
+      };
+
+      if (isScrollableEl(target)) return;
+
+      // ── If focused on drawing region, let Konva handleWheel take over ─────
+      // (don't zoom outer canvas when user is drawing)
+      const overDrawing = !!(target as HTMLElement).closest('.drawing-region-wrapper');
+      const drawingFocused = useEditorStore.getState().focusedRegionId === 'drawing';
+      if (overDrawing && drawingFocused) {
+        // Konva's onWheel will handle this — just block outer canvas zoom
+        e.preventDefault();
+        return;
+      }
+
+      // ── Normal outer canvas zoom ──────────────────────────────────────────
+      e.preventDefault();
+      const scaleBy = 1.08;
+      const rect = host.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const direction = e.deltaY < 0 ? 1 : -1;
+      const newZoom = Math.max(0.08, Math.min(8, zoom * (direction > 0 ? scaleBy : 1 / scaleBy)));
+      const newPanX = mouseX - (mouseX - pan.x) * (newZoom / zoom);
+      const newPanY = mouseY - (mouseY - pan.y) * (newZoom / zoom);
+      setZoom(newZoom);
+      setPan({ x: newPanX, y: newPanY });
+    };
+
+
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.drawing-region-wrapper') && useEditorStore.getState().focusedRegionId === 'drawing') {
+        return;
+      }
+
+      if (e.button === 1 || (e.button === 0 && tool === 'select' && e.altKey)) {
+        e.preventDefault();
+        isPanningRef.current = true;
+        panStartRef.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
+        host.style.cursor = 'grab';
+      }
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isPanningRef.current) return;
+      const dx = e.clientX - panStartRef.current.x;
+      const dy = e.clientY - panStartRef.current.y;
+      setPan({ x: panStartRef.current.panX + dx, y: panStartRef.current.panY + dy });
+    };
+    const onMouseUp = () => {
+      if (isPanningRef.current) {
+        isPanningRef.current = false;
+        host.style.cursor = '';
+      }
+    };
+
+    host.addEventListener('wheel', onWheel, { passive: false });
+    host.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      host.removeEventListener('wheel', onWheel);
+      host.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [zoom, pan, tool, setZoom, setPan]);
+
+  const snapToGrid = (val: number) => Math.round(val / GRID_SIZE) * GRID_SIZE;
+
+  const findSnapPoint = (pos: { x: number, y: number }, excludeWallId?: string) => {
+    let bestPoint = { ...pos };
+    let minDist = SNAP_DISTANCE;
+
+    if (gridVisible) {
+      const gx = snapToGrid(pos.x);
+      const gy = snapToGrid(pos.y);
+      const d = Math.sqrt((pos.x - gx) ** 2 + (pos.y - gy) ** 2);
+      if (d < minDist) {
+        bestPoint = { x: gx, y: gy };
+        minDist = d;
+      }
+    }
+
+    visibleElements.forEach(el => {
+      if (el.type !== 'wall' && el.points) {
+        for (let i = 0; i < el.points.length; i += 2) {
+          const px = el.points[i];
+          const py = el.points[i + 1];
+          const d = Math.sqrt((pos.x - px) ** 2 + (pos.y - py) ** 2);
+          if (d < minDist) {
+            bestPoint = { x: px, y: py };
+            minDist = d;
+          }
+        }
+      }
+    });
+
+    const wallSnap = findWallSnap(bestPoint, wallElements, { excludeId: excludeWallId });
+    return wallSnap.kind === 'free' ? bestPoint : wallSnap.point;
+  };
+
+  const handleStageMouseDown = (e: CanvasStageEvent) => {
+    if (e.evt.button === 1 || (e.evt.button === 0 && tool === 'select' && e.evt.altKey)) {
+      e.evt.preventDefault();
+      isInnerPanningRef.current = true;
+      innerPanStartRef.current = { x: e.evt.clientX, y: e.evt.clientY, panX: innerPan.x, panY: innerPan.y };
+      const stage = e.target.getStage();
+      if (stage) stage.container().style.cursor = 'grab';
+      return;
+    }
+
+    if (tool === 'eraser') {
+      const clickedOnEmpty = e.target === e.target.getStage();
+      if (clickedOnEmpty) setSelectedIds([]);
+      return;
+    }
+
+    if (tool === 'select') {
+      const clickedOnEmpty = e.target === e.target.getStage();
+      if (clickedOnEmpty) setSelectedIds([]);
+      return;
+    }
+
+    const stage = e.target.getStage();
+    if (!stage) return;
+    const pos = stage.getRelativePointerPosition();
+    if (!pos) return;
+    const snapped = findSnapPoint(pos);
+
+    if (['wall', 'window', 'door', 'evacuation-route', 'rescue-route', 'scale'].includes(tool)) {
+      setIsDrawing(true);
+      setCurrentLine([snapped.x, snapped.y, snapped.x, snapped.y]);
+      return;
+    }
+
+    if (['symbol', 'rect', 'text', 'stairs', 'elevator', 'column'].includes(tool as string)) {
+      const typeMap = { symbol: 'symbol', rect: 'rect', text: 'text', stairs: 'stairs', elevator: 'elevator', column: 'column' } as const;
+      const canvasTool = tool as keyof typeof typeMap;
+
+      addElement({
+        type: typeMap[canvasTool],
+        x: snapped.x,
+        y: snapped.y,
+        width: ['rect', 'stairs', 'elevator'].includes(tool) ? 100 : (tool === 'column' ? 30 : undefined),
+        height: ['rect', 'stairs', 'elevator'].includes(tool) ? 80 : (tool === 'column' ? 30 : undefined),
+        symbolType: tool === 'symbol' ? useEditorStore.getState().selectedSymbol || 'exit' : undefined,
+        label: tool === 'text' ? 'METİN EKLE' : (tool === 'elevator' ? 'ASANSÖR' : undefined),
+        color: tool === 'rect' ? undefined : (tool === 'stairs' ? '#94a3b8' : (tool === 'elevator' ? '#64748b' : (tool === 'column' ? '#1e293b' : undefined))),
+        stairsType: tool === 'stairs' ? 'straight' : undefined,
+        columnShape: tool === 'column' ? 'rect' : undefined
+      });
+      if (tool !== 'symbol') setTool('select');
+    }
+  };
+
+  const handleStageMouseMove = (e: CanvasStageEvent) => {
+    if (isInnerPanningRef.current) {
+      const dx = e.evt.clientX - innerPanStartRef.current.x;
+      const dy = e.evt.clientY - innerPanStartRef.current.y;
+      setInnerPan({
+        x: innerPanStartRef.current.panX + dx / zoom,
+        y: innerPanStartRef.current.panY + dy / zoom
+      });
+      return;
+    }
+
+    if (!isDrawing || !currentLine) return;
+    const stage = e.target.getStage();
+    if (!stage) return;
+    const pos = stage.getRelativePointerPosition();
+    if (!pos) return;
+    const snapped = findSnapPoint(pos);
+
+    // Magnetic alignment logic (Smart Guides)
+    let magneticAxis: { axis: 'x' | 'y', pos: number } | null = null;
+    if (!e.evt.shiftKey) {
+      const minAlignDist = 15 / zoom;
+      for (const w of wallElements) {
+        if (!w.points) continue;
+        for (let i = 0; i < w.points.length; i += 2) {
+          const px = w.points[i];
+          const py = w.points[i + 1];
+          // Skip if this is the start point of the current line
+          if (Math.abs(px - currentLine[0]) < 1 && Math.abs(py - currentLine[1]) < 1) continue;
+
+          if (Math.abs(snapped.x - px) < minAlignDist) {
+            snapped.x = px;
+            magneticAxis = { axis: 'x', pos: px };
+          }
+          if (Math.abs(snapped.y - py) < minAlignDist) {
+            snapped.y = py;
+            magneticAxis = { axis: 'y', pos: py };
+          }
+        }
+      }
+    }
+    setAlignLine(magneticAxis);
+
+    // Ortho Snap Logic (Shift key or auto-snap near straight lines)
+    const dx = snapped.x - currentLine[0];
+    const dy = snapped.y - currentLine[1];
+    const angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
+
+    if (e.evt.shiftKey) {
+      if (angle < 45 || angle > 135) {
+        snapped.y = currentLine[1]; // Force horizontal
+        setOrthoLine({ axis: 'y', pos: currentLine[1] });
+      } else {
+        snapped.x = currentLine[0]; // Force vertical
+        setOrthoLine({ axis: 'x', pos: currentLine[0] });
+      }
+    } else {
+      // Auto-ortho if within 5 degrees
+      if (angle < 5 || angle > 175 || (angle > 175 && angle < 185)) {
+        snapped.y = currentLine[1];
+        setOrthoLine({ axis: 'y', pos: currentLine[1] });
+      } else if (Math.abs(angle - 90) < 5 || Math.abs(angle - 270) < 5) {
+        snapped.x = currentLine[0];
+        setOrthoLine({ axis: 'x', pos: currentLine[0] });
+      } else {
+        setOrthoLine(null);
+      }
+    }
+
+    setCurrentLine([...currentLine.slice(0, 2), snapped.x, snapped.y]);
+  };
+
+  const calculateSnapToWall = (el: EditorElement, newX: number, newY: number) => {
+    const points = el.points ?? [0, 0, newX, newY];
+    const isPointBased = points.length >= 4;
+    // Center of the element in canvas space (accounting for drag offset)
+    const elCx = isPointBased ? (points[0] + points[2]) / 2 + newX : newX;
+    const elCy = isPointBased ? (points[1] + points[3]) / 2 + newY : newY;
+
+    const walls = elements.filter(e => e.type === 'wall' && e.layerId === el.layerId && e.id !== el.id);
+    let minDistance = 60; // 60px snap threshold
+    let snapPoint: { x: number; y: number } | null = null;
+    let wallAngle = 0;
+
+    walls.forEach(w => {
+      if (!w.points) return;
+      const [wx1, wy1, wx2, wy2] = wallPoints(w);
+
+      const l2 = (wx1 - wx2) ** 2 + (wy1 - wy2) ** 2;
+      if (l2 === 0) return;
+
+      let t = ((elCx - wx1) * (wx2 - wx1) + (elCy - wy1) * (wy2 - wy1)) / l2;
+      t = Math.max(0.05, Math.min(0.95, t)); // keep 5% from endpoints
+      const projX = wx1 + t * (wx2 - wx1);
+      const projY = wy1 + t * (wy2 - wy1);
+
+      const dist = Math.sqrt((elCx - projX) ** 2 + (elCy - projY) ** 2);
+      if (dist < minDistance) {
+        minDistance = dist;
+        snapPoint = { x: projX, y: projY };
+        wallAngle = Math.atan2(wy2 - wy1, wx2 - wx1);
+      }
+    });
+
+    if (snapPoint) {
+      const sp = snapPoint as { x: number; y: number };
+      if (isPointBased) {
+        let L = Math.sqrt((points[0] - points[2]) ** 2 + (points[1] - points[3]) ** 2);
+        if (L < 20) L = 80;
+
+        // Preserve door/window orientation relative to wall direction
+        const diff = ((wallAngle - Math.atan2(points[3] - points[1], points[2] - points[0])) + Math.PI * 2) % (Math.PI * 2);
+        const targetAngle = (diff > Math.PI / 2 && diff < 3 * Math.PI / 2) ? wallAngle + Math.PI : wallAngle;
+
+        const newPts = [
+          sp.x - Math.cos(targetAngle) * L / 2,
+          sp.y - Math.sin(targetAngle) * L / 2,
+          sp.x + Math.cos(targetAngle) * L / 2,
+          sp.y + Math.sin(targetAngle) * L / 2,
+        ];
+        return { points: newPts, x: 0, y: 0 };
+      } else {
+        return { x: sp.x, y: sp.y, rotation: wallAngle * 180 / Math.PI };
+      }
+    }
+    // No snap — keep the dragged position
+    return { x: newX, y: newY };
+  };
+
+
+  const handleStageMouseUp = (e: CanvasStageEvent) => {
+    if (isInnerPanningRef.current) {
+      isInnerPanningRef.current = false;
+      const stage = e?.target?.getStage();
+      if (stage) stage.container().style.cursor = 'default';
+      return;
+    }
+
+    if (isDrawing && currentLine) {
+      if (tool === 'scale') {
+        const pixels = Math.sqrt((currentLine[0] - currentLine[2]) ** 2 + (currentLine[1] - currentLine[3]) ** 2);
+        if (pixels > 10) setScaleModal({ pixels });
+        setIsDrawing(false);
+        setCurrentLine(null);
+        return;
+      }
+
+      if (['wall', 'window', 'door', 'evacuation-route', 'rescue-route'].includes(tool)) {
+        const drawingTool = tool as 'wall' | 'window' | 'door' | 'evacuation-route' | 'rescue-route';
+        let finalPoints = currentLine;
+        let finalX = 0;
+        let finalY = 0;
+
+        if (wallLength(finalPoints) < 6) {
+          setIsDrawing(false);
+          setCurrentLine(null);
+          setOrthoLine(null);
+          setAlignLine(null);
+          return;
+        }
+
+        if (drawingTool === 'window' || drawingTool === 'door') {
+          const snapResult = calculateSnapToWall(
+            { points: currentLine, layerId: useEditorStore.getState().activeLayerId, type: drawingTool, id: 'temp', x: 0, y: 0 },
+            0, 0
+          );
+          if (snapResult.points) {
+            finalPoints = snapResult.points;
+            finalX = snapResult.x;
+            finalY = snapResult.y;
+          }
+        }
+
+        const elementType: EditorElement['type'] =
+          drawingTool === 'evacuation-route' || drawingTool === 'rescue-route'
+            ? 'route'
+            : drawingTool;
+
+        const elementData: Partial<EditorElement> = {
+          type: elementType,
+          color: drawingTool === 'wall' ? '#1e293b' : drawingTool === 'window' ? '#3b82f6' : drawingTool === 'door' ? '#f59e0b' : drawingTool === 'evacuation-route' ? '#00A550' : '#ef4444',
+          routeType: drawingTool === 'evacuation-route' ? 'evacuation' : drawingTool === 'rescue-route' ? 'rescue' : undefined,
+          wallStyle: drawingTool === 'wall' ? 'hatch' : undefined,
+          thickness: drawingTool === 'window' || drawingTool === 'door' ? 8 : (drawingTool === 'wall' ? 12 : 4)
+        };
+
+        // Show dimension input overlay instead of committing immediately
+        const [x1, y1, x2, y2] = finalPoints;
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        // Convert canvas midpoint to screen coordinates
+        const host = infiniteHostRef.current;
+        const hostRect = host ? host.getBoundingClientRect() : { left: 0, top: 0 };
+        const screenX = hostRect.left + (midX + (finalX || 0)) * zoom + pan.x;
+        const screenY = hostRect.top + (midY + (finalY || 0)) * zoom + pan.y;
+
+        const drawnPixels = wallLength(finalPoints);
+        const displayVal = toDisplayUnit(drawnPixels);
+
+        setDimInput({
+          screenX,
+          screenY: screenY - 60,
+          frozenLine: finalPoints,
+          finalX,
+          finalY,
+          elementData,
+          value: displayVal,
+        });
+        // Keep the preview line visible while input is open
+        setIsDrawing(false);
+        setCurrentLine(finalPoints);
+        setOrthoLine(null);
+        setAlignLine(null);
+        return;
+      }
+    }
+    setIsDrawing(false);
+    setCurrentLine(null);
+    setOrthoLine(null);
+    setAlignLine(null);
+    if (!['symbol', 'wall'].includes(tool)) setTool('select');
+  };
+
+  // handleWheel is called by the Konva Stage's onWheel prop.
+  // When focused on the drawing region, apply inner zoom anchored to mouse position.
+  const handleWheel = (e: CanvasWheelEvent) => {
+    e.evt.preventDefault();
+    const drawingFocused = focusedRegionId === 'drawing';
+    if (!drawingFocused) return;
+
+    const scaleBy = 1.10;
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const oldZoom = innerZoom;
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    const direction = e.evt.deltaY < 0 ? 1 : -1;
+    const newZoom = Math.max(0.05, Math.min(20, oldZoom * (direction > 0 ? scaleBy : 1 / scaleBy)));
+
+    // Anchor: keep the point under mouse fixed
+    const mousePointTo = {
+      x: (pointer.x - innerPan.x) / oldZoom,
+      y: (pointer.y - innerPan.y) / oldZoom,
+    };
+    const newPanX = pointer.x - mousePointTo.x * newZoom;
+    const newPanY = pointer.y - mousePointTo.y * newZoom;
+
+    setInnerZoom(newZoom);
+    setInnerPan({ x: newPanX, y: newPanY });
+  };
+
+  const selectOrErase = (id: string, isLocked?: boolean, e?: CanvasStageEvent) => {
+    if (isLocked) return;
+    if (tool === 'eraser') {
+      removeElements([id]);
+      return;
+    }
+    if (e && e.evt && e.evt.shiftKey) {
+      const { selectedIds, setSelectedIds } = useEditorStore.getState();
+      if (selectedIds.includes(id)) {
+        setSelectedIds(selectedIds.filter(sid => sid !== id));
+      } else {
+        setSelectedIds([...selectedIds, id]);
+      }
+    } else {
+      setSelectedIds([id]);
+    }
+  };
+
+  // ── CAD-grade element renderers ──
+
+  const renderStairs = (el: EditorElement, isSelected: boolean, canInteract: boolean, isLocked?: boolean) => {
+    const w = el.width || 100;
+    const h = el.height || 120;
+    const type = el.stairsType || 'straight';
+    const sc = isSelected ? themeConfig.accent : '#1e293b';
+    const sg = '#475569';
+    const dragProps = {
+      draggable: canInteract,
+      onClick: (e: CanvasStageEvent) => selectOrErase(el.id, isLocked, e),
+      onDragStart: () => !isLocked && setSelectedIds([el.id]),
+      onDragEnd: (e: CanvasStageEvent) => updateElement(el.id, { x: e.target.x(), y: e.target.y() }),
+    };
+
+    /* ─── STRAIGHT ──────────────────────────────────────────── */
+    if (type === 'straight') {
+      const steps = Math.max(4, Math.floor(h / 10));
+      const stepH = h / steps;
+      return (
+        <Group key={el.id} x={el.x} y={el.y} rotation={el.rotation || 0} {...dragProps}>
+          <Rect x={-w / 2} y={-h / 2} width={w} height={h} fill="white" stroke={sc} strokeWidth={1.8} cornerRadius={2} />
+          {Array.from({ length: steps - 1 }).map((_, i) => (
+            <Line key={i} points={[-w / 2, -h / 2 + stepH * (i + 1), w / 2, -h / 2 + stepH * (i + 1)]} stroke={sg} strokeWidth={0.8} />
+          ))}
+          {/* Center axis line */}
+          <Line points={[0, h / 2 - 8, 0, -h / 2 + 16]} stroke={sc} strokeWidth={1.2} />
+          {/* Arrow head at top */}
+          <Line points={[-5, -h / 2 + 22, 0, -h / 2 + 16, 5, -h / 2 + 22]} stroke={sc} strokeWidth={1.5} />
+          <Line points={[0, -h / 2 + 16, 0, -h / 2 + 14]} stroke={sc} strokeWidth={1.5} />
+          <Shape sceneFunc={(ctx) => {
+            ctx.beginPath();
+            ctx.moveTo(-5, -h / 2 + 18);
+            ctx.lineTo(0, -h / 2 + 10);
+            ctx.lineTo(5, -h / 2 + 18);
+            ctx.closePath();
+            ctx.fillStyle = sc;
+            ctx.fill();
+          }} />
+          {/* Label */}
+          <Text text="DÜZ" x={-w / 2} y={h / 2 + 4} width={w} align="center" fontSize={8} fontStyle="bold" fill={sg} />
+          {isSelected && <Rect x={-w / 2 - 3} y={-h / 2 - 3} width={w + 6} height={h + 6} stroke={themeConfig.accent} strokeWidth={1.5} dash={[5, 3]} fill="transparent" cornerRadius={3} />}
+        </Group>
+      );
+    }
+
+    /* ─── L-SHAPE ───────────────────────────────────────────── */
+    if (type === 'l-shape') {
+      const vW = w * 0.42;
+      const hH = h * 0.42;
+      const landW = w - vW;
+      const landH = h - hH;
+      const vSteps = Math.max(3, Math.floor(hH / 10));
+      const hSteps = Math.max(3, Math.floor(vW / 10));
+      return (
+        <Group key={el.id} x={el.x} y={el.y} rotation={el.rotation || 0} {...dragProps}>
+          {/* Outer bounding box */}
+          <Rect x={-w / 2} y={-h / 2} width={w} height={h} fill="transparent" stroke={sc} strokeWidth={1.5} cornerRadius={2} />
+          {/* Vertical flight - bottom left */}
+          {Array.from({ length: vSteps - 1 }).map((_, i) => (
+            <Line key={`v${i}`}
+              points={[-w / 2, -h / 2 + landH + (hH / vSteps) * (i + 1), -w / 2 + vW, -h / 2 + landH + (hH / vSteps) * (i + 1)]}
+              stroke={sg} strokeWidth={0.9}
+            />
+          ))}
+          <Line points={[-w / 2 + vW / 2, h / 2 - 4, -w / 2 + vW / 2, -h / 2 + landH + 4]} stroke={sc} strokeWidth={1.1} />
+          <Shape sceneFunc={(ctx) => {
+            const ax = -w / 2 + vW / 2; const ay = -h / 2 + landH + 8;
+            ctx.beginPath(); ctx.moveTo(ax - 4, ay + 8); ctx.lineTo(ax, ay); ctx.lineTo(ax + 4, ay + 8); ctx.closePath(); ctx.fillStyle = sc; ctx.fill();
+          }} />
+          {/* Landing platform */}
+          <Rect x={-w / 2} y={-h / 2} width={vW} height={landH} fill="#f8fafc" stroke={sg} strokeWidth={0.8} />
+          <Rect x={-w / 2} y={-h / 2} width={vW} height={landH} fill="transparent" stroke={sg} strokeWidth={0.5} />
+          {/* Horizontal flight - top right */}
+          {Array.from({ length: hSteps - 1 }).map((_, i) => (
+            <Line key={`h${i}`}
+              points={[-w / 2 + vW + (landW / hSteps) * (i + 1), -h / 2, -w / 2 + vW + (landW / hSteps) * (i + 1), -h / 2 + hH]}
+              stroke={sg} strokeWidth={0.9}
+            />
+          ))}
+          <Line points={[w / 2 - 4, -h / 2 + hH / 2, -w / 2 + vW + 4, -h / 2 + hH / 2]} stroke={sc} strokeWidth={1.1} />
+          <Shape sceneFunc={(ctx) => {
+            const ax = w / 2 - 8; const ay = -h / 2 + hH / 2;
+            ctx.beginPath(); ctx.moveTo(ax - 8, ay - 4); ctx.lineTo(ax, ay); ctx.lineTo(ax - 8, ay + 4); ctx.closePath(); ctx.fillStyle = sc; ctx.fill();
+          }} />
+          <Text text="L" x={-w / 2} y={h / 2 + 4} width={w} align="center" fontSize={8} fontStyle="bold" fill={sg} />
+          {isSelected && <Rect x={-w / 2 - 3} y={-h / 2 - 3} width={w + 6} height={h + 6} stroke={themeConfig.accent} strokeWidth={1.5} dash={[5, 3]} fill="transparent" cornerRadius={3} />}
+        </Group>
+      );
+    }
+
+    /* ─── SPIRAL ─────────────────────────────────────────────── */
+    if (type === 'spiral') {
+      const r = Math.min(w, h) / 2;
+      const innerR = r * 0.15;
+      const segCount = 14;
+      return (
+        <Group key={el.id} x={el.x} y={el.y} rotation={el.rotation || 0} {...dragProps}>
+          {/* Outer circle */}
+          <Circle radius={r} fill="white" stroke={sc} strokeWidth={1.8} />
+          {/* Inner core circle */}
+          <Circle radius={innerR} fill="#e2e8f0" stroke={sc} strokeWidth={1.2} />
+          <Circle x={0} y={0} radius={2.5} fill={sc} />
+          {/* Radial step lines */}
+          {Array.from({ length: segCount }).map((_, i) => {
+            const angle = (i / segCount) * Math.PI * 2 - Math.PI / 2;
+            return (
+              <Line key={i}
+                points={[Math.cos(angle) * innerR, Math.sin(angle) * innerR, Math.cos(angle) * r, Math.sin(angle) * r]}
+                stroke={sg} strokeWidth={0.8}
+              />
+            );
+          })}
+          {/* Direction arc + arrow (like reference image) */}
+          <Shape sceneFunc={(ctx) => {
+            ctx.beginPath();
+            ctx.arc(0, 0, r * 0.55, -Math.PI * 0.1, Math.PI * 0.5);
+            ctx.strokeStyle = sc;
+            ctx.lineWidth = 1.3;
+            ctx.stroke();
+            // Arrow tip
+            const tipAngle = Math.PI * 0.5;
+            const tx = Math.cos(tipAngle) * r * 0.55;
+            const ty = Math.sin(tipAngle) * r * 0.55;
+            ctx.beginPath();
+            ctx.moveTo(tx - 4, ty - 6);
+            ctx.lineTo(tx + 2, ty);
+            ctx.lineTo(tx + 7, ty - 5);
+            ctx.strokeStyle = sc;
+            ctx.lineWidth = 1.3;
+            ctx.stroke();
+          }} />
+          <Text text="SP" x={-r} y={r + 4} width={r * 2} align="center" fontSize={8} fontStyle="bold" fill={sg} />
+          {isSelected && <Circle radius={r + 3} stroke={themeConfig.accent} strokeWidth={1.5} dash={[5, 3]} fill="transparent" />}
+        </Group>
+      );
+    }
+
+    /* ─── CORE (Apartman Boşluğu) ───────────────────────────── */
+    if (type === 'core') {
+      const flightW = w * 0.28;
+      const voidW = w * 0.44;
+      const voidH = h * 0.5;
+      const leftX = -w / 2;
+      const rightX = w / 2 - flightW;
+      const steps = Math.max(4, Math.floor(h / 14));
+      const stepH = h / steps;
+      return (
+        <Group key={el.id} x={el.x} y={el.y} rotation={el.rotation || 0} {...dragProps}>
+          {/* Outer box */}
+          <Rect x={-w / 2} y={-h / 2} width={w} height={h} fill="white" stroke={sc} strokeWidth={1.8} cornerRadius={2} />
+          {/* Central void (dashed) */}
+          <Rect x={-voidW / 2} y={-voidH / 2} width={voidW} height={voidH} fill="transparent" stroke={sg} strokeWidth={0.8} dash={[4, 2.5]} />
+          <Text text="BOŞLUK" x={-voidW / 2} y={-6} width={voidW} align="center" fontSize={7} fill={sg} />
+          {/* Left flight - going UP, fish-bone style */}
+          {Array.from({ length: steps - 1 }).map((_, i) => (
+            <Line key={`ll${i}`}
+              points={[leftX, -h / 2 + stepH * (i + 1), leftX + flightW, -h / 2 + stepH * (i + 1)]}
+              stroke={sg} strokeWidth={0.9}
+            />
+          ))}
+          {Array.from({ length: steps - 1 }).map((_, i) => (
+            <Line key={`lb${i}`}
+              points={[leftX + flightW * 0.3, -h / 2 + stepH * (i + 1), leftX - 4, -h / 2 + stepH * (i + 1) + 5]}
+              stroke={sg} strokeWidth={0.7}
+            />
+          ))}
+          <Line points={[leftX + flightW / 2, h / 2 - 6, leftX + flightW / 2, -h / 2 + 16]} stroke={sc} strokeWidth={1.2} />
+          <Shape sceneFunc={(ctx) => {
+            const ax = leftX + flightW / 2; const ay = -h / 2 + 18;
+            ctx.beginPath(); ctx.moveTo(ax - 4, ay + 8); ctx.lineTo(ax, ay); ctx.lineTo(ax + 4, ay + 8); ctx.closePath(); ctx.fillStyle = sc; ctx.fill();
+          }} />
+          {/* Right flight - going DOWN */}
+          {Array.from({ length: steps - 1 }).map((_, i) => (
+            <Line key={`rl${i}`}
+              points={[rightX, -h / 2 + stepH * (i + 1), rightX + flightW, -h / 2 + stepH * (i + 1)]}
+              stroke={sg} strokeWidth={0.9}
+            />
+          ))}
+          {Array.from({ length: steps - 1 }).map((_, i) => (
+            <Line key={`rb${i}`}
+              points={[rightX + flightW * 0.7, -h / 2 + stepH * (i + 1), rightX + flightW + 4, -h / 2 + stepH * (i + 1) + 5]}
+              stroke={sg} strokeWidth={0.7}
+            />
+          ))}
+          <Line points={[rightX + flightW / 2, -h / 2 + 6, rightX + flightW / 2, h / 2 - 16]} stroke={sc} strokeWidth={1.2} />
+          <Shape sceneFunc={(ctx) => {
+            const ax = rightX + flightW / 2; const ay = h / 2 - 18;
+            ctx.beginPath(); ctx.moveTo(ax - 4, ay - 8); ctx.lineTo(ax, ay); ctx.lineTo(ax + 4, ay - 8); ctx.closePath(); ctx.fillStyle = sc; ctx.fill();
+          }} />
+          <Text text="CORE" x={-w / 2} y={h / 2 + 4} width={w} align="center" fontSize={8} fontStyle="bold" fill={sg} />
+          {isSelected && <Rect x={-w / 2 - 3} y={-h / 2 - 3} width={w + 6} height={h + 6} stroke={themeConfig.accent} strokeWidth={1.5} dash={[5, 3]} fill="transparent" cornerRadius={3} />}
+        </Group>
+      );
+    }
+
+    return null;
+  };
+
+
+
+
+  const renderElevator = (el: EditorElement, isSelected: boolean, canInteract: boolean, isLocked?: boolean) => {
+    const w = el.width || 80;
+    const h = el.height || 80;
+    return (
+      <Group
+        key={el.id} x={el.x} y={el.y} rotation={el.rotation || 0}
+        draggable={canInteract}
+        onClick={(e) => selectOrErase(el.id, isLocked, e)}
+        onDragStart={(e: CanvasStageEvent) => { if (!isLocked && !selectedIds.includes(el.id)) { setSelectedIds(e.evt.shiftKey ? [...selectedIds, el.id] : [el.id]); } }}
+        onDragEnd={(e) => updateElement(el.id, { x: e.target.x(), y: e.target.y() })}
+      >
+        {/* Elevator box */}
+        <Rect x={-w / 2} y={-h / 2} width={w} height={h} fill="white" stroke={isSelected ? themeConfig.accent : '#1e293b'} strokeWidth={2} />
+        {/* Diagonal cross */}
+        <Line points={[-w / 2, -h / 2, w / 2, h / 2]} stroke="#94a3b8" strokeWidth={1} />
+        <Line points={[w / 2, -h / 2, -w / 2, h / 2]} stroke="#94a3b8" strokeWidth={1} />
+        {/* Center circle */}
+        <Circle x={0} y={0} radius={8} fill="white" stroke="#1e293b" strokeWidth={1.5} />
+        <Text text="E" x={-5} y={-6} fontSize={10} fontStyle="bold" fill="#1e293b" />
+        {isSelected && <Rect x={-w / 2 - 2} y={-h / 2 - 2} width={w + 4} height={h + 4} stroke={themeConfig.accent} strokeWidth={2} dash={[6, 3]} fill="transparent" />}
+      </Group>
+    );
+  };
+
+  const renderColumn = (el: EditorElement, isSelected: boolean, canInteract: boolean, isLocked?: boolean) => {
+    const size = el.width || 30;
+    return (
+      <Group
+        key={el.id} x={el.x} y={el.y} rotation={el.rotation || 0}
+        draggable={canInteract}
+        onClick={(e) => selectOrErase(el.id, isLocked, e)}
+        onDragStart={(e: CanvasStageEvent) => { if (!isLocked && !selectedIds.includes(el.id)) { setSelectedIds(e.evt.shiftKey ? [...selectedIds, el.id] : [el.id]); } }}
+        onDragEnd={(e) => {
+          const updates = calculateSnapToWall(el, e.target.x(), e.target.y());
+          updateElement(el.id, updates);
+        }}
+      >
+        {/* White mask behind column to trim the wall */}
+        {el.columnShape === 'circle' ? (
+          <Circle radius={size / 2 + 2} fill="white" />
+        ) : (
+          <Rect x={-size / 2 - 2} y={-size / 2 - 2} width={size + 4} height={size + 4} fill="white" />
+        )}
+        {/* Column Fill */}
+        {el.columnShape === 'circle' ? (
+          <Circle radius={size / 2} fill="#e2e8f0" stroke={isSelected ? themeConfig.accent : '#1e293b'} strokeWidth={2} />
+        ) : (
+          <Rect x={-size / 2} y={-size / 2} width={size} height={size} fill="#e2e8f0" stroke={isSelected ? themeConfig.accent : '#1e293b'} strokeWidth={2} />
+        )}
+        {/* Cross hatch for column */}
+        <Group>
+          <Line points={[-size / 2, -size / 2, size / 2, size / 2]} stroke="#94a3b8" strokeWidth={0.8} />
+          <Line points={[size / 2, -size / 2, -size / 2, size / 2]} stroke="#94a3b8" strokeWidth={0.8} />
+        </Group>
+        {isSelected && <Rect x={-size / 2 - 4} y={-size / 2 - 4} width={size + 8} height={size + 8} stroke={themeConfig.accent} strokeWidth={2} dash={[4, 2]} fill="transparent" />}
+      </Group>
+    );
+  };
+
+  const renderDoorArc = (el: EditorElement, isSelected: boolean, canInteract: boolean, isLocked?: boolean) => {
+    const pts = el.points || [0, 0, 80, 0];
+    const dx = pts[2] - pts[0];
+    const dy = pts[3] - pts[1];
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    const xOffset = el.x || 0;
+    const yOffset = el.y || 0;
+
+    return (
+      <Group
+        key={el.id} x={xOffset} y={yOffset}
+        draggable={canInteract}
+        onClick={(e) => selectOrErase(el.id, isLocked, e)}
+        onDragStart={(e: CanvasStageEvent) => { if (!isLocked && !selectedIds.includes(el.id)) { setSelectedIds(e.evt.shiftKey ? [...selectedIds, el.id] : [el.id]); } }}
+        onDragEnd={(e) => {
+          const updates = calculateSnapToWall(el, e.target.x(), e.target.y());
+          updateElement(el.id, updates);
+        }}
+      >
+        {/* White mask behind door to trim wall */}
+        <Line points={pts} stroke="white" strokeWidth={16} lineCap="square" />
+
+        <Group x={pts[0]} y={pts[1]} rotation={angle}>
+          {/* Wall Caps (Jambs) to seal the trimmed wall */}
+          <Line points={[0, -6, 0, 6]} stroke="#1e293b" strokeWidth={2} lineCap="square" />
+          <Line points={[length, -6, length, 6]} stroke="#1e293b" strokeWidth={2} lineCap="square" />
+
+          {/* Door leaf (drawn open at 90 degrees) */}
+          <Line points={[0, 0, 0, length]} stroke={isSelected ? themeConfig.accent : (el.color || '#f59e0b')} strokeWidth={3} lineCap="round" />
+
+          {/* Door swing arc */}
+          <Shape
+            sceneFunc={(ctx, shape) => {
+              ctx.beginPath();
+              ctx.arc(0, 0, length, 0, Math.PI / 2);
+              ctx.strokeStyle = el.color || '#f59e0b';
+              ctx.lineWidth = 1.5;
+              ctx.setLineDash([5, 4]);
+              ctx.stroke();
+              ctx.fillStrokeShape(shape);
+            }}
+          />
+        </Group>
+
+        {isSelected && <Circle x={pts[0] + dx / 2} y={pts[1] + dy / 2} radius={length / 2 + 15} stroke={themeConfig.accent} strokeWidth={1.5} dash={[4, 4]} />}
+      </Group>
+    );
+  };
+
+  const renderWindow = (el: EditorElement, isSelected: boolean, canInteract: boolean, isLocked?: boolean) => {
+    const pts = el.points || [0, 0, 0, 0];
+    const dx = pts[2] - pts[0];
+    const dy = pts[3] - pts[1];
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    const xOffset = el.x || 0;
+    const yOffset = el.y || 0;
+
+    return (
+      <Group
+        key={el.id} x={xOffset} y={yOffset}
+        draggable={canInteract}
+        onClick={(e) => selectOrErase(el.id, isLocked, e)}
+        onDragStart={(e: CanvasStageEvent) => { if (!isLocked && !selectedIds.includes(el.id)) { setSelectedIds(e.evt.shiftKey ? [...selectedIds, el.id] : [el.id]); } }}
+        onDragEnd={(e) => {
+          const updates = calculateSnapToWall(el, e.target.x(), e.target.y());
+          updateElement(el.id, updates);
+        }}
+      >
+        {/* White mask behind window to trim wall */}
+        <Line points={pts} stroke="white" strokeWidth={16} lineCap="square" />
+
+        <Group x={pts[0]} y={pts[1]} rotation={angle}>
+          {/* Wall Caps (Jambs) to seal the trimmed wall */}
+          <Line points={[0, -6, 0, 6]} stroke="#1e293b" strokeWidth={2} lineCap="square" />
+          <Line points={[length, -6, length, 6]} stroke="#1e293b" strokeWidth={2} lineCap="square" />
+
+          {/* Window Frame outer */}
+          <Rect x={0} y={-4} width={length} height={8} fill="#f1f5f9" stroke="#94a3b8" strokeWidth={1} />
+          {/* Window Glass inner */}
+          <Line points={[0, 0, length, 0]} stroke="#3b82f6" strokeWidth={2} />
+          <Line points={[0, -2, length, -2]} stroke="#bfdbfe" strokeWidth={1} />
+          <Line points={[0, 2, length, 2]} stroke="#bfdbfe" strokeWidth={1} />
+        </Group>
+
+        {isSelected && <Rect x={Math.min(pts[0], pts[2]) - 10} y={Math.min(pts[1], pts[3]) - 10} width={Math.abs(dx) + 20} height={Math.abs(dy) + 20} stroke={themeConfig.accent} strokeWidth={1.5} dash={[4, 4]} fill="transparent" />}
+      </Group>
+    );
+  };
+
+  const renderCorporateIcon = (symbolId: string, size: number, color: string, isSelected: boolean = false) => {
+    const r = size / 2;
+    // Basic rectangle fallback for now - will be expanded with actual SVGs or Konva primitives
+    return (
+      <Group shadowBlur={isSelected ? 0 : 2} shadowOpacity={0.15}>
+        <Rect width={size} height={size} x={-r} y={-r} fill={color} cornerRadius={4} stroke="white" strokeWidth={0.5} />
+        <Text text={symbolId.substring(0, 2).toUpperCase()} fill="white" fontSize={size * 0.4} fontStyle="bold" align="center" verticalAlign="middle" width={size} height={size} x={-r} y={-r} />
+      </Group>
+    );
+  };
+
+  const page = activeTemplateLayout?.layout_json.page;
+  const drawingRegion = activeTemplateLayout?.layout_json.regions.find((region) => region.type === 'drawing');
+  const mergedTemplateState = mergeTemplateState(templateState);
+
+  const stageWidth = Math.max(120, dimensions.width);
+  const stageHeight = Math.max(120, dimensions.height);
+
+  // Paper pixel size uses the TRUE preset dimensions (e.g. 1400x990 for A3).
+  // CSS transform (zoom) will scale it down to fit the screen. This prevents layout squishing.
+  const paperWidth = activeTemplateLayout && page ? page.width : 0;
+  const paperHeight = activeTemplateLayout && page ? page.height : 0;
+
+  const setCanvasHostRef = (node: HTMLDivElement | null) => {
+    stageHostRef.current = node;
+    setContainerNode(node);
+  };
+
+  // Auto-center and fit paper when template is applied
+  useEffect(() => {
+    const host = infiniteHostRef.current;
+    if (!host || !activeTemplateLayout || !page) return;
+    const hw = host.offsetWidth;
+    const hh = host.offsetHeight;
+
+    const PAPER_MARGIN = 40;
+    const maxPW = hw - PAPER_MARGIN * 2;
+    const maxPH = hh - PAPER_MARGIN * 2;
+
+    // Scale the absolute paper size so it fits inside the available viewport margin
+    const fitZoom = Math.min(1.5, maxPW / page.width, maxPH / page.height);
+
+    const centeredPanX = (hw - page.width * fitZoom) / 2;
+    const centeredPanY = (hh - page.height * fitZoom) / 2;
+
+    setZoom(fitZoom);
+    setPan({ x: centeredPanX, y: centeredPanY });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTemplateLayout?.id, activeTemplateLayout?.page_preset]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development' || typeof window === 'undefined') {
+      return;
+    }
+
+    if (!window.location.pathname.startsWith('/editor')) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const debugWindow = window as DebugEditorWindow;
+      const payload = sanitizeDebugEditorStatePayload({
+        elements,
+        layers,
+        scaleConfig,
+        projectTemplate,
+        templateLayoutId,
+        pagePreset: activeTemplateLayout?.page_preset,
+        templateState,
+        selectedIds,
+        invalidChildren: debugWindow.__konvaInvalidChildren ?? [],
+        invalidChildrenText: document.documentElement.dataset.konvaInvalidChild ?? null,
+        location: window.location.href,
+      });
+      const serializedPayload = JSON.stringify(payload);
+
+      if (serializedPayload === lastDebugPayloadRef.current) {
+        return;
+      }
+
+      lastDebugPayloadRef.current = serializedPayload;
+
+      void fetch('/api/debug/editor-state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: serializedPayload,
+        keepalive: true,
+      }).catch(() => {
+        // Dev-only capture should never affect editing.
+      });
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    activeTemplateLayout?.page_preset,
+    elements,
+    layers,
+    projectTemplate,
+    scaleConfig,
+    selectedIds,
+    templateLayoutId,
+    templateState,
+  ]);
+
+  const memoizedWallData = useMemo(() => {
+    return wallElements.map(el => ({
+      el,
+      rpts: computeRenderPoints(el, wallElements)
+    }));
+  }, [wallElements]);
+
+  const renderedOtherElements = useMemo(() => {
+    return visibleElements.filter(el => el.type !== 'wall').map((el) => {
+      const isSelected = selectedIds.includes(el.id);
+      const isLocked = layers.find(l => l.id === el.layerId)?.locked;
+      const canInteract = tool === 'select' && !isLocked;
+
+      if (el.type === 'rect') {
+        return (
+          <Group key={el.id} x={el.x} y={el.y} rotation={el.rotation || 0}>
+            <Rect width={el.width} height={el.height} x={-el.width! / 2} y={-el.height! / 2} fill={el.color || 'transparent'} opacity={el.color ? 0.2 : 1} stroke={isSelected ? themeConfig.accent : (el.color || themeConfig.text)} strokeWidth={2} draggable={canInteract} onClick={(e) => selectOrErase(el.id, isLocked, e)} onDragStart={(e: CanvasStageEvent) => { if (!isLocked && !selectedIds.includes(el.id)) { setSelectedIds(e.evt.shiftKey ? [...selectedIds, el.id] : [el.id]); } }} onDragEnd={(e) => updateElement(el.id, { x: e.target.x(), y: e.target.y() })} />
+          </Group>
+        );
+      }
+      if (el.type === 'stairs') {
+        return renderStairs(el, isSelected, canInteract, isLocked);
+      }
+      if (el.type === 'elevator') {
+        return renderElevator(el, isSelected, canInteract, isLocked);
+      }
+      if (el.type === 'column') {
+        return renderColumn(el, isSelected, canInteract, isLocked);
+      }
+      if (el.type === 'door') {
+        return renderDoorArc(el, isSelected, canInteract, isLocked);
+      }
+      if (el.type === 'window') {
+        return renderWindow(el, isSelected, canInteract, isLocked);
+      }
+      if (el.type === 'route') {
+        const pts = el.points || [0, 0, 0, 0];
+
+        return (
+          <Group
+            key={el.id}
+            draggable={canInteract}
+            onClick={(e) => selectOrErase(el.id, isLocked, e)}
+            onDragStart={(e: CanvasStageEvent) => { if (!isLocked && !selectedIds.includes(el.id)) { setSelectedIds(e.evt.shiftKey ? [...selectedIds, el.id] : [el.id]); } }}
+            onDragEnd={(e) => {
+              updateElement(el.id, { x: e.target.x(), y: e.target.y() });
+            }}
+          >
+            <Line
+              points={pts}
+              stroke={isSelected ? themeConfig.accent : (el.color || themeConfig.text)}
+              strokeWidth={el.thickness || 8}
+              lineCap="round"
+              dash={el.routeType === 'evacuation' ? [10, 6] : undefined}
+              x={el.x || 0} y={el.y || 0}
+            />
+          </Group>
+        )
+      }
+      if (el.type === 'symbol') {
+        const sym = SYMBOLS.find(s => s.id === el.symbolType);
+        const customSym = customSymbols.find(cs => cs.id === el.symbolType);
+        const isoDataUrl = el.symbolType ? ISO_SYMBOLS[el.symbolType] : null;
+        const sWidth = el.width || 36;
+        return (
+          <Group key={el.id} x={el.x} y={el.y} rotation={el.rotation || 0} draggable={canInteract} onClick={(e) => selectOrErase(el.id, isLocked, e)} onDragEnd={(e) => updateElement(el.id, { x: e.target.x(), y: e.target.y() })}>
+            {customSym ? (
+              <CustomSymbolImage src={customSym.dataUrl} size={sWidth} isSelected={isSelected} />
+            ) : isoDataUrl ? (
+              <CustomSymbolImage src={isoDataUrl} size={sWidth} isSelected={isSelected} />
+            ) : (
+              renderCorporateIcon(el.symbolType || 'exit', sWidth, el.color || sym?.color || '#ef4444', isSelected)
+            )}
+            {isSelected && <Rect width={sWidth + 8} height={sWidth + 8} x={-sWidth / 2 - 4} y={-sWidth / 2 - 4} stroke={themeConfig.accent} strokeWidth={2} dash={[4, 2]} />}
+          </Group>
+        )
+      }
+      if (el.type === 'text') {
+        return (
+          <Text
+            key={el.id}
+            x={el.x}
+            y={el.y}
+            rotation={el.rotation || 0}
+            width={el.width}
+            height={el.height}
+            text={el.label || ''}
+            fill={isSelected ? themeConfig.accent : (el.color || themeConfig.text)}
+            fontSize={el.fontSize || 14}
+            fontStyle={el.fontWeight || 'bold'}
+            align={el.textAlign || 'left'}
+            draggable={canInteract}
+            onClick={(e) => selectOrErase(el.id, isLocked, e)}
+            onDragEnd={(e) => updateElement(el.id, { x: e.target.x(), y: e.target.y() })}
+          />
+        );
+      }
+      return null;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleElements, selectedIds, layers, tool, themeConfig, customSymbols, editorTheme]);
+
+  const wallEndpointHandles = useMemo(() => {
+    return wallElements
+      .filter((el) => selectedIds.includes(el.id))
+      .flatMap((el) => {
+        const pts = wallPoints(el);
+
+        return ([0, 1] as const).map((endpointIndex) => {
+          const x = pts[endpointIndex * 2];
+          const y = pts[endpointIndex * 2 + 1];
+
+          return (
+            <Circle
+              key={`wall-handle-${el.id}-${endpointIndex}`}
+              x={x}
+              y={y}
+              radius={7}
+              fill="white"
+              stroke={themeConfig.accent}
+              strokeWidth={2}
+              shadowBlur={6}
+              shadowOpacity={0.25}
+              draggable={tool === 'select' && !layers.find(l => l.id === el.layerId)?.locked}
+              onDragMove={(e) => {
+                if (e.evt.shiftKey) {
+                  const otherX = pts[(1 - endpointIndex) * 2];
+                  const otherY = pts[(1 - endpointIndex) * 2 + 1];
+                  const dx = e.target.x() - otherX;
+                  const dy = e.target.y() - otherY;
+
+                  if (Math.abs(dx) > Math.abs(dy)) {
+                    e.target.y(otherY);
+                  } else {
+                    e.target.x(otherX);
+                  }
+                }
+              }}
+              onDragEnd={(e) => {
+                const originalX = pts[endpointIndex * 2];
+                const originalY = pts[endpointIndex * 2 + 1];
+                const { updates } = buildWallEndpointUpdates(
+                  el,
+                  wallElements,
+                  endpointIndex,
+                  { x: e.target.x(), y: e.target.y() }
+                );
+
+                if (updates.length > 0) updateElementsBatch(updates);
+                else e.target.position({ x: originalX, y: originalY });
+              }}
+            />
+          );
+        });
+      });
+  }, [layers, selectedIds, themeConfig.accent, tool, updateElementsBatch, wallElements]);
+
+  return (
+    <main
+      className="flex-1 relative overflow-hidden bg-slate-200"
+      onClick={() => {
+        if (mobileMenu) setMobileMenu(null);
+        if (focusedRegionId) setFocusedRegionId(null);
+      }}
+    >
+      {/* Infinite canvas host — fills main, handles wheel+pan */}
+      <div
+        ref={infiniteHostRef}
+        className="absolute inset-0"
+        style={{ cursor: tool === 'select' ? 'default' : 'crosshair' }}
+      >
+        {/* Dot-grid background pattern fixed in place */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+            backgroundPosition: `${pan.x % 24}px ${pan.y % 24}px`,
+            opacity: 0.35,
+          }}
+        />
+
+        {/* Transform wrapper — everything moves together */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            transformOrigin: '0 0',
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            willChange: 'transform',
+          }}
+        >
+          {activeTemplateLayout && page ? (
+            /* ── TEMPLATE MODE: HTML paper at absolute pixel size ── */
+            <div
+              ref={setCanvasHostRef}
+              data-template-paper="true"
+              style={{
+                position: 'relative',
+                width: paperWidth,
+                height: paperHeight,
+                background: 'white',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.07), 0 20px 50px -10px rgba(15,23,42,0.25), 0 0 0 1px rgba(148,163,184,0.3)',
+                borderRadius: 3,
+                overflow: 'hidden',
+                fontSize: `${Math.max(14, paperWidth * 0.0125)}px`,
+              }}
+            >
+              {/* Fine grid overlay on paper */}
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(15,23,42,.03)_1px,transparent_1px),linear-gradient(rgba(15,23,42,.03)_1px,transparent_1px)] bg-[length:20px_20px] pointer-events-none" />
+
+              {/* "Geri Gel" button when a region is focused */}
+              {focusedRegionId && (
+                <button
+                  onClick={(event) => { event.stopPropagation(); setFocusedRegionId(null); }}
+                  className="absolute left-1/2 -translate-x-1/2 top-6 z-40 flex items-center gap-2 rounded-full bg-slate-900/95 backdrop-blur-md px-6 py-3 text-xs font-black uppercase tracking-[0.15em] text-white shadow-2xl hover:bg-black transition-all hover:scale-105 active:scale-95 group border border-white/10"
+                >
+                  <svg className="w-4 h-4 text-cyan-400 group-hover:-translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                  Görünüme Dön
+                </button>
+              )}
+
+              {/* Non-drawing regions (header, instruction, etc.) */}
+              {activeTemplateLayout.layout_json.regions.filter((region) => region.type !== 'drawing').map((region) => {
+                const content = mergedTemplateState[region.id] || {};
+                const focused = focusedRegionId === region.id;
+                const dimmed = !!focusedRegionId && !focused;
+                const isHeader = region.type === 'header';
+                const tone = region.tone || 'neutral';
+                const toneClass =
+                  tone === 'red' ? 'border-red-100 bg-white shadow-md shadow-red-900/5' :
+                    tone === 'blue' ? 'border-blue-100 bg-white shadow-md shadow-blue-900/5' :
+                      tone === 'info' ? 'border-slate-200 bg-white shadow-sm' :
+                        tone === 'green' ? 'border-emerald-100 bg-white shadow-md shadow-emerald-900/5' :
+                          'border-slate-200 bg-white shadow-sm';
+                return (
+                  <section
+                    key={region.id}
+                    onClick={(event) => { event.stopPropagation(); if (!focused) setFocusedRegionId(region.id); }}
+                    className={cn(
+                      "absolute overflow-hidden border transition-all duration-300",
+                      isHeader ? "border-none" : "rounded-[12px]",
+                      !isHeader && toneClass,
+                      focused && "z-30 scale-[1.015] shadow-[0_20px_50px_rgba(8,145,178,0.3)] ring-4 ring-cyan-500/30 border-cyan-500",
+                      dimmed && "pointer-events-none opacity-25 grayscale",
+                      !focused && "cursor-pointer hover:shadow-lg hover:border-cyan-400"
+                    )}
+                    style={{
+                      left: isHeader ? `${region.x}%` : `calc(${region.x}% + 6px)`,
+                      top: isHeader ? `${region.y}%` : `calc(${region.y}% + 6px)`,
+                      width: focused ? `max(${region.w}%, 260px)` : isHeader ? `${region.w}%` : `calc(${region.w}% - 12px)`,
+                      height: focused ? `max(${region.h}%, 320px)` : isHeader ? `${region.h}%` : `calc(${region.h}% - 12px)`,
+                      zIndex: focused ? 40 : undefined,
+                      background: isHeader ? activeTemplateLayout.layout_json.accent : undefined,
+                    }}
+                  >
+                    {focused ? (
+                      <div className="flex flex-col h-full bg-white/5 backdrop-blur-sm p-4 animate-fade-in relative z-10">
+                        <div className="flex items-center justify-between mb-3 border-b border-slate-200/20 pb-2">
+                          <div className={cn("text-xs font-black uppercase tracking-widest", isHeader ? "text-white" : "text-slate-500")}>
+                            {region.label} DÜZENLE
+                          </div>
+                          <button onClick={(e) => { e.stopPropagation(); setFocusedRegionId(null); }} className={cn("w-6 h-6 flex items-center justify-center rounded-full transition-colors", isHeader ? "bg-white/20 hover:bg-white/30 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-600")}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                          </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-1" onWheel={(e) => e.stopPropagation()}>
+                          <div className="space-y-1">
+                            <label className={cn("text-[9px] font-bold uppercase tracking-wider ml-1", isHeader ? "text-white/80" : "text-slate-400")}>Başlık</label>
+                            <input
+                              value={content.title || ''}
+                              onChange={(event) => updateTemplateRegion(region.id, { title: event.target.value })}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black uppercase tracking-wide text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all shadow-sm"
+                              placeholder={region.label}
+                            />
+                          </div>
+                          <div className="space-y-1 flex-1 flex flex-col min-h-0">
+                            <label className={cn("text-[9px] font-bold uppercase tracking-wider ml-1", isHeader ? "text-white/80" : "text-slate-400")}>İçerik</label>
+                            <textarea
+                              value={content.body || ''}
+                              onChange={(event) => updateTemplateRegion(region.id, { body: event.target.value })}
+                              onWheel={(e) => e.stopPropagation()}
+                              className="flex-1 w-full resize-none overflow-y-auto rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium leading-relaxed text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all shadow-sm min-h-[120px]"
+                              placeholder="Bölge içeriğini buraya girin..."
+                            />
+                          </div>
+                          {(!isHeader || content.meta !== undefined) && (
+                            <div className="space-y-1">
+                              <label className={cn("text-[9px] font-bold uppercase tracking-wider ml-1", isHeader ? "text-white/80" : "text-slate-400")}>Alt Bilgi / Meta</label>
+                              <input
+                                value={content.meta || ''}
+                                onChange={(event) => updateTemplateRegion(region.id, { meta: event.target.value })}
+                                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all shadow-sm"
+                                placeholder="Kat / Revizyon vs."
+                              />
+                            </div>
+                          )}
+                          {region.type === 'assembly' && (
+                            <div className="space-y-1">
+                              <label className={cn("text-[9px] font-bold uppercase tracking-wider ml-1", isHeader ? "text-white/80" : "text-slate-400")}>Vaziyet Planı (Resim URL)</label>
+                              <input
+                                type="text"
+                                value={content.imageUrl || ''}
+                                onChange={(event) => updateTemplateRegion(region.id, { imageUrl: event.target.value })}
+                                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all shadow-sm"
+                                placeholder="https://... (Resim Linki)"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : isHeader ? (
+                      // ── FULL-WIDTH HEADER BLOCK (ISO 23601 style) ──────────────────
+                      <div className="w-full h-full flex items-center" style={{ containerType: 'size' } as React.CSSProperties}>
+                        {/* Left: ISO exit icon block */}
+                        <div className="h-full flex items-center justify-center bg-black/15 flex-shrink-0" style={{ width: 'min(8cqh, 6cqw)' }}>
+                          <svg style={{ width: 'min(5cqh, 4cqw)', height: 'min(5cqh, 4cqw)' }} viewBox="0 0 24 24" fill="white">
+                            <path d="M13.5 5a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0zm-1.5 4.5L10 14h4l-1-3 2.5 2 1.5-3-3-1-2 1.5zM3 3h7v2H5v14h14v-6h2v8H3V3z" />
+                          </svg>
+                        </div>
+                        {/* Center: Main title */}
+                        <div className="flex-1 flex flex-col items-center justify-center text-center px-[2cqw]">
+                          <div
+                            className="font-black uppercase tracking-widest text-white leading-[1.05]"
+                            style={{ fontSize: 'min(28cqh, 4.5cqw)' }}
+                          >
+                            {content.title || region.label}
+                          </div>
+                          {content.meta && (
+                            <div
+                              className="font-semibold uppercase tracking-wider text-white/85 mt-[1.5cqh]"
+                              style={{ fontSize: 'min(14cqh, 2cqw)' }}
+                            >
+                              {content.meta}
+                            </div>
+                          )}
+                        </div>
+                        {/* Right: mirror icon block for symmetry */}
+                        <div className="h-full bg-black/10 flex-shrink-0" style={{ width: 'min(4cqh, 3cqw)' }} />
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex flex-col overflow-hidden" style={{ containerType: 'size' } as React.CSSProperties}>
+                        {/* Gradient Pill Header */}
+                        <div className="shrink-0 p-[4cqmin]">
+                          <div className={cn(
+                            "font-black uppercase tracking-widest rounded-xl flex items-center px-[3cqmin] py-[2.5cqmin] gap-[2cqmin]",
+                            tone === 'red' ? "text-white bg-gradient-to-r from-red-600 to-red-500 shadow-md shadow-red-500/20" :
+                              tone === 'blue' ? "text-white bg-gradient-to-r from-blue-600 to-blue-500 shadow-md shadow-blue-500/20" :
+                                tone === 'green' ? "text-white bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-md shadow-emerald-500/20" :
+                                  "text-slate-700 bg-slate-100 shadow-inner border border-slate-200/60"
+                          )}
+                            style={{ fontSize: 'max(8px, min(4cqw, 18cqh))' }}>
+                            {region.type === 'assembly' && <svg className="w-[1.4em] h-[1.4em]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M12 2v4" /><path d="M12 2l-2 2" /><path d="M12 2l2 2" /></svg>}
+                            {region.type !== 'assembly' && tone === 'red' && <svg className="w-[1.2em] h-[1.2em]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}
+                            {region.type !== 'assembly' && tone === 'green' && <svg className="w-[1.2em] h-[1.2em]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                            {region.type !== 'assembly' && (tone === 'info' || tone === 'neutral') && <svg className="w-[1.2em] h-[1.2em]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>}
+                            {content.title || region.label}
+                          </div>
+                        </div>
+                        {/* Body Content */}
+                        {/* Body Content */}
+                        <div className="flex-1 min-h-0 flex flex-col px-[4cqmin] pb-[4cqmin] overflow-hidden">
+                          {content.imageUrl && (
+                            <div className="flex-1 min-h-0 relative mb-[2cqmin] flex items-center justify-center">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={content.imageUrl} alt={region.label} className="max-w-full max-h-full object-contain rounded-sm shadow-sm border border-slate-200/50" />
+                            </div>
+                          )}
+
+                          {/* Auto-generated Legend or Manual Body Text */}
+                          {region.type === 'legend' ? (
+                            <div className="flex-1 w-full overflow-hidden flex flex-wrap gap-y-[3cqh] gap-x-[5cqw] content-start pt-[2cqh]">
+                              {/* Dynamic Routes */}
+                              {visibleElements.some(el => el.type === 'route' && el.routeType === 'evacuation') && (
+                                <div className="flex items-center gap-[3cqw] w-[45%] shrink-0">
+                                  <div className="w-[18cqw] max-w-[2.5cqh] aspect-square flex items-center justify-center bg-emerald-100 rounded-sm">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" className="w-3/4 h-3/4"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                                  </div>
+                                  <span className="font-bold text-slate-700 leading-tight flex-1" style={{ fontSize: 'max(11px, min(4cqw, 14cqh))' }}>Tahliye Yolu</span>
+                                </div>
+                              )}
+
+                              {visibleElements.some(el => el.type === 'route' && el.routeType === 'rescue') && (
+                                <div className="flex items-center gap-[3cqw] w-[45%] shrink-0">
+                                  <div className="w-[18cqw] max-w-[2.5cqh] aspect-square flex items-center justify-center bg-red-100 rounded-sm">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="3" className="w-3/4 h-3/4"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                                  </div>
+                                  <span className="font-bold text-slate-700 leading-tight flex-1" style={{ fontSize: 'max(11px, min(4cqw, 14cqh))' }}>Kurtarma Yolu</span>
+                                </div>
+                              )}
+
+                              {/* Dynamic Symbols */}
+                              {Array.from(new Set(visibleElements.filter(el => el.type === 'symbol' && el.symbolType).map(el => el.symbolType as string))).map(id => {
+                                const isCustom = id.startsWith('data:') || id.startsWith('http');
+                                const symDef = SYMBOLS.find(s => s.id === id);
+
+                                // Fallback map for legacy symbol IDs
+                                const legacyMap: Record<string, string> = {
+                                  exit: 'Acil Çıkış', fire: 'Yangın Söndürücü', alarm: 'Yangın Alarmı',
+                                  assembly: 'Toplanma Alanı', firstaid: 'İlk Yardım', here: 'Buradasınız',
+                                  hydrant: 'Yangın Dolabı', electric: 'Elektrik Tehlikesi', gas: 'Gaz Kesme Vanası',
+                                  sign: 'Yönlendirme Oku', info: 'Bilgi', point: 'Özel Nokta'
+                                };
+
+                                const name = isCustom ? 'Özel Sembol' : (symDef?.name || legacyMap[id] || id);
+                                const src = isCustom ? id : ISO_SYMBOLS[id];
+                                if (!src) return null;
+
+                                return (
+                                  <div key={id} className="flex items-center gap-[3cqw] w-[45%] shrink-0">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={src} alt={name} className="w-[18cqw] max-w-[2.5cqh] aspect-square object-contain shadow-sm rounded-sm bg-white" />
+                                    <span className="font-bold text-slate-700 leading-tight flex-1" style={{ fontSize: 'max(11px, min(4cqw, 14cqh))' }}>
+                                      {name}
+                                    </span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          ) : content.body && (
+                            <div className="flex-1 min-h-0 relative">
+                              <div className="absolute inset-0 overflow-hidden flex flex-col justify-start pt-[1cqh]">
+                                <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.4]"
+                                  style={{
+                                    /* Fixed a larger base font to ensure 3m readability, gently scales down if lines increase */
+                                    fontSize: `max(14px, min(4cqw, ${80 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`
+                                  }}>
+                                  {content.body}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {content.meta && (
+                            <p className="shrink-0 mt-auto pt-[2cqh] font-black uppercase tracking-widest text-slate-400"
+                              style={{ fontSize: 'max(6px, min(2.5cqw, 8cqh))' }}>
+                              {content.meta}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+
+              {/* Drawing Region Wrapper and Konva Stage */}
+              {drawingRegion && (
+                <div
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (focusedRegionId !== 'drawing') setFocusedRegionId('drawing');
+                  }}
+                  className={cn(
+                    "drawing-region-wrapper absolute z-20 overflow-hidden bg-transparent transition-all duration-300 rounded-[12px]",
+                    !focusedRegionId ? "border border-slate-300 hover:shadow-lg hover:border-cyan-400 cursor-pointer" : "",
+                    focusedRegionId === 'drawing' ? "z-30 scale-[1.015] shadow-[0_20px_50px_rgba(8,145,178,0.3)] ring-4 ring-cyan-500/30 border-2 border-cyan-500" : "border-2 border-transparent",
+                    focusedRegionId && focusedRegionId !== 'drawing' ? "pointer-events-none opacity-25 grayscale" : ""
+                  )}
+                  style={{
+                    left: `calc(${drawingRegion.x}% + 6px)`, top: `calc(${drawingRegion.y}% + 6px)`,
+                    width: `calc(${drawingRegion.w}% - 12px)`, height: `calc(${drawingRegion.h}% - 12px)`,
+                  }}
+                >
+                  <Stage
+                    ref={stageRef}
+                    width={paperWidth * (drawingRegion.w / 100)}
+                    height={paperHeight * (drawingRegion.h / 100)}
+                    scaleX={innerZoom}
+                    scaleY={innerZoom}
+                    x={innerPan.x}
+                    y={innerPan.y}
+                    draggable={focusedRegionId === 'drawing' && tool === 'select'}
+                    onDragEnd={(e) => {
+                      if (e.target === e.target.getStage()) {
+                        setInnerPan({ x: e.target.x(), y: e.target.y() });
+                      }
+                    }}
+                    onWheel={handleWheel}
+                    onMouseDown={(e) => {
+                      if (activeTemplateLayout && focusedRegionId !== 'drawing') {
+                        setFocusedRegionId('drawing');
+                      }
+                      handleStageMouseDown(e);
+                    }}
+                    onMouseMove={handleStageMouseMove}
+                    onMouseUp={handleStageMouseUp}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      width: '100%',
+                      height: '100%',
+                      pointerEvents: (!focusedRegionId || focusedRegionId === 'drawing') ? 'auto' : 'none',
+                    }}
+                  >
+                    <Layer>
+                      <Group>
+                        {/* Grid is handled via CSS background for better performance in most cases, but Konva grid could be added here */}
+                        <MemoizedGrid gridVisible={gridVisible} themeConfig={themeConfig} editorTheme={editorTheme} gridSize={GRID_SIZE} size={2000} />
+
+                        {/* Wall Rendering Passes (CAD-like) */}
+                        {/* Pass 1: Outer Stroke (Black outline) */}
+                        {memoizedWallData.map(({ el, rpts }) => {
+                          const style = el.wallStyle || 'hatch';
+                          if (style === 'double') return null;
+                          return (
+                            <Line
+                              key={`wall-stroke-${el.id}`}
+                              points={rpts}
+                              stroke={selectedIds.includes(el.id) ? themeConfig.accent : '#1e293b'}
+                              strokeWidth={el.thickness || 12}
+                              lineCap="square"
+                            />
+                          );
+                        })}
+
+                        {/* Pass 2: Inner White Background */}
+                        {memoizedWallData.map(({ el, rpts }) => {
+                          const style = el.wallStyle || 'hatch';
+                          if (style === 'solid' || style === 'double') return null;
+                          return (
+                            <Line
+                              key={`wall-bg-${el.id}`}
+                              points={rpts}
+                              stroke="white"
+                              strokeWidth={Math.max(1, (el.thickness || 12) - 2)}
+                              lineCap="square"
+                            />
+                          );
+                        })}
+
+                        {/* Pass 3: Hatch/Double Pattern & Interaction */}
+                        {memoizedWallData.map(({ el, rpts }) => {
+                          const style = el.wallStyle || 'hatch';
+                          const length = wallLength(rpts);
+                          const nx = length > 0 ? -(rpts[3] - rpts[1]) / length : 0;
+                          const ny = length > 0 ? (rpts[2] - rpts[0]) / length : 0;
+                          const doubleOffset = Math.max(3, (el.thickness || 12) / 2);
+                          return (
+                            <Group
+                              key={`wall-hatch-${el.id}`}
+                              draggable={tool === 'select' && !layers.find(l => l.id === el.layerId)?.locked}
+                              onClick={(e) => {
+                                if (tool === 'eraser') {
+                                  removeElements([el.id]);
+                                  return;
+                                }
+                                if (!layers.find(l => l.id === el.layerId)?.locked) selectOrErase(el.id, false, e);
+                              }}
+                              onDragStart={(e) => {
+                                if (!layers.find(l => l.id === el.layerId)?.locked && !selectedIds.includes(el.id)) {
+                                  setSelectedIds(e.evt.shiftKey ? [...selectedIds, el.id] : [el.id]);
+                                }
+                              }}
+                              onDragEnd={(e) => {
+                                const dx = e.target.x();
+                                const dy = e.target.y();
+                                e.target.position({ x: 0, y: 0 });
+                                updateElementsBatch(buildWallMoveUpdates(el, wallElements, dx, dy));
+                              }}
+                            >
+                              {style === 'hatch' && (
+                                <Shape
+                                  sceneFunc={(context, shape) => {
+                                    const pattern = getHatchPattern();
+                                    if (pattern) {
+                                      context.beginPath();
+                                      context.moveTo(rpts[0], rpts[1]);
+                                      context.lineTo(rpts[2], rpts[3]);
+                                      context.strokeStyle = pattern;
+                                      context.lineWidth = Math.max(1, (el.thickness || 12) - 2);
+                                      context.lineCap = 'square';
+                                      context.stroke();
+                                    }
+                                    context.fillStrokeShape(shape);
+                                  }}
+                                />
+                              )}
+                              {style === 'double' && (
+                                <>
+                                  <Line
+                                    points={[rpts[0] + nx * doubleOffset, rpts[1] + ny * doubleOffset, rpts[2] + nx * doubleOffset, rpts[3] + ny * doubleOffset]}
+                                    stroke={selectedIds.includes(el.id) ? themeConfig.accent : '#1e293b'}
+                                    strokeWidth={2}
+                                    lineCap="square"
+                                  />
+                                  <Line
+                                    points={[rpts[0] - nx * doubleOffset, rpts[1] - ny * doubleOffset, rpts[2] - nx * doubleOffset, rpts[3] - ny * doubleOffset]}
+                                    stroke={selectedIds.includes(el.id) ? themeConfig.accent : '#1e293b'}
+                                    strokeWidth={2}
+                                    lineCap="square"
+                                  />
+                                </>
+                              )}
+                              {/* Invisible hit box for easier clicking */}
+                              <Line
+                                points={rpts}
+                                stroke="transparent"
+                                strokeWidth={el.thickness || 12}
+                                lineCap="square"
+                              />
+                            </Group>
+                          );
+                        })}
+
+                        {/* Selected wall endpoint handles */}
+                        {wallEndpointHandles}
+
+                        {/* Other Elements */}
+                        {renderedOtherElements}
+
+                        {(isDrawing || dimInput) && currentLine && (() => {
+                          const [x1, y1, x2, y2] = currentLine;
+                          const px = Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
+                          const meters = toDisplayUnit(px);
+                          const angle = wallAngleDegrees(currentLine);
+                          const midX = (x1 + x2) / 2;
+                          const midY = (y1 + y2) / 2;
+                          const isWallPreview = tool === 'wall';
+                          return (
+                            <Group>
+                              {/* Outer stroke */}
+                              {isWallPreview && (
+                                <Line
+                                  points={currentLine}
+                                  stroke="#1e293b"
+                                  strokeWidth={12}
+                                  opacity={0.4}
+                                  lineCap="square"
+                                />
+                              )}
+                              {/* Main preview line */}
+                              <Line
+                                points={currentLine}
+                                stroke={themeConfig.accent}
+                                strokeWidth={isWallPreview ? 10 : 3}
+                                opacity={0.6}
+                                dash={tool === 'evacuation-route' ? [10, 6] : undefined}
+                                lineCap="square"
+                              />
+                              {/* Endpoint dots */}
+                              <Circle x={x1} y={y1} radius={4} fill={themeConfig.accent} opacity={0.8} />
+                              <Circle x={x2} y={y2} radius={4} fill={themeConfig.accent} opacity={0.8} />
+                              {/* Live dimension label */}
+                              {px > 20 && (
+                                <Group x={midX} y={midY - 16 / zoom} scaleX={1 / zoom} scaleY={1 / zoom}>
+                                  <Rect x={-46} y={-10} width={92} height={20} fill="#1e293b" cornerRadius={4} opacity={0.88} />
+                                  <Text
+                                    text={`${meters}${scaleConfig.unit}  ${angle}°`}
+                                    x={-45} y={-7}
+                                    fontSize={11}
+                                    fontStyle="bold"
+                                    fill="white"
+                                    width={90}
+                                    align="center"
+                                  />
+                                </Group>
+                              )}
+                            </Group>
+                          );
+                        })()}
+
+                        {/* Alignment Guide Line (Smart Guides) */}
+                        {alignLine && (
+                          <Line
+                            points={
+                              alignLine.axis === 'y'
+                                ? [-5000, alignLine.pos, 5000, alignLine.pos] // Horizontal tracking line
+                                : [alignLine.pos, -5000, alignLine.pos, 5000] // Vertical tracking line
+                            }
+                            stroke="#3b82f6"
+                            strokeWidth={1 / zoom}
+                            dash={[5 / zoom, 5 / zoom]}
+                            opacity={0.5}
+                          />
+                        )}
+
+                        {/* Ortho Guide Line (AutoCAD tracking) */}
+                        {orthoLine && (
+                          <Line
+                            points={
+                              orthoLine.axis === 'y'
+                                ? [-5000, orthoLine.pos, 5000, orthoLine.pos] // Horizontal tracking line
+                                : [orthoLine.pos, -5000, orthoLine.pos, 5000] // Vertical tracking line
+                            }
+                            stroke={themeConfig.accent}
+                            strokeWidth={1.5}
+                            dash={[10, 10]}
+                            opacity={0.5}
+                          />
+                        )}
+                        <WatermarkGroup
+                          width={paperWidth * (drawingRegion.w / 100)}
+                          height={paperHeight * (drawingRegion.h / 100)}
+                          tier={subscriptionTier}
+                        />
+                      </Group>
+                    </Layer>
+                  </Stage>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* ── BLANK MODE: Stage fills the infinite space ── */
+            <div
+              ref={setCanvasHostRef}
+              style={{
+                position: 'relative',
+                width: Math.max(4000, stageWidth * 4),
+                height: Math.max(3000, stageHeight * 4),
+              }}
+            >
+              <Stage
+                ref={stageRef}
+                width={Math.max(4000, stageWidth * 4)}
+                height={Math.max(3000, stageHeight * 4)}
+                scaleX={1}
+                scaleY={1}
+                x={0}
+                y={0}
+                onWheel={handleWheel}
+                onMouseDown={handleStageMouseDown}
+                onMouseMove={handleStageMouseMove}
+                onMouseUp={handleStageMouseUp}
+                style={{ backgroundColor: themeConfig.bg }}
+              >
+                <Layer>
+                  <Group>
+                    <MemoizedGrid gridVisible={gridVisible} themeConfig={themeConfig} editorTheme={editorTheme} gridSize={GRID_SIZE} size={4000} />
+                    <WatermarkGroup
+                      width={Math.max(4000, stageWidth * 4)}
+                      height={Math.max(3000, stageHeight * 4)}
+                      tier={subscriptionTier}
+                    />
+                  </Group>
+                </Layer>
+              </Stage>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Fixed overlays — outside transform, always visible */}
+      {!activeTemplateLayout && (
+        <>
+          <div className={cn(
+            "absolute left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border-b-4 border-surface-900 shadow-2xl z-20 text-center animate-fade-in rounded-b-xl transition-all",
+            isPreview ? "top-10 w-80 p-4" : "top-3 w-72 p-2 opacity-90"
+          )}>
+            <h1 className={cn(
+              "font-black uppercase text-surface-900 border-b border-surface-200",
+              isPreview ? "text-sm tracking-[0.2em] pb-2 mb-2" : "text-[10px] tracking-[0.16em] pb-1 mb-1"
+            )}>ACİL DURUM TAHLİYE PLANI</h1>
+            <div className="flex justify-between items-center px-4">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kat: <span className="text-surface-900">Zemin</span></div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ölçek: <span className="text-surface-900">1:100</span></div>
+            </div>
+          </div>
+
+          <div className={cn(
+            "absolute right-6 bg-white/95 backdrop-blur-md border border-surface-200 shadow-2xl z-20 rounded-xl transition-all",
+            isPreview ? "bottom-16 w-64 p-5" : "bottom-5 w-52 p-3 opacity-90"
+          )}>
+            <p className="text-[10px] font-black text-surface-900 uppercase tracking-widest mb-4 border-b border-surface-200 pb-2 flex items-center gap-2">
+              <Layers className="w-4 h-4" /> LEJAND / LEGEND
+            </p>
+            <div className="space-y-3">
+              <LegendItem color="#00A550" label="TAHLİYE ROTASI" type="dash" />
+              <LegendItem color="#ef4444" label="YANGIN MÜDAHALE" type="line" />
+              <LegendItem color="#000000" label="YAPISAL DUVAR" type="bold" />
+            </div>
+          </div>
+        </>
+      )}
+
+      {scaleModal && (
+        <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full space-y-6 border border-white/10">
+            <h2 className="text-xl font-black text-slate-800 text-center">Ölçek Belirle</h2>
+            <p className="text-sm text-slate-500 text-center">Çizdiğiniz bu referans çizgisi gerçekte kaç metredir?</p>
+            <input type="number" step="0.1" autoFocus className="w-full text-center text-3xl font-black p-4 rounded-xl bg-white border-slate-200 text-slate-800 outline-none border border-slate-200 focus:border-accent-indigo" value={scaleValue} onChange={(e) => setScaleValue(e.target.value)} onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const meters = parseFloat(scaleValue);
+                if (meters > 0) { setScaleConfig({ pixelsPerMeter: scaleModal.pixels / meters, unit: 'm' }); setScaleModal(null); }
+              }
+            }} />
+            <div className="flex gap-3">
+              <button onClick={() => setScaleModal(null)} className="flex-1 py-3 text-xs font-bold bg-white border-slate-200 text-slate-600 rounded-xl hover:bg-slate-100">İptal</button>
+              <button onClick={() => {
+                const meters = parseFloat(scaleValue);
+                if (meters > 0) { setScaleConfig({ pixelsPerMeter: scaleModal.pixels / meters, unit: 'm' }); setScaleModal(null); }
+              }} className="flex-1 py-3 text-xs font-bold bg-accent-indigo text-white rounded-xl hover:bg-accent-indigo/90 glow-accent">Uygula</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Dimension Input Overlay (AutoCAD-style) ── */}
+      {dimInput && (
+        <>
+          {/* Backdrop — click outside to commit as-drawn */}
+          <div
+            className="fixed inset-0 z-[9998]"
+            onClick={() => { commitDimInput(); setCurrentLine(null); }}
+          />
+          <div
+            className="fixed z-[9999] animate-fade-in"
+            style={{ left: dimInput.screenX, top: dimInput.screenY, transform: 'translateX(-50%)' }}
+          >
+            <div className="bg-slate-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl p-2.5 w-48">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-1.5">
+                <div>
+                  <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest">KESİN ÖLÇÜ</div>
+                  <div className="text-[10px] font-bold text-white mt-0.5">
+                    {dimInput.elementData.type === 'wall' ? 'Duvar Uzunluğu' :
+                      dimInput.elementData.type === 'window' ? 'Pencere Genişliği' :
+                        dimInput.elementData.type === 'door' ? 'Kapı Genişliği' : 'Çizgi Uzunluğu'}
+                  </div>
+                </div>
+                <button
+                  onClick={() => { commitDimInput(); setCurrentLine(null); }}
+                  className="text-[9px] font-bold text-white/60 hover:text-white bg-white/10 hover:bg-white/20 px-1.5 py-0.5 rounded-md transition-all"
+                >
+                  ESC
+                </button>
+              </div>
+
+              {/* Input Row */}
+              <div className="flex items-stretch gap-1.5">
+                <div className="flex-1 relative">
+                  <input
+                    ref={dimInputRef}
+                    autoFocus
+                    type="number"
+                    step={scaleConfig.unit === 'mm' ? '1' : scaleConfig.unit === 'cm' ? '0.1' : '0.01'}
+                    min="0.01"
+                    value={dimInput.value}
+                    onChange={(e) => setDimInput(prev => prev ? { ...prev, value: e.target.value } : null)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const pixels = fromDisplayUnit(dimInput.value);
+                        commitDimInput(pixels > 0 ? pixels : undefined);
+                        setCurrentLine(null);
+                      }
+                      if (e.key === 'Escape') {
+                        commitDimInput(); // commit as-drawn
+                        setCurrentLine(null);
+                      }
+                    }}
+                    className="w-full bg-white/10 text-white text-lg font-black text-center py-1.5 rounded-lg outline-none border border-white/20 focus:border-accent-indigo focus:bg-white/15 transition-all pr-10 placeholder-white/30"
+                    placeholder="0"
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-black text-accent-indigo">
+                    {scaleConfig.unit}
+                  </span>
+                </div>
+              </div>
+
+              {/* Unit switcher */}
+              <div className="flex gap-1 mt-1.5">
+                {(['mm', 'cm', 'm'] as const).map((u) => (
+                  <button
+                    key={u}
+                    onClick={() => {
+                      // Convert current display value to new unit
+                      const pixels = fromDisplayUnit(dimInput.value);
+                      setScaleConfig({ ...scaleConfig, unit: u });
+                      // Recalculate display value for new unit
+                      const newMeters = pixels / scaleConfig.pixelsPerMeter;
+                      const newVal = u === 'mm' ? (newMeters * 1000).toFixed(0) :
+                        u === 'cm' ? (newMeters * 100).toFixed(1) :
+                          newMeters.toFixed(2);
+                      setDimInput(prev => prev ? { ...prev, value: newVal } : null);
+                    }}
+                    className={cn(
+                      "flex-1 py-1 rounded-md text-[9px] font-black uppercase tracking-widest transition-all",
+                      scaleConfig.unit === u
+                        ? "bg-accent-indigo text-white shadow-md shadow-accent-indigo/30"
+                        : "bg-white/10 text-white/60 hover:bg-white/20 hover:text-white"
+                    )}
+                  >
+                    {u}
+                  </button>
+                ))}
+              </div>
+
+              {/* Confirm button */}
+              <button
+                onClick={() => {
+                  const pixels = fromDisplayUnit(dimInput.value);
+                  commitDimInput(pixels > 0 ? pixels : undefined);
+                  setCurrentLine(null);
+                }}
+                className="w-full mt-1.5 py-1.5 bg-gradient-to-r from-accent-indigo to-accent-violet text-white font-black text-[9px] uppercase tracking-widest rounded-lg hover:opacity-90 transition-all shadow-md glow-accent"
+              >
+                Uygula ↵
+              </button>
+              <p className="text-[8px] text-white/40 text-center mt-1.5">Enter → Uygula &nbsp;|&nbsp; Esc → Geç</p>
+            </div>
+          </div>
+        </>
+      )}
+    </main>
+  );
+}

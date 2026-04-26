@@ -1,0 +1,12 @@
+src/components/editor/EditorCanvas.tsx(226,19): error TS2339: Property 'x' does not exist on type 'never'.
+src/components/editor/EditorCanvas.tsx(227,19): error TS2339: Property 'y' does not exist on type 'never'.
+src/components/editor/EditorCanvas.tsx(228,19): error TS2339: Property 'x' does not exist on type 'never'.
+src/components/editor/EditorCanvas.tsx(229,19): error TS2339: Property 'y' does not exist on type 'never'.
+src/components/editor/EditorLeftSidebar.tsx(294,15): error TS2322: Type 'StairType' is not assignable to type '"straight" | "l-shape" | "u-shape" | "spiral" | undefined'.
+  Type '"core"' is not assignable to type '"straight" | "l-shape" | "u-shape" | "spiral" | undefined'.
+src/store/useEditorStore.ts(102,51): error TS2345: Argument of type '(set: { (partial: EditorState | Partial<EditorState> | ((state: EditorState) => EditorState | Partial<EditorState>), replace?: false | undefined): void; (state: EditorState | ((state: EditorState) => EditorState), replace: true): void; }, get: () => EditorState) => { ...; } | { ...; }' is not assignable to parameter of type 'StateCreator<EditorState, [], []>'.
+  Type '(set: { (partial: EditorState | Partial<EditorState> | ((state: EditorState) => EditorState | Partial<EditorState>), replace?: false | undefined): void; (state: EditorState | ((state: EditorState) => EditorState), replace: true): void; }, get: () => EditorState) => { ...; } | { ...; }' is not assignable to type '(setState: { (partial: EditorState | Partial<EditorState> | ((state: EditorState) => EditorState | Partial<EditorState>), replace?: false | undefined): void; (state: EditorState | ((state: EditorState) => EditorState), replace: true): void; }, getState: () => EditorState, store: StoreApi<...>) => EditorState'.
+    Type '{ activeLayerId: string; selectedId: null; tool: "select"; zoom: number; pan: { x: number; y: number; }; gridVisible: true; selectedSymbol: null; canUndo: false; canRedo: false; past: never[]; future: never[]; ... 32 more ...; pagePreset?: undefined; } | { ...; }' is not assignable to type 'EditorState'.
+      Type '{ activeLayerId: string; selectedId: null; tool: "select"; zoom: number; pan: { x: number; y: number; }; gridVisible: true; selectedSymbol: null; canUndo: false; canRedo: false; past: never[]; future: never[]; ... 32 more ...; pagePreset?: undefined; }' is not assignable to type 'EditorState'.
+        Types of property 'projectTemplate' are incompatible.
+          Type 'undefined' is not assignable to type 'ProjectTemplate'.

@@ -1,0 +1,230 @@
+export type ElementType =
+  | 'wall'
+  | 'window'
+  | 'door'
+  | 'stairs'
+  | 'elevator'
+  | 'symbol'
+  | 'route'
+  | 'text'
+  | 'rect'
+  | 'rescue'
+  | 'column';
+
+export type EditorTheme = 'classic' | 'blueprint' | 'dark' | 'minimal';
+export type ProjectTemplate = string;
+export type PagePreset = 'Landscape' | 'Portrait';
+
+export type TemplateRegionType =
+  | 'header'
+  | 'drawing'
+  | 'instruction'
+  | 'legend'
+  | 'assembly'
+  | 'approval'
+  | 'team'
+  | 'info';
+
+export interface TemplateRegion {
+  id: string;
+  type: TemplateRegionType;
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  tone?: 'green' | 'red' | 'blue' | 'info' | 'neutral' | 'paper';
+}
+
+export interface TemplateLayoutJson {
+  id: string;
+  style: string;
+  accent: string;
+  page: {
+    preset: PagePreset;
+    width: number;
+    height: number;
+    orientation: 'landscape' | 'portrait';
+  };
+  regions: TemplateRegion[];
+}
+
+export interface TemplateLayout {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  category: string;
+  is_pro?: boolean;
+  page_preset: PagePreset;
+  orientation: 'landscape' | 'portrait';
+  layout_json: TemplateLayoutJson;
+  thumbnail_json: Record<string, unknown>;
+  compliance_tags: string[];
+  version: number;
+  is_official: boolean;
+}
+
+export interface TemplateRegionState {
+  title?: string;
+  body?: string;
+  meta?: string;
+  imageUrl?: string;
+}
+
+export type TemplateState = Record<string, TemplateRegionState>;
+
+export interface EditorElement {
+  id: string;
+  type: ElementType;
+  layerId: string;
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  rotation?: number;
+  points?: number[];
+  color?: string;
+  label?: string;
+  symbolType?: string;
+  imageUrl?: string;
+  startSymbol?: string;
+  endSymbol?: string;
+  routeType?: 'evacuation' | 'rescue';
+  stairsType?: 'straight' | 'l-shape' | 'spiral' | 'core';
+  wallStyle?: 'hatch' | 'solid' | 'double';
+  columnShape?: 'rect' | 'circle';
+  fontSize?: number;
+  thickness?: number;
+  doorSwing?: 'left' | 'right';
+  windowPanes?: number;
+  textAlign?: 'left' | 'center' | 'right';
+  fontWeight?: 'normal' | 'bold' | 'black';
+}
+
+export interface LayerDef {
+  id: string;
+  name: string;
+  visible: boolean;
+  locked: boolean;
+  order: number;
+}
+
+export type MeasurementUnit = 'mm' | 'cm' | 'm';
+
+export interface ScaleConfig {
+  pixelsPerMeter: number;
+  unit: MeasurementUnit;
+}
+
+export type EditorTool =
+  | 'select'
+  | 'wall'
+  | 'window'
+  | 'door'
+  | 'stairs'
+  | 'elevator'
+  | 'rect'
+  | 'column'
+  | 'evacuation-route'
+  | 'rescue-route'
+  | 'symbol'
+  | 'text'
+  | 'eraser'
+  | 'scale';
+
+export type SymbolCategory = 'E_ACIL' | 'F_YANGIN' | 'E_SAGLIK' | 'W_TEHLIKE' | 'X_OPERASYON';
+
+export interface SymbolTemplate {
+  id: string;
+  name: string;
+  color: string;
+  shape: 'square' | 'circle' | 'here' | 'none';
+  category: SymbolCategory;
+}
+
+export interface CustomSymbol {
+  id: string;
+  name: string;
+  dataUrl: string;
+  width?: number;
+  height?: number;
+}
+
+export const SYMBOLS: SymbolTemplate[] = [
+  { id: 'E001', name: 'Çıkış (Sağ)', color: '#1fa36a', shape: 'square', category: 'E_ACIL' },
+  { id: 'E002', name: 'Çıkış (Sol)', color: '#1fa36a', shape: 'square', category: 'E_ACIL' },
+  { id: 'E003', name: 'Acil Çıkış Kapısı', color: '#1fa36a', shape: 'square', category: 'E_ACIL' },
+  { id: 'E004', name: 'Buradasınız', color: '#1e293b', shape: 'square', category: 'E_ACIL' },
+  { id: 'E005', name: 'Çıkış (Yukarı)', color: '#1fa36a', shape: 'square', category: 'E_ACIL' },
+  { id: 'E006', name: 'Çıkış (Aşağı)', color: '#1fa36a', shape: 'square', category: 'E_ACIL' },
+  { id: 'E007', name: 'Toplanma Noktası', color: '#1fa36a', shape: 'square', category: 'E_ACIL' },
+  { id: 'E008', name: 'Acil Telefon', color: '#1fa36a', shape: 'square', category: 'E_ACIL' },
+  { id: 'E009', name: 'Acil Sedye', color: '#1fa36a', shape: 'square', category: 'E_ACIL' },
+  { id: 'E010', name: 'Yön Oku', color: '#1fa36a', shape: 'square', category: 'E_ACIL' },
+  { id: 'E011', name: 'Engelli Alanı', color: '#1fa36a', shape: 'square', category: 'E_ACIL' },
+  { id: 'E012', name: 'Acil Asansör', color: '#1fa36a', shape: 'square', category: 'E_ACIL' },
+  { id: 'E013', name: 'Acil Aydınlatma', color: '#1fa36a', shape: 'square', category: 'E_ACIL' },
+  { id: 'F001', name: 'Yangın Söndürücü', color: '#df4b4b', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F002', name: 'Yangın Hortumu', color: '#df4b4b', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F003', name: 'Yangın Merdiveni', color: '#df4b4b', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F004', name: 'Alarm Butonu', color: '#df4b4b', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F005', name: 'Yangın Hidrantı', color: '#df4b4b', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F006', name: 'Yangın Dolabı', color: '#df4b4b', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F007', name: 'Sprinkler', color: '#df4b4b', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F008', name: 'Yangın Paneli', color: '#df4b4b', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F009', name: 'Yangın Battaniyesi', color: '#df4b4b', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F010', name: 'Köpük Söndürücü', color: '#df4b4b', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F011', name: 'CO2 Tüpü', color: '#df4b4b', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F012', name: 'Gaz Kesme Vanası', color: '#df4b4b', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F013', name: 'Duman Dedektörü', color: '#df4b4b', shape: 'square', category: 'F_YANGIN' },
+  { id: 'E020', name: 'İlk Yardım', color: '#1fa36a', shape: 'square', category: 'E_SAGLIK' },
+  { id: 'E021', name: 'İlk Yardım Dolabı', color: '#1fa36a', shape: 'square', category: 'E_SAGLIK' },
+  { id: 'E022', name: 'İlk Yardım Çantası', color: '#1fa36a', shape: 'square', category: 'E_SAGLIK' },
+  { id: 'E023', name: 'Göz Yıkama', color: '#1fa36a', shape: 'square', category: 'E_SAGLIK' },
+  { id: 'E024', name: 'Acil Duş', color: '#1fa36a', shape: 'square', category: 'E_SAGLIK' },
+  { id: 'E025', name: 'Defibrilatör', color: '#1fa36a', shape: 'square', category: 'E_SAGLIK' },
+  { id: 'E026', name: 'Sedye', color: '#1fa36a', shape: 'square', category: 'E_SAGLIK' },
+  { id: 'E027', name: 'Medikal Oda', color: '#1fa36a', shape: 'square', category: 'E_SAGLIK' },
+  { id: 'E028', name: 'Oksijen Tüpü', color: '#1fa36a', shape: 'square', category: 'E_SAGLIK' },
+  { id: 'W001', name: 'Yanıcı Madde', color: '#d49a2a', shape: 'square', category: 'W_TEHLIKE' },
+  { id: 'W002', name: 'Patlayıcı', color: '#d49a2a', shape: 'square', category: 'W_TEHLIKE' },
+  { id: 'W003', name: 'Toksik', color: '#d49a2a', shape: 'square', category: 'W_TEHLIKE' },
+  { id: 'W004', name: 'Aşındırıcı', color: '#d49a2a', shape: 'square', category: 'W_TEHLIKE' },
+  { id: 'W005', name: 'Biyolojik', color: '#d49a2a', shape: 'square', category: 'W_TEHLIKE' },
+  { id: 'W006', name: 'Radyasyon', color: '#d49a2a', shape: 'square', category: 'W_TEHLIKE' },
+  { id: 'W007', name: 'Elektrik Tehlikesi', color: '#d49a2a', shape: 'square', category: 'W_TEHLIKE' },
+  { id: 'W008', name: 'Kaygan Zemin', color: '#d49a2a', shape: 'square', category: 'W_TEHLIKE' },
+  { id: 'W009', name: 'Düşme Tehlikesi', color: '#d49a2a', shape: 'square', category: 'W_TEHLIKE' },
+  { id: 'W010', name: 'Kimyasal Depo', color: '#d49a2a', shape: 'square', category: 'W_TEHLIKE' },
+  { id: 'X001', name: 'Acil Durum Kiti', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X002', name: 'Deprem Kiti', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X003', name: 'Kimyasal Müdahale', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X004', name: 'Biyolojik Kit', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X005', name: 'Elektrik Müdahale', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X010', name: 'Elektrik Panosu', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X011', name: 'Server Odası', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X012', name: 'CCTV Kamera', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X013', name: 'Güvenlik Odası', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X014', name: 'Kartlı Geçiş', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X020', name: 'Jeneratör', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X021', name: 'UPS', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X022', name: 'Gaz Vanası', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X023', name: 'Su Vanası', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X024', name: 'HVAC', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X030', name: 'Forklift Alanı', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X031', name: 'Yükleme Alanı', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X032', name: 'Depo Alanı', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X033', name: 'Tehlikeli Atık', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+  { id: 'X034', name: 'Kimyasal Tank', color: '#2a81d4', shape: 'square', category: 'X_OPERASYON' },
+];
+
+export const SNAP_DISTANCE = 15;
+export const GRID_SIZE = 50;
+
+export const THEME_CONFIGS = {
+  classic: { bg: '#ffffff', grid: '#e2e8f0', text: '#1e293b', accent: '#3b82f6' },
+  blueprint: { bg: '#1a365d', grid: '#2a4365', text: '#ffffff', accent: '#00ffff' },
+  dark: { bg: '#0f172a', grid: '#1e293b', text: '#94a3b8', accent: '#818cf8' },
+  minimal: { bg: '#f8fafc', grid: 'transparent', text: '#334155', accent: '#0f172a' }
+};

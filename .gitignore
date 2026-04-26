@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+.next/
+.next_old/
+.vercel/
+dist/
+build/
+
+# Debug and Logs
+*.log
+.debug/
+.konva-debug-dom.txt
+.konva-profile*-state.json
+
+# Environment
+.env*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
