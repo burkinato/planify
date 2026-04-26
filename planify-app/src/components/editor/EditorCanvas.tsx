@@ -1558,7 +1558,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                               onChange={(event) => updateTemplateRegion(region.id, { body: event.target.value })}
                               onWheel={(e) => e.stopPropagation()}
                               className="flex-1 w-full resize-none overflow-y-auto rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium leading-relaxed text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all shadow-sm min-h-[120px]"
-                              placeholder="Bölge içeriğini buraya girin..."
+                              placeholder={region.type === 'instruction' ? "Ek acil durum talimatlarını veya diğer telefon numaralarını (İtfaiye, İş Güvenliği vb.) buraya girin..." : "Bölge içeriğini buraya girin..."}
                             />
                           </div>
                           {(!isHeader || content.meta !== undefined) && (
@@ -1693,6 +1693,30 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                                   </div>
                                 )
                               })}
+                            </div>
+                          ) : region.type === 'instruction' ? (
+                            <div className="flex-1 min-h-0 flex flex-col pt-[1cqh]">
+                              {/* Fixed 112 Section */}
+                              <div className="flex items-center gap-[4cqw] mb-[3cqmin] p-[3cqmin] bg-red-50 border border-red-100 rounded-xl">
+                                <div className="w-[12cqmin] h-[12cqmin] flex-shrink-0 flex items-center justify-center bg-red-600 text-white rounded-lg font-black shadow-sm" style={{ fontSize: 'max(10px, 5cqmin)' }}>
+                                  112
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="font-black text-red-700 uppercase tracking-tighter" style={{ fontSize: 'max(12px, 4.5cqmin)' }}>ACİL DURUM TELEFONU</span>
+                                  <span className="font-bold text-red-600/70 uppercase tracking-widest" style={{ fontSize: 'max(7px, 2cqmin)' }}>EMERGENCY CALL</span>
+                                </div>
+                              </div>
+                              {/* Additional Instructions */}
+                              {content.body && (
+                                <div className="flex-1 overflow-hidden relative">
+                                  <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.35]"
+                                    style={{
+                                      fontSize: `max(13px, min(4cqw, ${65 / ((content.body.split('\n').length || 1) * 1.4)}cqh))`
+                                    }}>
+                                    {content.body}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           ) : content.body && (
                             <div className="flex-1 min-h-0 relative">
