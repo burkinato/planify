@@ -82,15 +82,15 @@ export default function EditorApp() {
         });
         hasLoadedProjectRef.current = true;
 
-        const canvasData = typeof proj.canvas_data === 'object' && proj.canvas_data ? proj.canvas_data : {};
+        const canvasData = (typeof proj.canvas_data === 'object' && proj.canvas_data ? proj.canvas_data : {}) as any;
         loadProject(JSON.stringify({
           ...canvasData,
           scaleConfig: proj.scale_config,
           templateLayoutId: proj.template_layout_id,
           pagePreset: proj.page_preset,
           templateState: proj.template_state,
-          innerZoom: proj.canvas_data?.innerZoom || 1,
-          innerPan: proj.canvas_data?.innerPan || { x: 0, y: 0 },
+          innerZoom: canvasData.innerZoom || 1,
+          innerPan: canvasData.innerPan || { x: 0, y: 0 },
         }));
       }
     }

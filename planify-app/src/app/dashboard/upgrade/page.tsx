@@ -11,27 +11,24 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSubscriptionStore, type Plan } from '@/store/useSubscriptionStore';
 import { useProAccess } from '@/hooks/useProAccess';
+import { usePricing } from '@/hooks/usePricing';
 import { toast } from 'sonner';
 
 export default function UpgradePage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { plans, exchangeRate, fetchPlans, fetchExchangeRate, getPriceInTRY } = useSubscriptionStore();
+  const { config, priceTry, loading: pricingLoading } = usePricing();
   const { isPro, isTrialing, daysRemaining, isCanceled, currentPeriodEnd } = useProAccess();
 
   const [billingCycle, setBillingCycle] = useState<'month' | 'year'>('month');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    fetchPlans();
-    fetchExchangeRate();
-  }, [fetchPlans, fetchExchangeRate]);
-
-  const selectedPlan = plans.find(p => p.billing_interval === billingCycle) || plans[0];
+  const priceInTRY = billingCycle === 'month' ? Math.round(priceTry) : Math.round(priceTry * 12 * 0.8);
+  const monthlyEquivalent = billingCycle === 'year' ? Math.round(priceInTRY / 12) : priceInTRY;
 
   const handleUpgrade = async () => {
-    if (!user || !selectedPlan) return;
+    if (!user) return;
 
     setIsProcessing(true);
     try {
@@ -39,9 +36,10 @@ export default function UpgradePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          planSlug: selectedPlan.slug,
+          planSlug: 'pro', // Dynamic plan slug if needed
           userId: user.id,
           userEmail: user.email,
+          billingInterval: billingCycle,
         }),
       });
 
@@ -60,9 +58,6 @@ export default function UpgradePage() {
       setIsProcessing(false);
     }
   };
-
-  const priceInTRY = selectedPlan ? getPriceInTRY(selectedPlan.price_usd) : (billingCycle === 'month' ? 450 : 4500);
-  const monthlyEquivalent = billingCycle === 'year' ? Math.round(priceInTRY / 12) : priceInTRY;
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-[#ececec] font-sans selection:bg-indigo-500/30">

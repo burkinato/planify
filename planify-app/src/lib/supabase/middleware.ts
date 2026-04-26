@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import {
   AUTH_SESSION_COOKIE_NAME,
+  ADMIN_AUTH_SESSION_COOKIE_NAME,
   getSafeRedirectPath,
   isAuthPersistence,
 } from '@/lib/auth/session'
@@ -13,19 +14,29 @@ const PUBLIC_PATHS = new Set([
   '/forgot-password',
   '/reset-password',
   '/konva-debug',
+  '/pxadmin/login',
 ])
 
 const AUTH_ENTRY_PATHS = new Set(['/login', '/register', '/forgot-password'])
 
 export async function updateSession(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const isAdminPath = pathname.startsWith('/pxadmin')
+  const isPublicPath =
+    PUBLIC_PATHS.has(pathname) ||
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/api/debug/')
+
   let supabaseResponse = NextResponse.next({
     request,
   })
 
+  // Create client based on path
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: isAdminPath ? { name: 'planify-admin-auth' } : {},
       cookies: {
         getAll() {
           return request.cookies.getAll()
@@ -46,43 +57,64 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
-
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { pathname } = request.nextUrl
-  const isPublicPath =
-    PUBLIC_PATHS.has(pathname) ||
-    pathname.startsWith('/auth/') ||
-    pathname.startsWith('/api/debug/')
+  const cookieName = isAdminPath ? ADMIN_AUTH_SESSION_COOKIE_NAME : AUTH_SESSION_COOKIE_NAME
   const hasBrowserSession = isAuthPersistence(
-    request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value
+    request.cookies.get(cookieName)?.value
   )
 
-  if (!user && !isPublicPath) {
-    return clearAuthCookies(
-      withNoStoreHeaders(NextResponse.redirect(getLoginUrl(request))),
-      request
-    )
+  // 1. Redirect /admin (old) to /pxadmin (new/original)
+  if (pathname.startsWith('/admin')) {
+    return NextResponse.redirect(new URL(pathname.replace('/admin', '/pxadmin'), request.url))
   }
 
-  if (user && !hasBrowserSession && !isPublicPath) {
-    return clearAuthCookies(
-      withNoStoreHeaders(NextResponse.redirect(getLoginUrl(request))),
-      request
-    )
+  // 2. Admin Path Logic
+  if (isAdminPath) {
+    if (pathname === '/pxadmin/login') {
+      if (user) {
+        // Double check role even for existing session
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+        if (profile?.role === 'admin') {
+          return withNoStoreHeaders(NextResponse.redirect(new URL('/pxadmin', request.url)))
+        }
+      }
+      return supabaseResponse
+    }
+
+    if (!user || !hasBrowserSession) {
+      return NextResponse.redirect(new URL('/pxadmin/login', request.url))
+    }
+
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role !== 'admin') {
+      // If they are logged into admin but aren't admin, sign them out and redirect
+      return clearAuthCookies(
+        withNoStoreHeaders(NextResponse.redirect(new URL('/pxadmin/login', request.url))),
+        request,
+        true
+      )
+    }
+    
+    return supabaseResponse
   }
 
-  if (user && hasBrowserSession && AUTH_ENTRY_PATHS.has(pathname)) {
-    return withNoStoreHeaders(
-      NextResponse.redirect(new URL(getSafeRedirectPath(request.nextUrl.searchParams.get('next')), request.url))
-    )
+  // 3. User Path Logic
+  if (!isPublicPath) {
+    if (!user || !hasBrowserSession) {
+      return clearAuthCookies(
+        withNoStoreHeaders(NextResponse.redirect(getLoginUrl(request))),
+        request
+      )
+    }
+
+    if (AUTH_ENTRY_PATHS.has(pathname)) {
+      return withNoStoreHeaders(
+        NextResponse.redirect(new URL(getSafeRedirectPath(request.nextUrl.searchParams.get('next')), request.url))
+      )
+    }
   }
 
   if (!isPublicPath || AUTH_ENTRY_PATHS.has(pathname)) {
@@ -110,14 +142,17 @@ function withNoStoreHeaders(response: NextResponse) {
   return response
 }
 
-function clearAuthCookies(response: NextResponse, request: NextRequest) {
+function clearAuthCookies(response: NextResponse, request: NextRequest, isAdmin = false) {
+  const activeCookie = isAdmin ? ADMIN_AUTH_SESSION_COOKIE_NAME : AUTH_SESSION_COOKIE_NAME
+  const authCookiePrefix = isAdmin ? 'sb-planify-admin' : getSupabaseAuthCookiePrefix()
+
   for (const { name } of request.cookies.getAll()) {
-    if (name === AUTH_SESSION_COOKIE_NAME || isSupabaseAuthCookieName(name)) {
+    if (name === activeCookie || (authCookiePrefix && name.includes(authCookiePrefix)) || (name.startsWith('sb-') && name.includes('auth-token'))) {
       response.cookies.set(name, '', { path: '/', maxAge: 0 })
     }
   }
 
-  response.cookies.set(AUTH_SESSION_COOKIE_NAME, '', { path: '/', maxAge: 0 })
+  response.cookies.set(activeCookie, '', { path: '/', maxAge: 0 })
   return response
 }
 

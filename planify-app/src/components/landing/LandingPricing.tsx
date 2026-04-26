@@ -1,5 +1,8 @@
-import { CheckCircle2 } from 'lucide-react';
+'use client';
+
+import { CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { usePricing } from '@/hooks/usePricing';
 
 const FREE_FEATURES = [
   'Temel CAD çizim araçları',
@@ -40,6 +43,18 @@ const FAQS = [
 ];
 
 export default function LandingPricing() {
+  const { config, priceTry, loading } = usePricing();
+
+  if (loading) {
+    return (
+      <section id="pricing" className="py-24 px-6 bg-white">
+        <div className="max-w-5xl mx-auto flex items-center justify-center h-96">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="pricing" className="py-24 px-6 bg-white">
       <div className="max-w-5xl mx-auto">
@@ -80,9 +95,12 @@ export default function LandingPricing() {
             </div>
             <p className="text-sm font-bold text-blue-200 uppercase tracking-wide mb-2">Pro Uzman</p>
             <div className="flex items-end gap-2 mb-1">
-              <span className="text-5xl font-black">₺499</span>
+              <span className="text-5xl font-black">₺{Math.round(priceTry)}</span>
               <span className="text-blue-300 mb-1">/ay</span>
             </div>
+            {config.show_both_currencies && (
+              <p className="text-blue-200 text-xs font-bold mb-4">($ {config.pro_price_usd.toFixed(2)} / ay)</p>
+            )}
             <p className="text-blue-200 text-sm mb-6">Profesyonel İSG uzmanları ve danışmanlık firmaları için.</p>
             <ul className="space-y-3 mb-8">
               {PRO_FEATURES.map((f, i) => (

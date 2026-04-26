@@ -3,21 +3,38 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 type SupabaseGlobal = typeof globalThis & {
   __planifyBrowserClient?: SupabaseClient;
+  __planifyAdminBrowserClient?: SupabaseClient;
 };
 
-export function createClient() {
+export function createClient(isAdmin = false) {
   const root = globalThis as SupabaseGlobal;
 
-  if (root.__planifyBrowserClient) {
+  if (!isAdmin && root.__planifyBrowserClient) {
     return root.__planifyBrowserClient;
+  }
+  
+  if (isAdmin && root.__planifyAdminBrowserClient) {
+    return root.__planifyAdminBrowserClient;
   }
 
   const client = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    isAdmin ? {
+      cookieOptions: { name: 'planify-admin-auth' },
+      auth: { 
+        storageKey: 'planify-admin-auth',
+        persistSession: true,
+        autoRefreshToken: true
+      }
+    } : {}
   );
 
-  root.__planifyBrowserClient = client;
+  if (isAdmin) {
+    root.__planifyAdminBrowserClient = client;
+  } else {
+    root.__planifyBrowserClient = client;
+  }
 
   // Geliştirme ortamında React Strict Mode / Fast Refresh nedeniyle oluşan 
   // zararsız Supabase Lock uyarılarını konsolda gizle

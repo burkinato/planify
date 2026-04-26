@@ -1,7 +1,10 @@
 export const AUTH_SESSION_COOKIE_NAME = 'planify_auth_active';
+export const ADMIN_AUTH_SESSION_COOKIE_NAME = 'planify_admin_auth_active';
 export const AUTH_REMEMBERED_EMAIL_KEY = 'planify_auth_remembered_email';
 export const AUTH_PERSISTENCE_KEY = 'planify_auth_persistence';
+export const ADMIN_AUTH_PERSISTENCE_KEY = 'planify_admin_auth_persistence';
 export const AUTH_BROWSER_SESSION_KEY = 'planify_auth_browser_session';
+export const ADMIN_AUTH_BROWSER_SESSION_KEY = 'planify_admin_auth_browser_session';
 
 export const AUTH_PERSISTENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 export const DEFAULT_AUTH_REDIRECT_PATH = '/dashboard';
@@ -44,38 +47,46 @@ export function isAuthPagePath(pathname: string) {
   );
 }
 
-export function activateBrowserSession(persistence: AuthPersistence) {
+export function activateBrowserSession(persistence: AuthPersistence, isAdmin = false) {
   if (!isBrowserRuntime()) {
     return;
   }
 
-  setClientCookie(AUTH_SESSION_COOKIE_NAME, persistence, {
+  const cookieName = isAdmin ? ADMIN_AUTH_SESSION_COOKIE_NAME : AUTH_SESSION_COOKIE_NAME;
+  const persistenceKey = isAdmin ? ADMIN_AUTH_PERSISTENCE_KEY : AUTH_PERSISTENCE_KEY;
+  const browserSessionKey = isAdmin ? ADMIN_AUTH_BROWSER_SESSION_KEY : AUTH_BROWSER_SESSION_KEY;
+
+  setClientCookie(cookieName, persistence, {
     maxAge: persistence === 'persistent' ? AUTH_PERSISTENT_MAX_AGE_SECONDS : undefined,
   });
 
   try {
-    window.sessionStorage.setItem(AUTH_BROWSER_SESSION_KEY, 'active');
+    window.sessionStorage.setItem(browserSessionKey, 'active');
 
     if (persistence === 'persistent') {
-      window.localStorage.setItem(AUTH_PERSISTENCE_KEY, persistence);
+      window.localStorage.setItem(persistenceKey, persistence);
     } else {
-      window.localStorage.removeItem(AUTH_PERSISTENCE_KEY);
+      window.localStorage.removeItem(persistenceKey);
     }
   } catch {
     // Storage can be unavailable in strict privacy modes; the cookie marker is enough.
   }
 }
 
-export function clearBrowserSession() {
+export function clearBrowserSession(isAdmin = false) {
   if (!isBrowserRuntime()) {
     return;
   }
 
-  clearClientCookie(AUTH_SESSION_COOKIE_NAME);
+  const cookieName = isAdmin ? ADMIN_AUTH_SESSION_COOKIE_NAME : AUTH_SESSION_COOKIE_NAME;
+  const persistenceKey = isAdmin ? ADMIN_AUTH_PERSISTENCE_KEY : AUTH_PERSISTENCE_KEY;
+  const browserSessionKey = isAdmin ? ADMIN_AUTH_BROWSER_SESSION_KEY : AUTH_BROWSER_SESSION_KEY;
+
+  clearClientCookie(cookieName);
 
   try {
-    window.sessionStorage.removeItem(AUTH_BROWSER_SESSION_KEY);
-    window.localStorage.removeItem(AUTH_PERSISTENCE_KEY);
+    window.sessionStorage.removeItem(browserSessionKey);
+    window.localStorage.removeItem(persistenceKey);
   } catch {
     // Nothing else to clear.
   }
@@ -85,60 +96,67 @@ export function reconcileBrowserSession(options: {
   hasSession: boolean;
   allowTemporarySession?: boolean;
   fallbackPersistence?: AuthPersistence;
+  isAdmin?: boolean;
 }) {
   if (!options.hasSession) {
-    clearBrowserSession();
+    clearBrowserSession(options.isAdmin);
     return false;
   }
 
-  if (ensureBrowserSessionCookie()) {
+  if (ensureBrowserSessionCookie(options.isAdmin)) {
     return true;
   }
 
   if (options.allowTemporarySession) {
-    activateBrowserSession(options.fallbackPersistence ?? 'session');
+    activateBrowserSession(options.fallbackPersistence ?? 'session', options.isAdmin);
     return true;
   }
 
-  clearBrowserSession();
+  clearBrowserSession(options.isAdmin);
   return false;
 }
 
-export function ensureBrowserSessionCookie() {
-  const persistence = getStoredAuthPersistence();
+export function ensureBrowserSessionCookie(isAdmin = false) {
+  const persistence = getStoredAuthPersistence(isAdmin);
 
   if (!persistence) {
     return false;
   }
 
-  setClientCookie(AUTH_SESSION_COOKIE_NAME, persistence, {
+  const cookieName = isAdmin ? ADMIN_AUTH_SESSION_COOKIE_NAME : AUTH_SESSION_COOKIE_NAME;
+
+  setClientCookie(cookieName, persistence, {
     maxAge: persistence === 'persistent' ? AUTH_PERSISTENT_MAX_AGE_SECONDS : undefined,
   });
 
   return true;
 }
 
-export function hasBrowserSessionMarker() {
-  return getStoredAuthPersistence() !== null;
+export function hasBrowserSessionMarker(isAdmin = false) {
+  return getStoredAuthPersistence(isAdmin) !== null;
 }
 
-export function getStoredAuthPersistence(): AuthPersistence | null {
+export function getStoredAuthPersistence(isAdmin = false): AuthPersistence | null {
   if (!isBrowserRuntime()) {
     return null;
   }
 
-  const cookieValue = getClientCookie(AUTH_SESSION_COOKIE_NAME);
+  const cookieName = isAdmin ? ADMIN_AUTH_SESSION_COOKIE_NAME : AUTH_SESSION_COOKIE_NAME;
+  const persistenceKey = isAdmin ? ADMIN_AUTH_PERSISTENCE_KEY : AUTH_PERSISTENCE_KEY;
+  const browserSessionKey = isAdmin ? ADMIN_AUTH_BROWSER_SESSION_KEY : AUTH_BROWSER_SESSION_KEY;
+
+  const cookieValue = getClientCookie(cookieName);
   if (isAuthPersistence(cookieValue)) {
     return cookieValue;
   }
 
   try {
-    const localPersistence = window.localStorage.getItem(AUTH_PERSISTENCE_KEY);
+    const localPersistence = window.localStorage.getItem(persistenceKey);
     if (isAuthPersistence(localPersistence)) {
       return localPersistence;
     }
 
-    if (window.sessionStorage.getItem(AUTH_BROWSER_SESSION_KEY) === 'active') {
+    if (window.sessionStorage.getItem(browserSessionKey) === 'active') {
       return 'session';
     }
   } catch {

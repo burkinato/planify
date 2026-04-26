@@ -4,19 +4,19 @@
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  /* Primary — Electric Blue */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
+  /* Primary — Electric Orange (Updated from Blue) */
+  --color-primary-50: #fff7ed;
+  --color-primary-100: #ffedd5;
+  --color-primary-200: #fed7aa;
+  --color-primary-300: #fdba74;
+  --color-primary-400: #fb923c;
+  --color-primary-500: #f97316;
+  --color-primary-600: #ea580c;
+  --color-primary-700: #c2410c;
+  --color-primary-800: #9a3412;
+  --color-primary-900: #7c2d12;
 
-  /* Surface — Premium Dark */
+  /* Surface — Premium Dark (Admin Default) */
   --color-surface-950: #06060a;
   --color-surface-900: #0a0a12;
   --color-surface-800: #10101c;
@@ -25,6 +25,15 @@
   --color-surface-500: #2d2d44;
   --color-surface-400: #3d3d58;
   --color-surface-300: #52526e;
+
+  /* Light Theme Surface (Admin Toggle) */
+  --color-surface-light-950: #ffffff;
+  --color-surface-light-900: #f8fafc;
+  --color-surface-light-800: #f1f5f9;
+  --color-surface-light-700: #e2e8f0;
+  --color-surface-light-600: #cbd5e1;
+  --color-surface-light-500: #94a3b8;
+  --color-surface-light-400: #64748b;
 
   /* Accent — Indigo-Violet gradient endpoints */
   --color-accent-indigo: #6366f1;
@@ -78,6 +87,22 @@ html {
 body {
   background: var(--color-surface-950);
   color: #e2e8f0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.light body {
+  background: var(--color-surface-light-950);
+  color: #1e293b;
+}
+
+html.light {
+  --color-surface-950: var(--color-surface-light-950);
+  --color-surface-900: var(--color-surface-light-900);
+  --color-surface-800: var(--color-surface-light-800);
+  --color-surface-700: var(--color-surface-light-700);
+  --color-surface-600: var(--color-surface-light-600);
+  --color-surface-500: var(--color-surface-light-500);
+  --color-surface-400: var(--color-surface-light-400);
 }
 
 /* Glass Effect */
