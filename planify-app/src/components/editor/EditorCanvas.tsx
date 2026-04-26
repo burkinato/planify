@@ -118,35 +118,40 @@ interface EditorCanvasProps {
 const WatermarkGroup = ({ width, height, tier, email }: { width: number; height: number; tier: string; email?: string }) => {
   if (tier !== 'free') return null;
 
-  const patternSize = 240; // Denser pattern
-  const rows = Number.isFinite(height) ? Math.ceil(height / patternSize) + 2 : 0;
-  const cols = Number.isFinite(width) ? Math.ceil(width / patternSize) + 2 : 0;
+  const patternSize = 160; 
+  const rows = Number.isFinite(height) ? Math.ceil(height / (patternSize * 0.8)) + 4 : 0;
+  const cols = Number.isFinite(width) ? Math.ceil(width / patternSize) + 4 : 0;
 
   return (
-    <Group opacity={0.15} listening={false}>
+    <Group opacity={0.12} listening={false}>
       {Array.from({ length: rows }).map((_, r) => (
         Array.from({ length: cols }).map((_, c) => (
-          <Group key={`${r}-${c}`} x={c * patternSize} y={r * patternSize} rotation={-35}>
+          <Group 
+            key={`${r}-${c}`} 
+            x={c * patternSize + (r % 2 === 0 ? 0 : patternSize / 2)} 
+            y={r * patternSize * 0.8} 
+            rotation={-25}
+          >
             <Text
-              text="PLANIFY FREE"
-              fontSize={32}
+              text="PLANIFY"
+              fontSize={24}
               fontStyle="900"
-              fill="#64748b"
+              fill="#94a3b8"
               align="center"
               verticalAlign="middle"
               width={patternSize}
-              height={40}
+              height={30}
             />
             {email && (
               <Text
                 text={email.toLowerCase()}
-                y={30}
-                fontSize={10}
+                y={20}
+                fontSize={8}
                 fontStyle="bold"
                 fill="#94a3b8"
                 align="center"
                 width={patternSize}
-                opacity={0.5}
+                opacity={0.4}
               />
             )}
           </Group>
