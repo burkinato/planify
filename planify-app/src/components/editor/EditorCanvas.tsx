@@ -188,6 +188,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   const infiniteHostRef = useRef<HTMLDivElement>(null);
   // Middle-mouse pan state
   const isPanningRef = useRef(false);
+  const isSpacePressedRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
 
   const [scaleModal, setScaleModal] = useState<{ pixels: number } | null>(null);
@@ -303,6 +304,26 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     const host = infiniteHostRef.current;
     if (!host) return;
 
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        if (!isSpacePressedRef.current) {
+          isSpacePressedRef.current = true;
+          if (host) host.style.cursor = 'grab';
+        }
+        // Only prevent default if it's not in an input
+        e.preventDefault();
+      }
+    };
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        isSpacePressedRef.current = false;
+        if (host && !isPanningRef.current) {
+          host.style.cursor = '';
+        }
+      }
+    };
+
     const onWheel = (e: WheelEvent) => {
       // ── Scrollable element check ──────────────────────────────────────────
       const target = e.target as HTMLElement;
@@ -351,11 +372,11 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
         return;
       }
 
-      if (e.button === 1 || (e.button === 0 && tool === 'select' && e.altKey)) {
+      if (e.button === 1 || (e.button === 0 && (e.altKey || isSpacePressedRef.current))) {
         e.preventDefault();
         isPanningRef.current = true;
         panStartRef.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
-        host.style.cursor = 'grab';
+        host.style.cursor = 'grabbing';
       }
     };
     const onMouseMove = (e: MouseEvent) => {
@@ -367,15 +388,20 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     const onMouseUp = () => {
       if (isPanningRef.current) {
         isPanningRef.current = false;
-        host.style.cursor = '';
+        host.style.cursor = isSpacePressedRef.current ? 'grab' : '';
       }
     };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
 
     host.addEventListener('wheel', onWheel, { passive: false });
     host.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
     return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
       host.removeEventListener('wheel', onWheel);
       host.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mousemove', onMouseMove);
@@ -418,12 +444,12 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   };
 
   const handleStageMouseDown = (e: CanvasStageEvent) => {
-    if (e.evt.button === 1 || (e.evt.button === 0 && tool === 'select' && e.evt.altKey)) {
+    if (e.evt.button === 1 || (e.evt.button === 0 && (e.evt.altKey || isSpacePressedRef.current))) {
       e.evt.preventDefault();
       isInnerPanningRef.current = true;
       innerPanStartRef.current = { x: e.evt.clientX, y: e.evt.clientY, panX: innerPan.x, panY: innerPan.y };
       const stage = e.target.getStage();
-      if (stage) stage.container().style.cursor = 'grab';
+      if (stage) stage.container().style.cursor = 'grabbing';
       return;
     }
 
@@ -605,7 +631,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     if (isInnerPanningRef.current) {
       isInnerPanningRef.current = false;
       const stage = e?.target?.getStage();
-      if (stage) stage.container().style.cursor = 'default';
+      if (stage) stage.container().style.cursor = isSpacePressedRef.current ? 'grab' : 'default';
       return;
     }
 

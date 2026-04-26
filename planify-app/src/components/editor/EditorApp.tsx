@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type Konva from 'konva';
 import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import { EditorHeader } from './EditorHeader';
 import { EditorLeftSidebar } from './EditorLeftSidebar';
 import { EditorRightSidebar } from './EditorRightSidebar';
@@ -22,6 +22,7 @@ export default function EditorApp() {
   const [isPreview, setIsPreview] = useState(false);
   const [mobileMenu, setMobileMenu] = useState<'tools' | 'properties' | null>(null);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [showUpgradeBanner, setShowUpgradeBanner] = useState(true);
   const stageRef = useRef<Konva.Stage | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const hasLoadedProjectRef = useRef(false);
@@ -284,16 +285,43 @@ export default function EditorApp() {
           onOpenTemplateModal={() => setIsTemplateModalOpen(true)}
         />
         <div className="flex flex-1 overflow-hidden relative">
-          {!isPro && !isPreview && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[35]">
-              <Link 
-                href="/dashboard/upgrade"
-                className="flex items-center gap-3 px-4 py-2.5 bg-white border border-slate-200 text-slate-800 rounded-full shadow-xl shadow-slate-200/50 text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all group"
-              >
-                <Sparkles className="w-4 h-4 text-indigo-600 animate-pulse" />
-                Plus&apos;a Yüksel: Filigransız Temiz Çıktı Al
-                <span className="ml-1 bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full text-[8px] border border-indigo-100">Hemen Başla</span>
-              </Link>
+          {!isPro && !isPreview && showUpgradeBanner && (
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[35]">
+              <div className="relative group">
+                <Link 
+                  href="/dashboard/upgrade"
+                  className="flex items-center gap-5 px-6 py-3 bg-white/80 backdrop-blur-xl border border-cyan-500/30 text-slate-900 rounded-none shadow-[0_20px_50px_-12px_rgba(6,182,212,0.25)] text-[9px] font-black uppercase tracking-[0.2em] hover:border-cyan-500/60 transition-all relative"
+                >
+                  {/* Technical CAD Corners */}
+                  <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t-2 border-l-2 border-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute -bottom-[1px] -right-[1px] w-2 h-2 border-b-2 border-r-2 border-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  
+                  <div className="flex items-center justify-center w-8 h-8 bg-cyan-50 border border-cyan-100">
+                    <Sparkles className="w-4 h-4 text-cyan-500 group-hover:rotate-12 transition-transform" />
+                  </div>
+
+                  <div className="flex flex-col items-start gap-0.5">
+                    <span className="relative z-10">
+                      Plus&apos;a Yüksel: <span className="text-cyan-600">Filigransız Temiz Çıktı Al</span>
+                    </span>
+                  </div>
+
+                  <div className="h-8 w-px bg-slate-200 mx-2" />
+
+                  <span className="px-4 py-2 bg-slate-900 text-white rounded-none text-[10px] font-black tracking-widest group-hover:bg-cyan-600 transition-colors relative flex items-center gap-2">
+                    Hemen Başla
+                    <div className="w-1 h-1 bg-cyan-400 animate-pulse rounded-full" />
+                  </span>
+                </Link>
+                
+                {/* Close Button */}
+                <button 
+                  onClick={() => setShowUpgradeBanner(false)}
+                  className="absolute -right-2 -top-2 w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-300 transition-all shadow-md z-10"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           )}
           {!isPreview && (
