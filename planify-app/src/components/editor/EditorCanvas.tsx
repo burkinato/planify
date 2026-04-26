@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type Konva from 'konva';
 import '@/lib/editor/konva-init';
 // Register Konva nodes for react-konva to prevent "Konva has no node with the type X" errors
-import { Stage, Layer, Rect, Line, Text, Group, Circle, Image as KonvaImage, Shape } from 'react-konva';
+import { Stage, Layer, Rect, Line, Text, Group, Circle, Image as KonvaImage, Shape, Arrow } from 'react-konva';
 import { useEditorStore, useShallow } from '@/store/useEditorStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { SYMBOLS, SNAP_DISTANCE, GRID_SIZE, THEME_CONFIGS, type EditorElement, type EditorTheme } from '@/types/editor';
@@ -1313,10 +1313,14 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
               updateElement(el.id, { x: e.target.x(), y: e.target.y() });
             }}
           >
-            <Line
+            <Arrow
               points={pts}
               stroke={isSelected ? themeConfig.accent : (el.color || themeConfig.text)}
               strokeWidth={el.thickness || 8}
+              fill={isSelected ? themeConfig.accent : (el.color || themeConfig.text)}
+              pointerLength={12}
+              pointerWidth={12}
+              pointerAtBeginning={false}
               lineCap="round"
               dash={el.routeType === 'evacuation' ? [10, 6] : undefined}
               x={el.x || 0} y={el.y || 0}
@@ -1894,14 +1898,28 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                                 />
                               )}
                               {/* Main preview line */}
-                              <Line
-                                points={currentLine}
-                                stroke={themeConfig.accent}
-                                strokeWidth={isWallPreview ? 10 : 3}
-                                opacity={0.6}
-                                dash={tool === 'evacuation-route' ? [10, 6] : undefined}
-                                lineCap="square"
-                              />
+                              {tool === 'evacuation-route' || tool === 'rescue-route' ? (
+                                <Arrow
+                                  points={currentLine}
+                                  stroke={themeConfig.accent}
+                                  strokeWidth={isWallPreview ? 10 : 3}
+                                  fill={themeConfig.accent}
+                                  pointerLength={10}
+                                  pointerWidth={10}
+                                  opacity={0.6}
+                                  dash={[10, 6]}
+                                  lineCap="round"
+                                />
+                              ) : (
+                                <Line
+                                  points={currentLine}
+                                  stroke={themeConfig.accent}
+                                  strokeWidth={isWallPreview ? 10 : 3}
+                                  opacity={0.6}
+                                  dash={undefined}
+                                  lineCap="square"
+                                />
+                              )}
                               {/* Endpoint dots */}
                               <Circle x={x1} y={y1} radius={4} fill={themeConfig.accent} opacity={0.8} />
                               <Circle x={x2} y={y2} radius={4} fill={themeConfig.accent} opacity={0.8} />
