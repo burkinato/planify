@@ -50,6 +50,7 @@ interface SubscriptionState {
   exchangeRate: number;
   isLoading: boolean;
   error: string | null;
+  initialized: boolean;
 
   fetchPlans: () => Promise<void>;
   fetchSubscription: (userId: string) => Promise<void>;
@@ -66,6 +67,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   exchangeRate: 45.02,
   isLoading: false,
   error: null,
+  initialized: false,
 
   fetchPlans: async () => {
     const supabase = createClient();
@@ -86,6 +88,8 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       set({ plans });
     } catch (error) {
       console.error('Failed to fetch plans:', error);
+    } finally {
+      set({ initialized: true });
     }
   },
 
@@ -108,6 +112,8 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     } catch (error) {
       console.error('Failed to fetch subscription:', error);
       set({ activeSubscription: null, isLoading: false, error: 'Abonelik bilgisi alınamadı' });
+    } finally {
+      set({ initialized: true });
     }
   },
 
@@ -146,6 +152,8 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       }
     } catch (error) {
       console.error('Failed to fetch exchange rate:', error);
+    } finally {
+      set({ initialized: true });
     }
   },
 

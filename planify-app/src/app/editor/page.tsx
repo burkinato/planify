@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import '@/lib/editor/konva-init';
 
@@ -21,5 +22,9 @@ const EditorApp = dynamic(() => import('@/components/editor/EditorApp'), {
 });
 
 export default function EditorPage() {
-  return <EditorApp />;
+  return (
+    <Suspense fallback={null}>
+      <EditorApp />
+    </Suspense>
+  );
 }

@@ -115,45 +115,88 @@ interface EditorCanvasProps {
   setContainerNode: (node: HTMLDivElement | null) => void;
 }
 
-const WatermarkGroup = ({ width, height, tier }: { width: number; height: number; tier: string }) => {
+const WatermarkGroup = ({ width, height, tier, email }: { width: number; height: number; tier: string; email?: string }) => {
   if (tier !== 'free') return null;
 
-  const patternSize = 300;
-  const rows = Math.ceil(height / patternSize) + 1;
-  const cols = Math.ceil(width / patternSize) + 1;
+  const patternSize = 240; // Denser pattern
+  const rows = Number.isFinite(height) ? Math.ceil(height / patternSize) + 2 : 0;
+  const cols = Number.isFinite(width) ? Math.ceil(width / patternSize) + 2 : 0;
 
   return (
-    <Group opacity={0.12} listening={false}>
+    <Group opacity={0.15} listening={false}>
       {Array.from({ length: rows }).map((_, r) => (
         Array.from({ length: cols }).map((_, c) => (
-          <Text
-            key={`${r}-${c}`}
-            text="PLANIFY"
-            x={c * patternSize}
-            y={r * patternSize}
-            fontSize={40}
-            fontStyle="900"
-            fill="#64748b"
-            rotation={-45}
-            align="center"
-            verticalAlign="middle"
-            width={patternSize}
-            height={patternSize}
-          />
+          <Group key={`${r}-${c}`} x={c * patternSize} y={r * patternSize} rotation={-35}>
+            <Text
+              text="PLANIFY FREE"
+              fontSize={32}
+              fontStyle="900"
+              fill="#64748b"
+              align="center"
+              verticalAlign="middle"
+              width={patternSize}
+              height={40}
+            />
+            {email && (
+              <Text
+                text={email.toLowerCase()}
+                y={30}
+                fontSize={10}
+                fontStyle="bold"
+                fill="#94a3b8"
+                align="center"
+                width={patternSize}
+                opacity={0.5}
+              />
+            )}
+          </Group>
         ))
       ))}
     </Group>
   );
 };
 
+const BrandingBanner = ({ width, height, tier }: { width: number; height: number; tier: string }) => {
+  if (tier !== 'free') return null;
+
+  return (
+    <Group x={width / 2} y={height - 40} listening={false}>
+      <Rect
+        x={-200}
+        width={400}
+        height={30}
+        fill="#f8fafc"
+        stroke="#e2e8f0"
+        strokeWidth={1}
+        cornerRadius={15}
+        shadowBlur={10}
+        shadowOpacity={0.1}
+      />
+      <Text
+        x={-200}
+        width={400}
+        height={30}
+        text="BU ÇİZİM PLANIFY ÜCRETSİZ SÜRÜM İLE OLUŞTURULMUŞTUR"
+        fontSize={10}
+        fontStyle="900"
+        fill="#64748b"
+        align="center"
+        verticalAlign="middle"
+        letterSpacing={1}
+      />
+    </Group>
+  );
+};
+
 export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, setContainerNode }: EditorCanvasProps) {
-  const { profile } = useAuthStore();
+  const { profile, user } = useAuthStore();
   const subscriptionTier = profile?.subscription_tier || 'free';
 
   const {
     elements, layers, tool, zoom, pan, gridVisible, selectedIds, customSymbols,
     addElement, updateElement, updateElementsBatch, removeElements, setSelectedIds, scaleConfig, setScaleConfig, setTool,
-    editorTheme, setZoom, setPan, activeTemplateLayout, projectTemplate, templateLayoutId, templateState, focusedRegionId, setFocusedRegionId, updateTemplateRegion
+    editorTheme, setZoom, setPan, activeTemplateLayout, projectTemplate, templateLayoutId, templateState, focusedRegionId, setFocusedRegionId, updateTemplateRegion,
+    innerZoom, innerPan, setInnerZoom, setInnerPan
   } = useEditorStore(useShallow((s) => ({
     elements: s.elements,
     layers: s.layers,
@@ -181,6 +224,10 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     focusedRegionId: s.focusedRegionId,
     setFocusedRegionId: s.setFocusedRegionId,
     updateTemplateRegion: s.updateTemplateRegion,
+    innerZoom: s.innerZoom,
+    innerPan: s.innerPan,
+    setInnerZoom: s.setInnerZoom,
+    setInnerPan: s.setInnerPan,
   })));
 
   const themeConfig = THEME_CONFIGS[editorTheme];
@@ -246,15 +293,38 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   const visibleElements = elements.filter(el => visibleLayers.includes(el.layerId));
   const wallElements = visibleElements.filter((el): el is WallElement => el.type === 'wall' && !!el.points && el.points.length >= 4);
 
-  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentLine, setCurrentLine] = useState<number[] | null>(null);
   const [orthoLine, setOrthoLine] = useState<{ axis: 'x' | 'y', pos: number } | null>(null);
   const [alignLine, setAlignLine] = useState<{ axis: 'x' | 'y', pos: number } | null>(null);
-  const [innerPan, setInnerPan] = useState({ x: 0, y: 0 });
-  const [innerZoom, setInnerZoom] = useState(1);
   const isInnerPanningRef = useRef(false);
   const innerPanStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+
+  const page = activeTemplateLayout?.layout_json.page;
+  const paperWidth = activeTemplateLayout && page ? page.width : 2000;
+  const paperHeight = activeTemplateLayout && page ? page.height : 2000;
+  
+  const drawingRegion = activeTemplateLayout?.layout_json.regions.find(r => r.type === 'drawing');
+  const stageWidth = drawingRegion ? paperWidth * (drawingRegion.w / 100) : 2000;
+  const stageHeight = drawingRegion ? paperHeight * (drawingRegion.h / 100) : 2000;
+
+  const [isFocused, setIsFocused] = useState(true);
+
+  useEffect(() => {
+    const handleFocus = () => setIsFocused(true);
+    const handleBlur = () => {
+      if (subscriptionTier === 'free') {
+        setIsFocused(false);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [subscriptionTier]);
 
   // Auto-focus dim input when it appears
   useEffect(() => {
@@ -279,25 +349,6 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tool, dimInput]);
 
-  // Track host element dimensions
-  useEffect(() => {
-    const updateDimensions = () => {
-      const host = infiniteHostRef.current;
-      if (!host) return;
-      const drawingRegion = activeTemplateLayout?.layout_json.regions.find((r) => r.type === 'drawing');
-      if (activeTemplateLayout && drawingRegion && stageHostRef.current) {
-        setDimensions({
-          width: Math.max(240, stageHostRef.current.offsetWidth),
-          height: Math.max(180, stageHostRef.current.offsetHeight),
-        });
-      } else {
-        setDimensions({ width: host.offsetWidth, height: host.offsetHeight });
-      }
-    };
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
-  }, [activeTemplateLayout]);
 
   // Infinite canvas: wheel = zoom, middle-mouse = pan
   useEffect(() => {
@@ -1131,17 +1182,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     );
   };
 
-  const page = activeTemplateLayout?.layout_json.page;
-  const drawingRegion = activeTemplateLayout?.layout_json.regions.find((region) => region.type === 'drawing');
   const mergedTemplateState = mergeTemplateState(templateState);
-
-  const stageWidth = Math.max(120, dimensions.width);
-  const stageHeight = Math.max(120, dimensions.height);
-
-  // Paper pixel size uses the TRUE preset dimensions (e.g. 1400x990 for A3).
-  // CSS transform (zoom) will scale it down to fit the screen. This prevents layout squishing.
-  const paperWidth = activeTemplateLayout && page ? page.width : 0;
-  const paperHeight = activeTemplateLayout && page ? page.height : 0;
 
   const setCanvasHostRef = (node: HTMLDivElement | null) => {
     stageHostRef.current = node;
@@ -1691,18 +1732,8 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                 >
                   <Stage
                     ref={stageRef}
-                    width={paperWidth * (drawingRegion.w / 100)}
-                    height={paperHeight * (drawingRegion.h / 100)}
-                    scaleX={innerZoom}
-                    scaleY={innerZoom}
-                    x={innerPan.x}
-                    y={innerPan.y}
-                    draggable={focusedRegionId === 'drawing' && tool === 'select'}
-                    onDragEnd={(e) => {
-                      if (e.target === e.target.getStage()) {
-                        setInnerPan({ x: e.target.x(), y: e.target.y() });
-                      }
-                    }}
+                    width={stageWidth}
+                    height={stageHeight}
                     onWheel={handleWheel}
                     onMouseDown={(e) => {
                       if (activeTemplateLayout && focusedRegionId !== 'drawing') {
@@ -1717,11 +1748,18 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                       width: '100%',
                       height: '100%',
                       pointerEvents: (!focusedRegionId || focusedRegionId === 'drawing') ? 'auto' : 'none',
+                      filter: isFocused ? 'none' : 'blur(20px)',
+                      transition: 'filter 0.3s ease-in-out'
                     }}
                   >
                     <Layer>
-                      <Group>
-                        {/* Grid is handled via CSS background for better performance in most cases, but Konva grid could be added here */}
+                      {/* Drawing Content - Transformable */}
+                      <Group
+                        scaleX={innerZoom}
+                        scaleY={innerZoom}
+                        x={innerPan.x}
+                        y={innerPan.y}
+                      >
                         <MemoizedGrid gridVisible={gridVisible} themeConfig={themeConfig} editorTheme={editorTheme} gridSize={GRID_SIZE} size={2000} />
 
                         {/* Wall Rendering Passes (CAD-like) */}
@@ -1916,11 +1954,19 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                           />
                         )}
                         <WatermarkGroup
-                          width={paperWidth * (drawingRegion.w / 100)}
-                          height={paperHeight * (drawingRegion.h / 100)}
+                          width={paperWidth}
+                          height={paperHeight}
                           tier={subscriptionTier}
+                          email={user?.email}
                         />
                       </Group>
+
+                      {/* Branding Banner - Fixed UI Layer */}
+                      <BrandingBanner
+                        width={stageWidth}
+                        height={stageHeight}
+                        tier={subscriptionTier}
+                      />
                     </Layer>
                   </Stage>
                 </div>
@@ -1957,6 +2003,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                       width={Math.max(4000, stageWidth * 4)}
                       height={Math.max(3000, stageHeight * 4)}
                       tier={subscriptionTier}
+                      email={user?.email}
                     />
                   </Group>
                 </Layer>

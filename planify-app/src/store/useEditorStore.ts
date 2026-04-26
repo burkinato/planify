@@ -50,6 +50,8 @@ interface EditorState {
   pagePreset: PagePreset;
   templateState: TemplateState;
   focusedRegionId: string | null;
+  innerZoom: number;
+  innerPan: { x: number; y: number };
   canUndo: boolean;
   canRedo: boolean;
   past: HistorySnapshot[];
@@ -60,6 +62,8 @@ interface EditorState {
   setSelectedIds: (ids: string[]) => void;
   setZoom: (zoom: number) => void;
   setPan: (pan: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => void;
+  setInnerZoom: (zoom: number) => void;
+  setInnerPan: (pan: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => void;
   setGridVisible: (visible: boolean) => void;
   setSelectedSymbol: (symbol: string | null) => void;
   setScaleConfig: (config: ScaleConfig) => void;
@@ -112,6 +116,8 @@ const getInitialState = () => {
       activeTemplateLayout: null as TemplateLayout | null,
       pagePreset: 'Landscape' as PagePreset,
       templateState: {} as TemplateState,
+      innerZoom: 1,
+      innerPan: { x: 0, y: 0 },
     };
   }
 
@@ -142,6 +148,8 @@ const getInitialState = () => {
     activeTemplateLayout: null as TemplateLayout | null,
     pagePreset: (localStorage.getItem('planify-preset') as PagePreset) || 'Landscape',
     templateState: sanitizeTemplateState(JSON.parse(localStorage.getItem('planify-template-state') || '{}')),
+    innerZoom: parseFloat(localStorage.getItem('planify-inner-zoom') || '1') || 1,
+    innerPan: JSON.parse(localStorage.getItem('planify-inner-pan') || '{"x":0,"y":0}'),
   };
 };
 
@@ -181,6 +189,10 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(5, zoom)) }),
     setPan: (panUpdate) => set((state) => ({ 
       pan: typeof panUpdate === 'function' ? panUpdate(state.pan) : panUpdate 
+    })),
+    setInnerZoom: (innerZoom) => set({ innerZoom: Math.max(0.05, Math.min(20, innerZoom)) }),
+    setInnerPan: (innerPanUpdate) => set((state) => ({ 
+      innerPan: typeof innerPanUpdate === 'function' ? innerPanUpdate(state.innerPan) : innerPanUpdate 
     })),
     setGridVisible: (gridVisible) => set({ gridVisible }),
     setSelectedSymbol: (selectedSymbol) => set({ selectedSymbol }),
@@ -441,6 +453,8 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
             templateLayoutId: data.templateLayoutId,
             templateState: data.templateState,
             pagePreset: data.pagePreset,
+            innerZoom: data.innerZoom || 1,
+            innerPan: data.innerPan || { x: 0, y: 0 },
             activeLayerId: data.layers[0]?.id || DEFAULT_LAYER.id,
             focusedRegionId: null,
             past: [],

@@ -14,21 +14,22 @@ export interface ProAccessInfo {
 
 export function useProAccess(): ProAccessInfo {
   const { profile, user } = useAuthStore();
-  const {
-    activeSubscription,
-    fetchSubscription,
-    fetchPlans,
-    fetchExchangeRate,
-    checkProAccess,
-  } = useSubscriptionStore();
+  const fetchSubscription = useSubscriptionStore(s => s.fetchSubscription);
+  const fetchPlans = useSubscriptionStore(s => s.fetchPlans);
+  const fetchExchangeRate = useSubscriptionStore(s => s.fetchExchangeRate);
+  const activeSubscription = useSubscriptionStore(s => s.activeSubscription);
+  const checkProAccess = useSubscriptionStore(s => s.checkProAccess);
+  const initialized = useSubscriptionStore(s => s.initialized);
+  const isLoading = useSubscriptionStore(s => s.isLoading);
+  const error = useSubscriptionStore(s => s.error);
 
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && !initialized && !isLoading) {
       fetchSubscription(user.id);
       fetchPlans();
       fetchExchangeRate();
     }
-  }, [user?.id, fetchSubscription, fetchPlans, fetchExchangeRate]);
+  }, [user?.id, initialized, isLoading, fetchSubscription, fetchPlans, fetchExchangeRate]);
 
   return useMemo(() => {
     // Check subscription store first (new system)

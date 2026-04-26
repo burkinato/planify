@@ -72,6 +72,8 @@ export interface DebugEditorStatePayload {
   templateLayoutId: string | null;
   pagePreset: PagePreset;
   templateState: TemplateState;
+  innerZoom: number;
+  innerPan: { x: number; y: number };
   selectedIds: string[];
   invalidChildren: Array<Record<string, unknown>>;
   invalidChildrenText: string | null;
@@ -275,6 +277,11 @@ export function sanitizeDebugEditorStatePayload(value: unknown): DebugEditorStat
     templateLayoutId: asNullableString(raw.templateLayoutId),
     pagePreset: VALID_PAGE_PRESETS.has(raw.pagePreset as PagePreset) ? (raw.pagePreset as PagePreset) : 'Landscape',
     templateState: sanitizeTemplateState(raw.templateState),
+    innerZoom: asPositiveNumber(raw.innerZoom, 1) ?? 1,
+    innerPan: isRecord(raw.innerPan) ? {
+      x: asFiniteNumber(raw.innerPan.x, 0),
+      y: asFiniteNumber(raw.innerPan.y, 0)
+    } : { x: 0, y: 0 },
     selectedIds,
     invalidChildren,
     invalidChildrenText: asNullableString(raw.invalidChildrenText),

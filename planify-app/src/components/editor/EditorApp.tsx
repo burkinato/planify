@@ -11,7 +11,7 @@ import { EditorCanvas } from './EditorCanvas';
 import { EditorErrorBoundary } from './EditorErrorBoundary';
 import { TemplateSelectorModal } from './TemplateSelectorModal';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
 import { useEditorStore } from '@/store/useEditorStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -36,10 +36,31 @@ export default function EditorApp() {
   const { projects, fetchProjects, templateLayouts, fetchTemplateLayouts, updateProject } = useProjectStore();
   const { 
     loadProject, templateLayoutId, projectTemplate, setTemplateLayout, 
-    elements, layers, activeTemplateLayout, scaleConfig, pagePreset, templateState 
+    elements, layers, activeTemplateLayout, scaleConfig, pagePreset, templateState,
+    innerZoom, innerPan, setInnerZoom, setInnerPan
   } = useEditorStore();
-  const { profile } = useAuthStore();
+  const { profile, user, isLoading } = useAuthStore();
   const isPro = profile?.subscription_tier === 'pro';
+  const router = useRouter();
+
+  // Auth Guard: Redirect unauthenticated users
+  useEffect(() => {
+    if (!isLoading && !user && !profile) {
+      toast.error('Editorü kullanmak için giriş yapmalısınız.');
+      router.push('/login');
+    }
+  }, [user, profile, isLoading, router]);
+
+  // Show loading state while checking auth or loading project
+  if (isLoading && !profile) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-50">
+        <div className="animate-pulse text-slate-400 font-bold uppercase tracking-widest text-xs">
+          Kullanıcı Doğrulanıyor...
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (projectId) {
@@ -68,6 +89,8 @@ export default function EditorApp() {
           templateLayoutId: proj.template_layout_id,
           pagePreset: proj.page_preset,
           templateState: proj.template_state,
+          innerZoom: proj.canvas_data?.innerZoom || 1,
+          innerPan: proj.canvas_data?.innerPan || { x: 0, y: 0 },
         }));
       }
     }
@@ -89,7 +112,16 @@ export default function EditorApp() {
       }
 
       try {
-        const canvas_data = { elements, layers, projectTemplate, templateLayoutId, pagePreset, templateState };
+        const canvas_data = { 
+          elements, 
+          layers, 
+          projectTemplate, 
+          templateLayoutId, 
+          pagePreset, 
+          templateState,
+          innerZoom,
+          innerPan
+        };
         const snapshot = JSON.stringify({
           canvas_data,
           scale_config: scaleConfig,
@@ -167,7 +199,7 @@ export default function EditorApp() {
     }, 5000); // Increased to 5s to be less aggressive with thumbnails
 
     return () => clearTimeout(timeoutId);
-  }, [elements, layers, templateLayoutId, pagePreset, templateState, scaleConfig, projectId, updateProject, projectTemplate, templateLayouts]);
+  }, [elements, layers, templateLayoutId, pagePreset, templateState, scaleConfig, projectId, updateProject, projectTemplate, templateLayouts, innerZoom, innerPan]);
 
   const validateCompliance = () => {
     const missing: string[] = [];
