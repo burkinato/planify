@@ -1,7 +1,7 @@
 'use client';
 
 import { MapPin, ZoomOut, ZoomIn, Grid, Undo2, Redo2,
-  Keyboard, X, Eye, EyeOff, Download, FileImage, FileText, Layers, Pencil, Check, Lock, Sparkles, XCircle
+  Keyboard, X, Eye, EyeOff, Download, FileImage, FileText, Layers, Pencil, Check, Lock, Sparkles, XCircle, ArrowLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/store/useEditorStore';
@@ -92,7 +92,15 @@ export function EditorHeader({ projectId, isPreview, setIsPreview, exportImage, 
   return (
     <header className="h-12 bg-white border-slate-200 border-b border-slate-200 flex items-center justify-between px-3 md:px-5 z-40 shrink-0 relative">
       {/* Left section */}
-      <div className="flex items-center gap-3 md:gap-5">
+      <div className="flex items-center gap-3 md:gap-4">
+        <button
+          onClick={() => router.push('/dashboard')}
+          className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-all group flex items-center gap-1.5"
+          title="Dashboard'a Dön"
+        >
+          <ArrowLeft className="w-4.5 h-4.5 group-hover:-translate-x-0.5 transition-transform" />
+        </button>
+
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-indigo to-accent-violet flex items-center justify-center shadow-lg glow-accent">
             <MapPin className="text-slate-800 w-4.5 h-4.5" />
