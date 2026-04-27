@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Loader2, ShieldCheck, Lock } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock } from 'lucide-react';
+import { Logo } from '@/components/shared/Logo';
 import { createClient } from '@/lib/supabase/client';
 import { useAdminAuthStore } from '@/store/useAdminAuthStore';
 import { activateBrowserSession } from '@/lib/auth/session';
@@ -77,11 +78,8 @@ export default function AdminLoginPage() {
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary-500/50 to-transparent" />
           
           <div className="flex flex-col items-center mb-10">
-            <div className="w-16 h-16 bg-primary-600 flex items-center justify-center mb-6">
-              <ShieldCheck className="text-white w-10 h-10" />
-            </div>
-            <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Planify Admin</h1>
-            <p className="text-slate-500 text-sm mt-2 font-medium tracking-wide">Yalnızca yetkili personel girişi</p>
+            <Logo variant="dark" size="lg" className="flex-col !gap-4" />
+            <p className="text-slate-500 text-sm mt-4 font-medium tracking-wide uppercase">Admin Paneli</p>
           </div>
 
           {error && (

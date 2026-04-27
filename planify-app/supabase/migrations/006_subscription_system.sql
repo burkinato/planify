@@ -122,7 +122,9 @@ INSERT INTO public.exchange_rates (from_currency, to_currency, rate, source)
 VALUES ('USD', 'TRY', 45.02, 'open.er-api.com');
 
 -- 10. Convenience view: user subscription status
-CREATE OR REPLACE VIEW public.user_subscription_status AS
+CREATE OR REPLACE VIEW public.user_subscription_status 
+WITH (security_invoker = on)
+AS
 SELECT
   p.id AS user_id,
   COALESCE(s.status, 'inactive') AS subscription_status,

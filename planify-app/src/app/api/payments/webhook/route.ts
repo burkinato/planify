@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createHmac } from 'node:crypto';
 
 /**
  * PayTR Webhook/Notification Handler
@@ -6,11 +7,9 @@ import { NextResponse } from 'next/server';
  * PayTR ödeme sonucunu bu endpoint'e POST olarak bildirir.
  * Başarılı ödeme geldiğinde:
  * 1. Hash doğrulaması yap (merchant_key + merchant_salt)
- * 2. Supabase'de subscription'ı aktif et
- * 3. Payment history kaydı oluştur
+ * 2. Supabase'de subscription'ı aktif et (İş mantığı eklenmeli)
+ * 3. Payment history kaydı oluştur (İş mantığı eklenmeli)
  * 4. PayTR'ye "OK" yanıtı dön
- * 
- * PayTR Docs: https://dev.paytr.com/iframe-api (Bildirim URL bölümü)
  */
 
 export async function POST(request: Request) {
@@ -34,23 +33,23 @@ export async function POST(request: Request) {
       return new Response('CONFIG_ERROR', { status: 500 });
     }
 
-    // TODO: Hash verification
-    // const expectedHash = createHmac('sha256', merchantKey + merchantSalt)
-    //   .update(merchantOid + merchantSalt + status + totalAmount)
-    //   .digest('base64');
-    // if (hash !== expectedHash) return new Response('HASH_MISMATCH', { status: 403 });
+    // Hash Verification
+    // PayTR Algorithm: base64_encode(hmac_sha256(merchant_oid + merchant_salt + status + total_amount, merchant_key))
+    const hashStr = merchantOid + merchantSalt + status + totalAmount;
+    const expectedHash = createHmac('sha256', merchantKey)
+      .update(hashStr)
+      .digest('base64');
 
-    // TODO: Implement based on status
+    if (hash !== expectedHash) {
+      console.warn('PayTR Webhook: Hash mismatch!', { merchantOid, receivedHash: hash, expectedHash });
+      return new Response('PAYTR_IFRAME_FAILED. REASON: bad hash', { status: 403 });
+    }
+
     if (status === 'success') {
-      // 1. Parse merchantOid to extract userId and planSlug
-      // 2. Create/update subscription in Supabase
-      // 3. Record payment in payment_history
-      // 4. Update profiles.subscription_tier to 'pro' (legacy compat)
+      // TODO: Implement subscription activation in Supabase
       console.log('Payment success:', { merchantOid, totalAmount });
     } else {
       // Payment failed
-      // 1. Record failed payment in payment_history
-      // 2. Optionally notify user
       console.log('Payment failed:', { merchantOid, status });
     }
 

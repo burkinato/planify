@@ -33,6 +33,7 @@ export default function EditorApp() {
   
   const searchParams = useSearchParams();
   const projectId = searchParams.get('id');
+  const templateSlug = searchParams.get('template');
   const { projects, fetchProjects, templateLayouts, fetchTemplateLayouts, updateProject } = useProjectStore();
   const { 
     loadProject, templateLayoutId, projectTemplate, setTemplateLayout, 
@@ -72,29 +73,55 @@ export default function EditorApp() {
   useEffect(() => {
     if (projectId && projects.length > 0) {
       const proj = projects.find(p => p.id === projectId);
-      if (proj && proj.canvas_data) {
-        lastSavedSnapshotRef.current = JSON.stringify({
-          canvas_data: proj.canvas_data,
-          scale_config: proj.scale_config,
-          template_layout_id: proj.template_layout_id ?? null,
-          page_preset: proj.page_preset ?? null,
-          template_state: proj.template_state ?? null,
-        });
-        hasLoadedProjectRef.current = true;
+      if (proj) {
+        // If we haven't loaded this specific project yet, or it's a new one
+        if (!hasLoadedProjectRef.current) {
+          const canvasData = (typeof proj.canvas_data === 'object' && proj.canvas_data ? proj.canvas_data : {}) as any;
+          
+          // If it's a brand new project (no canvas_data) and we have a template in URL
+          if (!proj.canvas_data && templateSlug) {
+            const sourceLayouts = templateLayouts.length > 0 ? templateLayouts : FALLBACK_TEMPLATE_LAYOUTS;
+            const targetLayout = sourceLayouts.find(l => l.slug === templateSlug);
+            
+            loadProject(JSON.stringify({
+              elements: [],
+              layers: [{ id: 'default', name: 'Ana Katman', visible: true, locked: false, order: 0 }],
+              ...canvasData,
+              scaleConfig: proj.scale_config,
+              templateLayoutId: targetLayout?.id || proj.template_layout_id,
+              projectTemplate: templateSlug,
+              pagePreset: targetLayout?.page_preset || proj.page_preset,
+              templateState: proj.template_state,
+              innerZoom: 1,
+              innerPan: { x: 0, y: 0 },
+            }));
+          } else {
+            // Normal load
+            loadProject(JSON.stringify({
+              elements: canvasData.elements || [],
+              layers: canvasData.layers || [{ id: 'default', name: 'Ana Katman', visible: true, locked: false, order: 0 }],
+              ...canvasData,
+              scaleConfig: proj.scale_config,
+              templateLayoutId: proj.template_layout_id,
+              pagePreset: proj.page_preset,
+              templateState: proj.template_state,
+              innerZoom: canvasData.innerZoom || 1,
+              innerPan: canvasData.innerPan || { x: 0, y: 0 },
+            }));
+          }
 
-        const canvasData = (typeof proj.canvas_data === 'object' && proj.canvas_data ? proj.canvas_data : {}) as any;
-        loadProject(JSON.stringify({
-          ...canvasData,
-          scaleConfig: proj.scale_config,
-          templateLayoutId: proj.template_layout_id,
-          pagePreset: proj.page_preset,
-          templateState: proj.template_state,
-          innerZoom: canvasData.innerZoom || 1,
-          innerPan: canvasData.innerPan || { x: 0, y: 0 },
-        }));
+          lastSavedSnapshotRef.current = JSON.stringify({
+            canvas_data: proj.canvas_data,
+            scale_config: proj.scale_config,
+            template_layout_id: proj.template_layout_id ?? null,
+            page_preset: proj.page_preset ?? null,
+            template_state: proj.template_state ?? null,
+          });
+          hasLoadedProjectRef.current = true;
+        }
       }
     }
-  }, [projectId, projects, loadProject]);
+  }, [projectId, projects, loadProject, templateSlug, templateLayouts]);
 
   useEffect(() => {
     const sourceLayouts = templateLayouts.length > 0 ? templateLayouts : FALLBACK_TEMPLATE_LAYOUTS;

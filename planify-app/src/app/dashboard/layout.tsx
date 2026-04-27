@@ -6,6 +6,7 @@ import { LayoutDashboard, UserCircle, LogOut, Plus, Shield, Sparkles } from 'luc
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ClientOnly } from '@/components/shared/ClientOnly';
+import { Logo } from '@/components/shared/Logo';
 
 export default function DashboardLayout({
   children,
@@ -31,13 +32,8 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col hidden md:flex">
         <div className="h-16 flex items-center px-6 border-b border-slate-100">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center shadow-md shadow-blue-600/20">
-              <ClientOnly>
-                <Shield className="text-white w-4 h-4" />
-              </ClientOnly>
-            </div>
-            <span className="font-black text-slate-900 tracking-tight text-lg">Planify</span>
+          <Link href="/dashboard">
+            <Logo size="sm" />
           </Link>
         </div>
         

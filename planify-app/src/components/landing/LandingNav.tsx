@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Shield, Menu, X, LayoutDashboard } from 'lucide-react';
+import { Menu, X, LayoutDashboard } from 'lucide-react';
+import { Logo } from '@/components/shared/Logo';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -20,11 +21,8 @@ export default function LandingNav() {
     <header className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between" style={{ height: 72 }}>
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md shadow-blue-200">
-            <Shield className="text-white w-5 h-5" />
-          </div>
-          <span className="font-black tracking-tight text-xl text-slate-900">Planify</span>
+        <Link href="/">
+          <Logo size="md" />
         </Link>
 
         {/* Desktop nav */}

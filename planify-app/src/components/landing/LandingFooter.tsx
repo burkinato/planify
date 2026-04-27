@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Shield, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { Logo } from '@/components/shared/Logo';
 
 export default function LandingFooter() {
   return (
@@ -34,12 +35,7 @@ export default function LandingFooter() {
           <div className="grid md:grid-cols-5 gap-10 mb-12">
             {/* Brand */}
             <div className="md:col-span-2 space-y-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md">
-                  <Shield className="text-white w-5 h-5" />
-                </div>
-                <span className="font-black tracking-tight text-xl text-white">Planify</span>
-              </div>
+              <Logo variant="white" size="md" />
               <p className="text-sm leading-relaxed max-w-xs">
                 İş güvenliği uzmanları için geliştirilmiş profesyonel tahliye planı tasarım yazılımı.
               </p>

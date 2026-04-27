@@ -13,6 +13,7 @@ import {
   getStoredAuthPersistence,
   setRememberedEmail,
 } from '@/lib/auth/session';
+import { useAuthStore } from '@/store/useAuthStore';
 
 function OAuthButton({
   onClick,
@@ -75,7 +76,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberEmail, setRememberEmailState] = useState(false);
   const [keepActive, setKeepActive] = useState(true);
+  const { user, isInitialized } = useAuthStore();
   const [formData, setFormData] = useState({ email: '', password: '' });
+
+  useEffect(() => {
+    if (isInitialized && user) {
+      router.replace(getRedirectPath());
+    }
+  }, [isInitialized, user, router]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -145,14 +153,14 @@ export default function LoginPage() {
   const isDisabled = loading || oauthLoading !== null;
 
   return (
-    <div className="w-full space-y-7 font-sans">
-      <div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Hoş Geldiniz</h1>
-        <p className="text-slate-500 mt-2 font-medium">Hesabınıza giriş yapın ve çizime devam edin.</p>
+    <div className="w-full space-y-4 lg:space-y-6 font-sans">
+      <div className="text-center md:text-left">
+        <h1 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">Hoş Geldiniz</h1>
+        <p className="text-slate-500 mt-1 lg:mt-2 font-medium text-sm">Hesabınıza giriş yapın ve çizime devam edin.</p>
       </div>
 
       {error && (
-        <div className="p-3.5 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-medium flex items-center gap-2">
+        <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-xl text-xs font-medium flex items-center gap-2">
           <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
@@ -160,30 +168,36 @@ export default function LoginPage() {
         </div>
       )}
 
-      <div className="space-y-3">
-        <OAuthButton
+      <div className="grid grid-cols-2 gap-3">
+        <button
           onClick={() => handleOAuth('google')}
+          type="button"
           disabled={isDisabled}
-          icon={oauthLoading === 'google' ? <Loader2 className="w-5 h-5 animate-spin" /> : <GoogleIcon />}
-          label="Google ile Giriş Yap"
-        />
-        <OAuthButton
+          className="py-2.5 px-4 bg-white border border-slate-200 rounded-xl text-slate-700 font-bold text-xs hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          {oauthLoading === 'google' ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
+          Google
+        </button>
+        <button
           onClick={() => handleOAuth('linkedin_oidc')}
+          type="button"
           disabled={isDisabled}
-          icon={oauthLoading === 'linkedin' ? <Loader2 className="w-5 h-5 animate-spin" /> : <LinkedInIcon />}
-          label="LinkedIn ile Giriş Yap"
-        />
+          className="py-2.5 px-4 bg-white border border-slate-200 rounded-xl text-slate-700 font-bold text-xs hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          {oauthLoading === 'linkedin' ? <Loader2 className="w-4 h-4 animate-spin" /> : <LinkedInIcon />}
+          LinkedIn
+        </button>
       </div>
 
       <div className="relative flex items-center">
-        <div className="flex-grow border-t border-slate-200" />
-        <span className="flex-shrink-0 px-4 text-xs text-slate-400 font-semibold uppercase tracking-wider">veya e-posta ile</span>
-        <div className="flex-grow border-t border-slate-200" />
+        <div className="flex-grow border-t border-slate-100" />
+        <span className="flex-shrink-0 px-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">veya</span>
+        <div className="flex-grow border-t border-slate-100" />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3 lg:space-y-4">
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1.5">E-posta Adresi</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">E-posta</label>
           <input
             type="email"
             required
@@ -192,14 +206,14 @@ export default function LoginPage() {
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             disabled={isDisabled}
             autoComplete="email"
-            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all disabled:opacity-60 text-sm"
+            className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-sm"
           />
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-sm font-bold text-slate-700">Şifre</label>
-            <Link href="/forgot-password" className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-bold text-slate-700">Şifre</label>
+            <Link href="/forgot-password" className="text-[10px] font-bold text-blue-600 hover:text-blue-700">
               Şifremi Unuttum
             </Link>
           </div>
@@ -212,62 +226,65 @@ export default function LoginPage() {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               disabled={isDisabled}
               autoComplete="current-password"
-              className="w-full px-4 py-3 pr-12 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all disabled:opacity-60 text-sm"
+              className="w-full px-4 py-2.5 pr-12 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-sm"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-              aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
             >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             </button>
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
-          <label className="flex items-start gap-3 text-sm text-slate-600">
-            <input
-              type="checkbox"
-              checked={rememberEmail}
-              onChange={(e) => setRememberEmailState(e.target.checked)}
-              disabled={isDisabled}
-              className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span>
-              <span className="block font-bold text-slate-700">Beni hatırla</span>
-              <span className="text-xs text-slate-500">E-posta adresim bu tarayıcıda hazır gelsin.</span>
-            </span>
+        <div className="grid grid-cols-1 gap-1.5 py-1">
+          <label className="relative flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 transition-all group">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={rememberEmail}
+                onChange={(e) => setRememberEmailState(e.target.checked)}
+                disabled={isDisabled}
+                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all"
+              />
+              <div className="flex flex-col">
+                <span className="text-[11px] font-black text-slate-700 uppercase tracking-tight">Beni Hatırla</span>
+                <span className="text-[9px] text-slate-400 font-bold leading-tight group-hover:text-slate-500 transition-colors">E-posta adresimi bu cihazda güvenle sakla</span>
+              </div>
+            </div>
           </label>
 
-          <label className="flex items-start gap-3 text-sm text-slate-600">
-            <input
-              type="checkbox"
-              checked={keepActive}
-              onChange={(e) => setKeepActive(e.target.checked)}
-              disabled={isDisabled}
-              className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span>
-              <span className="block font-bold text-slate-700">Bu tarayıcıda açık tut</span>
-              <span className="text-xs text-slate-500">Oturum bu cihazda 30 gün yenilenebilir kalsın.</span>
-            </span>
+          <label className="relative flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 transition-all group">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={keepActive}
+                onChange={(e) => setKeepActive(e.target.checked)}
+                disabled={isDisabled}
+                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all"
+              />
+              <div className="flex flex-col">
+                <span className="text-[11px] font-black text-slate-700 uppercase tracking-tight">Oturumu Açık Tut</span>
+                <span className="text-[9px] text-slate-400 font-bold leading-tight group-hover:text-slate-500 transition-colors">30 gün boyunca şifre sormadan girişi sürdür</span>
+              </div>
+            </div>
           </label>
         </div>
 
         <button
           type="submit"
           disabled={isDisabled}
-          className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold text-sm hover:from-blue-700 hover:to-blue-800 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-600/30 transition-all disabled:opacity-60 disabled:translate-y-0 disabled:shadow-none flex items-center justify-center gap-2"
+          className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-600/20 transition-all disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-2"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
           {loading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
         </button>
       </form>
 
-      <p className="text-center text-sm text-slate-500 font-medium">
+      <p className="text-center text-xs text-slate-500 font-medium pt-2">
         Hesabınız yok mu?{' '}
-        <Link href="/register" className="text-blue-600 font-bold hover:text-blue-700 transition-colors">
+        <Link href="/register" className="text-blue-600 font-bold hover:text-blue-700">
           Ücretsiz Kayıt Olun
         </Link>
       </p>

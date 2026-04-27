@@ -185,54 +185,54 @@ export default function RegisterPage() {
   const isDisabled = loading || oauthLoading !== null;
 
   return (
-    <div className="w-full space-y-6 font-sans">
-      <div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Hesap Oluşturun</h1>
-        <p className="text-slate-500 mt-2 font-medium text-sm">
+    <div className="w-full space-y-3 lg:space-y-4 font-sans">
+      <div className="text-center md:text-left">
+        <h1 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tight leading-none">Hesap Oluşturun</h1>
+        <p className="text-slate-500 mt-1 font-medium text-[11px] lg:text-xs">
           Kayıt olun ve hemen çizim yapmaya başlayın.
         </p>
       </div>
 
       {error && (
-        <div className="p-3.5 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-medium flex items-center gap-2">
-          <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+        <div className="p-2 bg-red-50 text-red-700 border border-red-200 rounded-xl text-[10px] font-medium flex items-center gap-2">
+          <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
           {error}
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => handleOAuth('google')}
           type="button"
           disabled={isDisabled}
-          className="w-full py-3 px-4 bg-white border border-slate-200 rounded-xl text-slate-700 font-semibold text-sm hover:bg-slate-50 hover:border-slate-300 hover:shadow-md transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-2 bg-white border border-slate-200 rounded-lg text-slate-700 font-bold text-[10px] hover:bg-slate-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
         >
-          {oauthLoading === 'google' ? <Loader2 className="w-5 h-5 animate-spin" /> : <GoogleIcon />}
-          Google ile Kayıt Ol
+          {oauthLoading === 'google' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <GoogleIcon />}
+          Google
         </button>
         <button
           onClick={() => handleOAuth('linkedin_oidc')}
           type="button"
           disabled={isDisabled}
-          className="w-full py-3 px-4 bg-white border border-slate-200 rounded-xl text-slate-700 font-semibold text-sm hover:bg-slate-50 hover:border-slate-300 hover:shadow-md transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-2 bg-white border border-slate-200 rounded-lg text-slate-700 font-bold text-[10px] hover:bg-slate-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
         >
-          {oauthLoading === 'linkedin' ? <Loader2 className="w-5 h-5 animate-spin" /> : <LinkedInIcon />}
-          LinkedIn ile Kayıt Ol
+          {oauthLoading === 'linkedin' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LinkedInIcon />}
+          LinkedIn
         </button>
       </div>
 
       <div className="relative flex items-center">
-        <div className="flex-grow border-t border-slate-200" />
-        <span className="flex-shrink-0 px-4 text-xs text-slate-400 font-semibold uppercase tracking-wider">veya e-posta ile</span>
-        <div className="flex-grow border-t border-slate-200" />
+        <div className="flex-grow border-t border-slate-100" />
+        <span className="flex-shrink-0 px-3 text-[9px] text-slate-400 font-bold uppercase tracking-widest">veya</span>
+        <div className="flex-grow border-t border-slate-100" />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
+      <form onSubmit={handleSubmit} className="space-y-2 lg:space-y-3">
+        <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1.5">Ad</label>
+            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Ad</label>
             <input
               type="text"
               required
@@ -240,12 +240,11 @@ export default function RegisterPage() {
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               disabled={isDisabled}
-              autoComplete="given-name"
-              className="w-full px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all disabled:opacity-60 text-sm"
+              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-xs"
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1.5">Soyad</label>
+            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Soyad</label>
             <input
               type="text"
               required
@@ -253,14 +252,13 @@ export default function RegisterPage() {
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               disabled={isDisabled}
-              autoComplete="family-name"
-              className="w-full px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all disabled:opacity-60 text-sm"
+              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-xs"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1.5">E-posta Adresi</label>
+          <label className="block text-[10px] font-bold text-slate-700 mb-0.5">E-posta</label>
           <input
             type="email"
             required
@@ -268,114 +266,117 @@ export default function RegisterPage() {
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             disabled={isDisabled}
-            autoComplete="email"
-            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all disabled:opacity-60 text-sm"
+            className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-xs"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1.5">Telefon Numarası</label>
+            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Telefon</label>
             <input
               type="tel"
-              placeholder="05XX XXX XX XX"
+              placeholder="05XX..."
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               disabled={isDisabled}
-              autoComplete="tel"
-              className="w-full px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all disabled:opacity-60 text-sm"
+              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-xs"
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1.5">Cinsiyet</label>
-            <select
-              value={formData.gender}
-              onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-              disabled={isDisabled}
-              className="w-full px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all disabled:opacity-60 text-sm appearance-none"
-            >
-              <option value="">Seçiniz</option>
-              <option value="Erkek">Erkek</option>
-              <option value="Kadın">Kadın</option>
-              <option value="Belirtmek İstemiyorum">Belirtmek İstemiyorum</option>
-            </select>
+            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Cinsiyet</label>
+            <div className="relative">
+              <select
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                disabled={isDisabled}
+                className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 focus:bg-white focus:border-blue-500 outline-none transition-all text-xs appearance-none"
+              >
+                <option value="">Seçiniz</option>
+                <option value="Erkek">Erkek</option>
+                <option value="Kadın">Kadın</option>
+                <option value="Belirtmek İstemiyorum">Belirtmek İstemiyorum</option>
+              </select>
+            </div>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1.5">Şifre Belirleyin</label>
+          <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Şifre</label>
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
               required
-              placeholder="En az 8 karakter"
+              placeholder="Min. 8 karakter"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               disabled={isDisabled}
-              autoComplete="new-password"
-              className="w-full px-4 py-3 pr-12 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all disabled:opacity-60 text-sm"
+              className="w-full px-3 py-2 pr-10 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-xs"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-              aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 p-1"
             >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             </button>
           </div>
-          <PasswordStrength password={formData.password} />
         </div>
 
-        <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-          <input
-            type="checkbox"
-            checked={keepActive}
-            onChange={(e) => setKeepActive(e.target.checked)}
-            disabled={isDisabled}
-            className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-          />
-          <span>
-            <span className="block font-bold text-slate-700">Bu tarayıcıda açık tut</span>
-            <span className="text-xs text-slate-500">Oturum bu cihazda 30 gün yenilenebilir kalsın.</span>
-          </span>
-        </label>
+        <div className="grid grid-cols-1 gap-1.5 py-1">
+          <label className="relative flex items-center justify-between p-2 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 transition-all group">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={keepActive}
+                onChange={(e) => setKeepActive(e.target.checked)}
+                disabled={isDisabled}
+                className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all"
+              />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight">Oturumu Açık Tut</span>
+                <span className="text-[9px] text-slate-400 font-bold leading-tight group-hover:text-slate-500 transition-colors">30 gün boyunca şifre sormadan girişi sürdür</span>
+              </div>
+            </div>
+          </label>
+
+          <label className="relative flex items-center justify-between p-2 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 transition-all group">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={formData.marketingConsent}
+                onChange={(e) => setFormData({ ...formData, marketingConsent: e.target.checked })}
+                disabled={isDisabled}
+                className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all"
+              />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight">Gelişmelerden Haber Al</span>
+                <span className="text-[9px] text-slate-400 font-bold leading-tight group-hover:text-slate-500 transition-colors">Yenilikler ve fırsatlar hakkında e-posta almayı kabul ediyorum</span>
+              </div>
+            </div>
+          </label>
+        </div>
 
         <button
           type="submit"
           disabled={isDisabled}
-          className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold text-sm hover:from-blue-700 hover:to-blue-800 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-600/30 transition-all disabled:opacity-60 disabled:translate-y-0 disabled:shadow-none flex items-center justify-center gap-2 mt-1"
+          className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-          {loading ? 'Hesap Oluşturuluyor...' : 'Hesap Oluştur ve Başla'}
+          {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          {loading ? 'İşleniyor...' : 'Hesap Oluştur'}
         </button>
 
-        <div className="flex items-start gap-2.5">
-          <input
-            type="checkbox"
-            id="marketingConsent"
-            checked={formData.marketingConsent}
-            onChange={(e) => setFormData({ ...formData, marketingConsent: e.target.checked })}
-            disabled={isDisabled}
-            className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-          />
-          <label htmlFor="marketingConsent" className="text-xs text-slate-500 leading-relaxed">
-            Planify kampanyaları, yenilikler ve özel fırsatlar hakkında bana e-posta gönderilmesine izin veriyorum.
-          </label>
-        </div>
-
-        <p className="text-center text-xs text-slate-400 leading-relaxed pt-2">
+        <p className="text-center text-[9px] text-slate-400 leading-tight">
           Kayıt olarak{' '}
-          <a href="#" className="text-blue-600 hover:underline font-medium">Kullanım Koşullarını</a>
+          <a href="#" className="text-blue-600 font-bold">Koşulları</a>
           {' '}ve{' '}
-          <a href="#" className="text-blue-600 hover:underline font-medium">Gizlilik Politikasını</a>
+          <a href="#" className="text-blue-600 font-bold">Gizliliği</a>
           {' '}kabul etmiş olursunuz.
         </p>
       </form>
 
-      <p className="text-center text-sm text-slate-500 font-medium">
-        Zaten hesabınız var mı?{' '}
-        <Link href="/login" className="text-blue-600 font-bold hover:text-blue-700 transition-colors">
+      <p className="text-center text-xs text-slate-500 font-medium pt-1">
+        Hesabınız var mı?{' '}
+        <Link href="/login" className="text-blue-600 font-bold">
           Giriş Yapın
         </Link>
       </p>

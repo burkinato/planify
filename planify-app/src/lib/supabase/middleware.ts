@@ -25,7 +25,8 @@ export async function updateSession(request: NextRequest) {
   const isPublicPath =
     PUBLIC_PATHS.has(pathname) ||
     pathname.startsWith('/auth/') ||
-    pathname.startsWith('/api/debug/')
+    pathname.startsWith('/api/payments/webhook') ||
+    pathname.startsWith('/api/exchange-rate')
 
   let supabaseResponse = NextResponse.next({
     request,
@@ -66,12 +67,7 @@ export async function updateSession(request: NextRequest) {
     request.cookies.get(cookieName)?.value
   )
 
-  // 1. Redirect /admin (old) to /pxadmin (new/original)
-  if (pathname.startsWith('/admin')) {
-    return NextResponse.redirect(new URL(pathname.replace('/admin', '/pxadmin'), request.url))
-  }
-
-  // 2. Admin Path Logic
+  // 1. Admin Path Logic
   if (isAdminPath) {
     if (pathname === '/pxadmin/login') {
       if (user) {
@@ -107,30 +103,36 @@ export async function updateSession(request: NextRequest) {
   }
 
   // 3. User Path Logic
-  if (!isPublicPath) {
-    if (!user) {
-      return clearAuthCookies(
-        withNoStoreHeaders(NextResponse.redirect(getLoginUrl(request))),
-        request
-      )
-    }
-
-    // If we have a user but no marker cookie, set it and continue
-    if (!hasBrowserSession) {
-      supabaseResponse.cookies.set(cookieName, 'session', { path: '/', sameSite: 'lax' })
-    }
-
-    if (AUTH_ENTRY_PATHS.has(pathname)) {
+  if (isPublicPath) {
+    // If user is logged in and trying to access auth entry paths (login, register, etc.)
+    if (user && AUTH_ENTRY_PATHS.has(pathname)) {
       return withNoStoreHeaders(
         NextResponse.redirect(new URL(getSafeRedirectPath(request.nextUrl.searchParams.get('next')), request.url))
       )
     }
+    return supabaseResponse
   }
 
-  if (!isPublicPath || AUTH_ENTRY_PATHS.has(pathname)) {
-    withNoStoreHeaders(supabaseResponse)
+  // Protected paths logic
+  if (!user) {
+    return clearAuthCookies(
+      withNoStoreHeaders(NextResponse.redirect(getLoginUrl(request))),
+      request
+    )
   }
 
+  // If we have a user but no marker cookie, set it and continue
+  if (!hasBrowserSession) {
+    supabaseResponse.cookies.set(cookieName, 'session', { path: '/', sameSite: 'lax' })
+  }
+
+  if (AUTH_ENTRY_PATHS.has(pathname)) {
+    return withNoStoreHeaders(
+      NextResponse.redirect(new URL(getSafeRedirectPath(request.nextUrl.searchParams.get('next')), request.url))
+    )
+  }
+
+  withNoStoreHeaders(supabaseResponse)
   return supabaseResponse
 }
 

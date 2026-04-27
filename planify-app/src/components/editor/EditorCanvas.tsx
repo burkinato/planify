@@ -1618,7 +1618,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                     ) : (
                       <div className="w-full h-full flex flex-col overflow-hidden" style={{ containerType: 'size' } as React.CSSProperties}>
                         {/* Gradient Pill Header */}
-                        <div className="shrink-0 p-[4cqmin]">
+                        <div className="shrink-0 p-[3cqmin]">
                           <div className={cn(
                             "font-black uppercase tracking-widest rounded-xl flex items-center px-[3cqmin] py-[2.5cqmin] gap-[2cqmin]",
                             tone === 'red' ? "text-white bg-gradient-to-r from-red-600 to-red-500 shadow-md shadow-red-500/20" :
@@ -1626,7 +1626,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                                 tone === 'green' ? "text-white bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-md shadow-emerald-500/20" :
                                   "text-slate-700 bg-slate-100 shadow-inner border border-slate-200/60"
                           )}
-                            style={{ fontSize: 'max(8px, min(4cqw, 18cqh))' }}>
+                            style={{ fontSize: 'max(8px, min(3.5cqw, 15cqh))' }}>
                             {region.type === 'assembly' && <svg className="w-[1.4em] h-[1.4em]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M12 2v4" /><path d="M12 2l-2 2" /><path d="M12 2l2 2" /></svg>}
                             {region.type !== 'assembly' && tone === 'red' && <svg className="w-[1.2em] h-[1.2em]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}
                             {region.type !== 'assembly' && tone === 'green' && <svg className="w-[1.2em] h-[1.2em]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
@@ -1636,9 +1636,9 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                         </div>
                         {/* Body Content */}
                         {/* Body Content */}
-                        <div className="flex-1 min-h-0 flex flex-col px-[4cqmin] pb-[4cqmin] overflow-hidden">
+                        <div className="flex-1 min-h-0 flex flex-col px-[3cqmin] pb-[3cqmin] overflow-hidden">
                           {content.imageUrl && (
-                            <div className="flex-1 min-h-0 relative mb-[2cqmin] flex items-center justify-center">
+                            <div className="shrink-0 h-[30%] relative mb-[2cqmin] flex items-center justify-center">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={content.imageUrl} alt={region.label} className="max-w-full max-h-full object-contain rounded-sm shadow-sm border border-slate-200/50" />
                             </div>
@@ -1719,16 +1719,14 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                               )}
                             </div>
                           ) : content.body && (
-                            <div className="flex-1 min-h-0 relative">
-                              <div className="absolute inset-0 overflow-hidden flex flex-col justify-start pt-[1cqh]">
-                                <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.4]"
-                                  style={{
-                                    /* Fixed a larger base font to ensure 3m readability, gently scales down if lines increase */
-                                    fontSize: `max(14px, min(4cqw, ${80 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`
-                                  }}>
-                                  {content.body}
-                                </p>
-                              </div>
+                            <div className="flex-1 min-h-0 flex flex-col justify-center">
+                              <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.3]"
+                                style={{
+                                  /* Improved scaling: Uses more of the container height while respecting line count */
+                                  fontSize: `max(11px, min(4cqw, ${85 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`
+                                }}>
+                                {content.body}
+                              </p>
                             </div>
                           )}
 

@@ -8,6 +8,7 @@ import { useEditorStore } from '@/store/useEditorStore';
 import { useProjectStore } from '@/store/useProjectStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProAccess } from '@/hooks/useProAccess';
+import { Logo } from '@/components/shared/Logo';
 import { useState, useRef } from 'react';
 import type { EditorTheme } from '@/types/editor';
 import { toast } from 'sonner';
@@ -102,17 +103,12 @@ export function EditorHeader({ projectId, isPreview, setIsPreview, exportImage, 
         </button>
 
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-indigo to-accent-violet flex items-center justify-center shadow-lg glow-accent">
-            <MapPin className="text-slate-800 w-4.5 h-4.5" />
-          </div>
-          <h1 className="font-black text-base md:text-lg tracking-tight mr-2 flex items-center gap-1.5">
-            Plan<span className="bg-gradient-to-r from-accent-indigo to-accent-violet bg-clip-text text-transparent">ify</span>
-            {isPro ? (
-              <span className="px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[8px] font-black uppercase tracking-wider border border-indigo-100">Plus</span>
-            ) : (
-              <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[8px] font-black uppercase tracking-wider border border-slate-200">Free</span>
-            )}
-          </h1>
+          <Logo size="sm" className="mr-2" />
+          {isPro ? (
+            <span className="px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[8px] font-black uppercase tracking-wider border border-indigo-100">Plus</span>
+          ) : (
+            <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[8px] font-black uppercase tracking-wider border border-slate-200">Free</span>
+          )}
           
           <div className="h-5 w-px bg-slate-200 mx-1 hidden sm:block" />
 

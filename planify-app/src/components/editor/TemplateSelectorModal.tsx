@@ -71,12 +71,15 @@ function TemplateThumbnail({ layout }: { layout: TemplateLayout }) {
       {regions.map((region) => (
         <div
           key={region.id}
-          className="absolute rounded-sm border shadow-[0_1px_2px_rgba(0,0,0,0.02)] overflow-hidden transition-all"
+          className={cn(
+            "absolute border shadow-[0_1px_2px_rgba(0,0,0,0.02)] overflow-hidden transition-all",
+            region.type === 'header' ? "rounded-none" : "rounded-md"
+          )}
           style={{
-            left:   `${region.x}%`,
-            top:    `${region.y}%`,
-            width:  `${region.w}%`,
-            height: `${region.h}%`,
+            left:   region.type === 'header' ? `${region.x}%` : `calc(${region.x}% + 2px)`,
+            top:    region.type === 'header' ? `${region.y}%` : `calc(${region.y}% + 2px)`,
+            width:  region.type === 'header' ? `${region.w}%` : `calc(${region.w}% - 4px)`,
+            height: region.type === 'header' ? `${region.h}%` : `calc(${region.h}% - 4px)`,
             ...toneStyle(region),
           }}
         >

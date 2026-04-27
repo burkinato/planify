@@ -14,6 +14,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Logo } from '@/components/shared/Logo';
 import { useAdminAuthStore } from '@/store/useAdminAuthStore';
 
 const navigation = [
@@ -32,14 +33,9 @@ export function AdminSidebar() {
   return (
     <aside className="w-64 flex-shrink-0 bg-surface-950 border-r border-slate-200 dark:border-white/5 flex flex-col h-screen sticky top-0 transition-colors duration-300">
       {/* Logo Section */}
-      <div className="p-8 flex items-center gap-3">
-        <div className="w-10 h-10 bg-primary-600 flex items-center justify-center rounded-none">
-          <ShieldCheck className="text-white w-6 h-6" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tighter">PLANIFY</h1>
-          <p className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase tracking-widest leading-none">Admin Panel</p>
-        </div>
+      <div className="p-8 flex flex-col items-start gap-4">
+        <Logo variant="dark" size="md" />
+        <p className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase tracking-widest leading-none">Admin Panel</p>
       </div>
 
       {/* Navigation */}
