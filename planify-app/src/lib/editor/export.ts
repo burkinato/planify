@@ -6,13 +6,14 @@ export async function exportToPDF(
   containerRef: React.RefObject<HTMLDivElement | null>, 
   projectName: string = 'Tahliye-Plani',
   activeLayout?: TemplateLayout | null,
-  isPro: boolean = false
+  isPro: boolean = false,
+  scale: number = 2
 ) {
   if (!containerRef.current) return;
 
   try {
     const canvas = await html2canvas(containerRef.current, {
-      scale: 2, 
+      scale: scale, 
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff'

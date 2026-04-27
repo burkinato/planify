@@ -201,7 +201,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     elements, layers, tool, zoom, pan, gridVisible, selectedIds, customSymbols,
     addElement, updateElement, updateElementsBatch, removeElements, setSelectedIds, scaleConfig, setScaleConfig, setTool,
     editorTheme, setZoom, setPan, activeTemplateLayout, projectTemplate, templateLayoutId, templateState, focusedRegionId, setFocusedRegionId, updateTemplateRegion,
-    innerZoom, innerPan, setInnerZoom, setInnerPan
+    innerZoom, innerPan, setInnerZoom, setInnerPan, projectMetadata, setProjectMetadata
   } = useEditorStore(useShallow((s) => ({
     elements: s.elements,
     layers: s.layers,
@@ -233,6 +233,8 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     innerPan: s.innerPan,
     setInnerZoom: s.setInnerZoom,
     setInnerPan: s.setInnerPan,
+    projectMetadata: s.projectMetadata,
+    setProjectMetadata: s.setProjectMetadata,
   })));
 
   const themeConfig = THEME_CONFIGS[editorTheme];
@@ -1617,40 +1619,46 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                     ) : isHeader ? (
                       // ── IMPROVED HEADER BLOCK ───────────────────────────────────────
                       <div className="w-full h-full flex items-center group/header relative" style={{ containerType: 'size' } as React.CSSProperties}>
-                        {/* ISO Exit Icon - Clickable to focus */}
+                        {/* Logo Area */}
                         <div 
                           onClick={(e) => { e.stopPropagation(); setFocusedRegionId(region.id); }}
-                          className="h-full flex items-center justify-center bg-black/15 flex-shrink-0 cursor-pointer hover:bg-black/25 transition-colors" 
-                          style={{ width: 'min(10cqh, 7cqw)' }}
+                          className="h-full aspect-square flex items-center justify-center bg-white/10 border-r border-white/10 cursor-pointer hover:bg-white/20 transition-all overflow-hidden"
                         >
-                          <svg style={{ width: 'min(6cqh, 5cqw)', height: 'min(6cqh, 5cqw)' }} viewBox="0 0 24 24" fill="white">
-                            <path d="M13.5 5a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0zm-1.5 4.5L10 14h4l-1-3 2.5 2 1.5-3-3-1-2 1.5zM3 3h7v2H5v14h14v-6h2v8H3V3z" />
-                          </svg>
+                          {projectMetadata.logoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={projectMetadata.logoUrl} alt="Logo" className="max-w-[80%] max-h-[80%] object-contain" />
+                          ) : (
+                            <svg className="w-1/2 h-1/2 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
+                          )}
                         </div>
 
                         {/* Title & Meta Group */}
                         <div className="flex-1 flex flex-col items-center justify-center text-center px-[3cqw] overflow-hidden">
-                          {/* Title - Transparent Inline Input */}
                           <input 
-                            value={content.title || ''}
-                            onChange={(e) => updateTemplateRegion(region.id, { title: e.target.value })}
-                            placeholder={region.label}
+                            value={projectMetadata.name}
+                            onChange={(e) => setProjectMetadata({ name: e.target.value.toUpperCase() })}
+                            placeholder="PROJE ADI"
                             className="w-full bg-transparent border-none outline-none text-center font-black uppercase tracking-[0.05em] text-white placeholder:text-white/30 leading-[1.1]"
-                            style={{ fontSize: 'min(32cqh, 5cqw)' }}
+                            style={{ fontSize: 'min(32cqh, 4.5cqw)' }}
                           />
                           
-                          {/* Meta - Transparent Inline Input (Optional) */}
-                          <input 
-                            value={content.meta || ''}
-                            onChange={(e) => updateTemplateRegion(region.id, { meta: e.target.value })}
-                            placeholder="META BİLGİ"
-                            className="w-full bg-transparent border-none outline-none text-center font-black uppercase tracking-widest text-white/70 placeholder:text-white/20 mt-[1.5cqh] leading-none"
-                            style={{ fontSize: 'min(14cqh, 2cqw)' }}
-                          />
+                          <div className="flex items-center gap-[4cqw] mt-[1cqh]">
+                             <span className="font-black text-white/50 uppercase tracking-widest" style={{ fontSize: 'min(12cqh, 1.8cqw)' }}>
+                               {activeTemplateLayout.name}
+                             </span>
+                             <div className="w-1 h-1 rounded-full bg-white/30" />
+                             <span className="font-black text-white/50 uppercase tracking-widest" style={{ fontSize: 'min(12cqh, 1.8cqw)' }}>
+                               REV: {projectMetadata.revision}
+                             </span>
+                          </div>
                         </div>
 
-                        {/* Symmetry Block */}
-                        <div className="h-full bg-black/5 flex-shrink-0" style={{ width: 'min(4cqh, 3cqw)' }} />
+                        {/* ISO Icon */}
+                        <div className="h-full flex items-center justify-center px-[3cqw] opacity-40">
+                           <svg className="h-[60%] aspect-square" viewBox="0 0 24 24" fill="white">
+                             <path d="M13.5 5a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0zm-1.5 4.5L10 14h4l-1-3 2.5 2 1.5-3-3-1-2 1.5zM3 3h7v2H5v14h14v-6h2v8H3V3z" />
+                           </svg>
+                        </div>
                       </div>
 
                     ) : (
@@ -1673,109 +1681,150 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                           </div>
                         </div>
                         {/* Body Content */}
-                        {/* Body Content */}
                         <div className="flex-1 min-h-0 flex flex-col px-[3cqmin] pb-[3cqmin] overflow-hidden">
-                          {content.imageUrl && (
-                            <div className="shrink-0 h-[30%] relative mb-[2cqmin] flex items-center justify-center">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={content.imageUrl} alt={region.label} className="max-w-full max-h-full object-contain rounded-sm shadow-sm border border-slate-200/50" />
-                            </div>
-                          )}
-
-                          {/* Auto-generated Legend or Manual Body Text */}
-                          {region.type === 'legend' ? (
-                            <div className="flex-1 w-full overflow-hidden flex flex-wrap gap-y-[3cqh] gap-x-[5cqw] content-start pt-[2cqh]">
-                              {/* Dynamic Routes */}
-                              {visibleElements.some(el => el.type === 'route' && el.routeType === 'evacuation') && (
-                                <div className="flex items-center gap-[3cqw] w-[45%] shrink-0">
-                                  <div className="w-[18cqw] max-w-[2.5cqh] aspect-square flex items-center justify-center bg-emerald-100 rounded-sm">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" className="w-3/4 h-3/4"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                          {region.type === 'approval' ? (
+                            <div className="flex-1 flex divide-x divide-slate-100 border-t border-slate-50 mt-1 pt-1">
+                               <div className="flex-1 flex flex-col justify-between py-1 pr-2">
+                                  <div className="space-y-2">
+                                     <div className="flex flex-col">
+                                        <span className="text-[7px] font-black text-slate-300 uppercase tracking-tighter">Hazırlayan / Author</span>
+                                        <input 
+                                          value={projectMetadata.author}
+                                          onChange={(e) => setProjectMetadata({ author: e.target.value.toUpperCase() })}
+                                          className="bg-transparent border-none outline-none font-black text-slate-700 uppercase"
+                                          style={{ fontSize: 'min(12px, 3.5cqw)' }}
+                                          placeholder="İSİM SOYİSİM"
+                                        />
+                                     </div>
+                                     <div className="flex flex-col">
+                                        <span className="text-[7px] font-black text-slate-300 uppercase tracking-tighter">Onay / Approval</span>
+                                        <div className="h-4 border-b border-dashed border-slate-200" />
+                                     </div>
                                   </div>
-                                  <span className="font-bold text-slate-700 leading-tight flex-1" style={{ fontSize: 'max(11px, min(4cqw, 14cqh))' }}>Tahliye Yolu</span>
+                                  <div className="text-[8px] font-black text-slate-400">© PLANIFY TECH SOLUTIONS</div>
+                               </div>
+                               <div className="w-[40%] flex flex-col divide-y divide-slate-100 pl-2 py-1">
+                                  <div className="flex-1 flex flex-col justify-center">
+                                     <span className="text-[7px] font-black text-slate-300 uppercase tracking-tighter">Tarih / Date</span>
+                                     <span className="font-black text-slate-600" style={{ fontSize: 'min(11px, 3cqw)' }}>{projectMetadata.date}</span>
+                                  </div>
+                                  <div className="flex-1 flex flex-col justify-center">
+                                     <span className="text-[7px] font-black text-slate-300 uppercase tracking-tighter">Revizyon / Rev.</span>
+                                     <input 
+                                          value={projectMetadata.revision}
+                                          onChange={(e) => setProjectMetadata({ revision: e.target.value.toUpperCase() })}
+                                          className="bg-transparent border-none outline-none font-black text-slate-600 uppercase"
+                                          style={{ fontSize: 'min(11px, 3cqw)' }}
+                                          placeholder="00"
+                                        />
+                                  </div>
+                               </div>
+                            </div>
+                          ) : (
+                            <>
+                              {content.imageUrl && (
+                                <div className="shrink-0 h-[30%] relative mb-[2cqmin] flex items-center justify-center">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={content.imageUrl} alt={region.label} className="max-w-full max-h-full object-contain rounded-sm shadow-sm border border-slate-200/50" />
                                 </div>
                               )}
 
-                              {visibleElements.some(el => el.type === 'route' && el.routeType === 'rescue') && (
-                                <div className="flex items-center gap-[3cqw] w-[45%] shrink-0">
-                                  <div className="w-[18cqw] max-w-[2.5cqh] aspect-square flex items-center justify-center bg-red-100 rounded-sm">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="3" className="w-3/4 h-3/4"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                              {/* Auto-generated Legend or Manual Body Text */}
+                              {region.type === 'legend' ? (
+                                <div className="flex-1 w-full overflow-hidden flex flex-wrap gap-y-[3cqh] gap-x-[5cqw] content-start pt-[2cqh]">
+                                  {/* Dynamic Routes */}
+                                  {visibleElements.some(el => el.type === 'route' && el.routeType === 'evacuation') && (
+                                    <div className="flex items-center gap-[3cqw] w-[45%] shrink-0">
+                                      <div className="w-[18cqw] max-w-[2.5cqh] aspect-square flex items-center justify-center bg-emerald-100 rounded-sm">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" className="w-3/4 h-3/4"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                                      </div>
+                                      <span className="font-bold text-slate-700 leading-tight flex-1" style={{ fontSize: 'max(11px, min(4cqw, 14cqh))' }}>Tahliye Yolu</span>
+                                    </div>
+                                  )}
+
+                                  {visibleElements.some(el => el.type === 'route' && el.routeType === 'rescue') && (
+                                    <div className="flex items-center gap-[3cqw] w-[45%] shrink-0">
+                                      <div className="w-[18cqw] max-w-[2.5cqh] aspect-square flex items-center justify-center bg-red-100 rounded-sm">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="3" className="w-3/4 h-3/4"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                                      </div>
+                                      <span className="font-bold text-slate-700 leading-tight flex-1" style={{ fontSize: 'max(11px, min(4cqw, 14cqh))' }}>Kurtarma Yolu</span>
+                                    </div>
+                                  )}
+
+                                  {/* Dynamic Symbols */}
+                                  {Array.from(new Set(visibleElements.filter(el => el.type === 'symbol' && el.symbolType).map(el => el.symbolType as string))).map(id => {
+                                    const isCustom = id.startsWith('data:') || id.startsWith('http');
+                                    const symDef = SYMBOLS.find(s => s.id === id);
+
+                                    // Fallback map for legacy symbol IDs
+                                    const legacyMap: Record<string, string> = {
+                                      exit: 'Acil Çıkış', fire: 'Yangın Söndürücü', alarm: 'Yangın Alarmı',
+                                      assembly: 'Toplanma Alanı', firstaid: 'İlk Yardım', here: 'Buradasınız',
+                                      hydrant: 'Yangın Dolabı', electric: 'Elektrik Tehlikesi', gas: 'Gaz Kesme Vanası',
+                                      sign: 'Yönlendirme Oku', info: 'Bilgi', point: 'Özel Nokta'
+                                    };
+
+                                    const name = isCustom ? 'Özel Sembol' : (symDef?.name || legacyMap[id] || id);
+                                    const src = isCustom ? id : ISO_SYMBOLS[id];
+                                    if (!src) return null;
+
+                                    return (
+                                      <div key={id} className="flex items-center gap-[3cqw] w-[45%] shrink-0">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={src} alt={name} className="w-[18cqw] max-w-[2.5cqh] aspect-square object-contain shadow-sm rounded-sm bg-white" />
+                                        <span className="font-bold text-slate-700 leading-tight flex-1" style={{ fontSize: 'max(11px, min(4cqw, 14cqh))' }}>
+                                          {name}
+                                        </span>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              ) : region.type === 'instruction' ? (
+                                <div className="flex-1 min-h-0 flex flex-col pt-[1cqh]">
+                                  {/* Fixed 112 Section */}
+                                  <div className="flex items-center gap-[4cqw] mb-[3cqmin] p-[3cqmin] bg-red-50 border border-red-100 rounded-xl">
+                                    <div className="w-[12cqmin] h-[12cqmin] flex-shrink-0 flex items-center justify-center bg-red-600 text-white rounded-lg font-black shadow-sm" style={{ fontSize: 'max(10px, 5cqmin)' }}>
+                                      112
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <span className="font-black text-red-700 uppercase tracking-tighter" style={{ fontSize: 'max(12px, 4.5cqmin)' }}>ACİL DURUM TELEFONU</span>
+                                      <span className="font-bold text-red-600/70 uppercase tracking-widest" style={{ fontSize: 'max(7px, 2cqmin)' }}>EMERGENCY CALL</span>
+                                    </div>
                                   </div>
-                                  <span className="font-bold text-slate-700 leading-tight flex-1" style={{ fontSize: 'max(11px, min(4cqw, 14cqh))' }}>Kurtarma Yolu</span>
+                                  {/* Additional Instructions */}
+                                  {content.body && (
+                                    <div className="flex-1 overflow-hidden relative flex flex-col justify-center">
+                                      <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.3]"
+                                        style={{
+                                          fontSize: `max(12px, min(3.8cqw, ${65 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`,
+                                          lineHeight: (content.body.split('\n').length || 1) > 6 ? 1.15 : 1.35
+                                        }}>
+                                        {content.body}
+                                      </p>
+                                    </div>
+                                  )}
+
                                 </div>
-                              )}
-
-                              {/* Dynamic Symbols */}
-                              {Array.from(new Set(visibleElements.filter(el => el.type === 'symbol' && el.symbolType).map(el => el.symbolType as string))).map(id => {
-                                const isCustom = id.startsWith('data:') || id.startsWith('http');
-                                const symDef = SYMBOLS.find(s => s.id === id);
-
-                                // Fallback map for legacy symbol IDs
-                                const legacyMap: Record<string, string> = {
-                                  exit: 'Acil Çıkış', fire: 'Yangın Söndürücü', alarm: 'Yangın Alarmı',
-                                  assembly: 'Toplanma Alanı', firstaid: 'İlk Yardım', here: 'Buradasınız',
-                                  hydrant: 'Yangın Dolabı', electric: 'Elektrik Tehlikesi', gas: 'Gaz Kesme Vanası',
-                                  sign: 'Yönlendirme Oku', info: 'Bilgi', point: 'Özel Nokta'
-                                };
-
-                                const name = isCustom ? 'Özel Sembol' : (symDef?.name || legacyMap[id] || id);
-                                const src = isCustom ? id : ISO_SYMBOLS[id];
-                                if (!src) return null;
-
-                                return (
-                                  <div key={id} className="flex items-center gap-[3cqw] w-[45%] shrink-0">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={src} alt={name} className="w-[18cqw] max-w-[2.5cqh] aspect-square object-contain shadow-sm rounded-sm bg-white" />
-                                    <span className="font-bold text-slate-700 leading-tight flex-1" style={{ fontSize: 'max(11px, min(4cqw, 14cqh))' }}>
-                                      {name}
-                                    </span>
+                                ) : content.body && (
+                                  <div className="flex-1 min-h-0 flex flex-col justify-center">
+                                    <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.3]"
+                                      style={{
+                                        fontSize: `max(11px, min(4cqw, ${85 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`,
+                                        lineHeight: (content.body.split('\n').length || 1) > 6 ? 1.15 : 1.3
+                                      }}>
+                                      {content.body}
+                                    </p>
                                   </div>
-                                )
-                              })}
-                            </div>
-                          ) : region.type === 'instruction' ? (
-                            <div className="flex-1 min-h-0 flex flex-col pt-[1cqh]">
-                              {/* Fixed 112 Section */}
-                              <div className="flex items-center gap-[4cqw] mb-[3cqmin] p-[3cqmin] bg-red-50 border border-red-100 rounded-xl">
-                                <div className="w-[12cqmin] h-[12cqmin] flex-shrink-0 flex items-center justify-center bg-red-600 text-white rounded-lg font-black shadow-sm" style={{ fontSize: 'max(10px, 5cqmin)' }}>
-                                  112
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="font-black text-red-700 uppercase tracking-tighter" style={{ fontSize: 'max(12px, 4.5cqmin)' }}>ACİL DURUM TELEFONU</span>
-                                  <span className="font-bold text-red-600/70 uppercase tracking-widest" style={{ fontSize: 'max(7px, 2cqmin)' }}>EMERGENCY CALL</span>
-                                </div>
-                              </div>
-                              {/* Additional Instructions */}
-                              {content.body && (
-                                <div className="flex-1 overflow-hidden relative flex flex-col justify-center">
-                                  <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.3]"
-                                    style={{
-                                      fontSize: `max(12px, min(3.8cqw, ${65 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`,
-                                      lineHeight: (content.body.split('\n').length || 1) > 6 ? 1.15 : 1.35
-                                    }}>
-                                    {content.body}
-                                  </p>
-                                </div>
-                              )}
+                                )}
 
-                            </div>
-                            ) : content.body && (
-                              <div className="flex-1 min-h-0 flex flex-col justify-center">
-                                <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.3]"
-                                  style={{
-                                    fontSize: `max(11px, min(4cqw, ${85 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`,
-                                    lineHeight: (content.body.split('\n').length || 1) > 6 ? 1.15 : 1.3
-                                  }}>
-                                  {content.body}
+
+                              {content.meta && (
+                                <p className="shrink-0 mt-auto pt-[2cqh] font-black uppercase tracking-widest text-slate-400"
+                                  style={{ fontSize: 'max(6px, min(2.5cqw, 8cqh))' }}>
+                                  {content.meta}
                                 </p>
-                              </div>
-                            )}
-
-
-                          {content.meta && (
-                            <p className="shrink-0 mt-auto pt-[2cqh] font-black uppercase tracking-widest text-slate-400"
-                              style={{ fontSize: 'max(6px, min(2.5cqw, 8cqh))' }}>
-                              {content.meta}
-                            </p>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>

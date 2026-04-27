@@ -21,9 +21,13 @@ interface EditorHeaderProps {
   exportImage: (format: 'png' | 'jpeg') => void;
   exportPdf: () => void;
   onOpenTemplateModal?: () => void;
+  onOpenExportModal?: () => void;
 }
 
-export function EditorHeader({ projectId, isPreview, setIsPreview, exportImage, exportPdf, onOpenTemplateModal }: EditorHeaderProps) {
+export function EditorHeader({ 
+  projectId, isPreview, setIsPreview, exportImage, exportPdf, 
+  onOpenTemplateModal, onOpenExportModal 
+}: EditorHeaderProps) {
   const {
     zoom, setZoom, gridVisible, setGridVisible, undo, redo, canUndo, canRedo,
     scaleConfig, setScaleConfig, editorTheme, setEditorTheme
@@ -325,6 +329,8 @@ export function EditorHeader({ projectId, isPreview, setIsPreview, exportImage, 
             onClick={() => {
               if (!isPro) {
                 router.push('/dashboard/upgrade');
+              } else if (onOpenExportModal) {
+                onOpenExportModal();
               } else {
                 setShowExport(!showExport);
               }

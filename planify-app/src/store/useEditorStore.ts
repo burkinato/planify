@@ -16,6 +16,7 @@ import type {
   TemplateLayout,
   TemplateState,
   TemplateRegionState,
+  ProjectMetadata,
 } from '@/types/editor';
 import {
   sanitizeDebugEditorStatePayload,
@@ -50,6 +51,7 @@ interface EditorState {
   pagePreset: PagePreset;
   templateState: TemplateState;
   focusedRegionId: string | null;
+  projectMetadata: ProjectMetadata;
   innerZoom: number;
   innerPan: { x: number; y: number };
   canUndo: boolean;
@@ -73,6 +75,7 @@ interface EditorState {
   setPagePreset: (preset: PagePreset) => void;
   setTemplateState: (state: TemplateState) => void;
   updateTemplateRegion: (regionId: string, updates: TemplateRegionState) => void;
+  setProjectMetadata: (metadata: Partial<ProjectMetadata>) => void;
   setFocusedRegionId: (id: string | null) => void;
   setActiveLayer: (id: string) => void;
   toggleLayerVisibility: (id: string) => void;
@@ -116,6 +119,7 @@ const getInitialState = () => {
       activeTemplateLayout: null as TemplateLayout | null,
       pagePreset: 'Landscape' as PagePreset,
       templateState: {} as TemplateState,
+      projectMetadata: { name: 'İSİMSİZ PROJE', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00' },
       innerZoom: 1,
       innerPan: { x: 0, y: 0 },
     };
@@ -148,6 +152,7 @@ const getInitialState = () => {
     activeTemplateLayout: null as TemplateLayout | null,
     pagePreset: (localStorage.getItem('planify-preset') as PagePreset) || 'Landscape',
     templateState: sanitizeTemplateState(JSON.parse(localStorage.getItem('planify-template-state') || '{}')),
+    projectMetadata: JSON.parse(localStorage.getItem('planify-project-metadata') || JSON.stringify({ name: 'İSİMSİZ PROJE', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00' })),
     innerZoom: parseFloat(localStorage.getItem('planify-inner-zoom') || '1') || 1,
     innerPan: JSON.parse(localStorage.getItem('planify-inner-pan') || '{"x":0,"y":0}'),
   };
@@ -263,6 +268,14 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       set({ templateState });
       if (typeof window !== 'undefined') {
         localStorage.setItem('planify-template-state', JSON.stringify(templateState));
+      }
+    },
+
+    setProjectMetadata: (updates) => {
+      const projectMetadata = { ...get().projectMetadata, ...updates };
+      set({ projectMetadata });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('planify-project-metadata', JSON.stringify(projectMetadata));
       }
     },
 
@@ -452,6 +465,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
             projectTemplate: data.projectTemplate || get().projectTemplate,
             templateLayoutId: data.templateLayoutId,
             templateState: data.templateState,
+            projectMetadata: data.projectMetadata || { name: 'İSİMSİZ PROJE', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00' },
             pagePreset: data.pagePreset,
             innerZoom: data.innerZoom || 1,
             innerPan: data.innerPan || { x: 0, y: 0 },
@@ -469,6 +483,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
             if (data.templateLayoutId) localStorage.setItem('planify-template-layout-id', data.templateLayoutId);
             else localStorage.removeItem('planify-template-layout-id');
             if (data.templateState) localStorage.setItem('planify-template-state', JSON.stringify(data.templateState));
+            if (data.projectMetadata) localStorage.setItem('planify-project-metadata', JSON.stringify(data.projectMetadata));
             if (data.pagePreset) localStorage.setItem('planify-preset', data.pagePreset);
             saveLayers(data.layers);
           }

@@ -6,6 +6,7 @@ import type {
   ScaleConfig,
   TemplateRegionState,
   TemplateState,
+  ProjectMetadata,
 } from '@/types/editor';
 
 const DEFAULT_LAYER_ID = 'default';
@@ -72,6 +73,7 @@ export interface DebugEditorStatePayload {
   templateLayoutId: string | null;
   pagePreset: PagePreset;
   templateState: TemplateState;
+  projectMetadata: ProjectMetadata;
   innerZoom: number;
   innerPan: { x: number; y: number };
   selectedIds: string[];
@@ -132,6 +134,17 @@ export function sanitizeTemplateState(value: unknown): TemplateState {
       .filter(([key]) => typeof key === 'string' && key.length > 0)
       .map(([key, regionValue]) => [key, sanitizeTemplateRegionState(regionValue)])
   );
+}
+
+export function sanitizeProjectMetadata(value: unknown): ProjectMetadata {
+  const raw = isRecord(value) ? value : {};
+  return {
+    name: asString(raw.name, 'İSİMSİZ PROJE'),
+    author: asString(raw.author, ''),
+    date: asString(raw.date, new Date().toLocaleDateString('tr-TR')),
+    revision: asString(raw.revision, '00'),
+    logoUrl: asNullableString(raw.logoUrl) ?? undefined,
+  };
 }
 
 export function sanitizeLayers(value: unknown): LayerDef[] {
@@ -277,6 +290,7 @@ export function sanitizeDebugEditorStatePayload(value: unknown): DebugEditorStat
     templateLayoutId: asNullableString(raw.templateLayoutId),
     pagePreset: VALID_PAGE_PRESETS.has(raw.pagePreset as PagePreset) ? (raw.pagePreset as PagePreset) : 'Landscape',
     templateState: sanitizeTemplateState(raw.templateState),
+    projectMetadata: sanitizeProjectMetadata(raw.projectMetadata),
     innerZoom: asPositiveNumber(raw.innerZoom, 1) ?? 1,
     innerPan: isRecord(raw.innerPan) ? {
       x: asFiniteNumber(raw.innerPan.x, 0),

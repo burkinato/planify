@@ -117,6 +117,14 @@ export interface ScaleConfig {
   unit: MeasurementUnit;
 }
 
+export interface ProjectMetadata {
+  name: string;
+  author: string;
+  date: string;
+  revision: string;
+  logoUrl?: string;
+}
+
 export type EditorTool =
   | 'select'
   | 'wall'

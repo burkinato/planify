@@ -19,7 +19,8 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
   const [activeTab, setActiveTab] = useState<'props' | 'layers'>('props');
   const {
     elements, selectedIds, removeElements, updateElement, scaleConfig, loadProject, layers,
-    activeTemplateLayout, focusedRegionId, templateState, updateTemplateRegion, setFocusedRegionId
+    activeTemplateLayout, focusedRegionId, templateState, updateTemplateRegion, setFocusedRegionId,
+    projectMetadata, setProjectMetadata
   } = useEditorStore(useShallow((s) => ({
     elements: s.elements,
     selectedIds: s.selectedIds,
@@ -33,6 +34,8 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
     templateState: s.templateState,
     updateTemplateRegion: s.updateTemplateRegion,
     setFocusedRegionId: s.setFocusedRegionId,
+    projectMetadata: s.projectMetadata,
+    setProjectMetadata: s.setProjectMetadata,
   })));
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,6 +53,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
       projectTemplate: activeTemplateLayout?.slug || 'blank',
       pagePreset: activeTemplateLayout?.page_preset,
       templateState,
+      projectMetadata,
       version: '2.0'
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -507,6 +511,63 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                 </div>
 
 
+
+                {/* Project Metadata Management */}
+                <div className="space-y-4 pt-4 border-t border-slate-200">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1 block">Proje Ayarları</label>
+                  
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Proje Adı</label>
+                      <input 
+                        value={projectMetadata.name}
+                        onChange={(e) => setProjectMetadata({ name: e.target.value.toUpperCase() })}
+                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-accent-indigo transition-all"
+                        placeholder="PROJE ADI"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Hazırlayan</label>
+                      <input 
+                        value={projectMetadata.author}
+                        onChange={(e) => setProjectMetadata({ author: e.target.value.toUpperCase() })}
+                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-accent-indigo transition-all"
+                        placeholder="İSİM SOYİSİM"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Tarih</label>
+                        <input 
+                          value={projectMetadata.date}
+                          onChange={(e) => setProjectMetadata({ date: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-accent-indigo transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Revizyon</label>
+                        <input 
+                          value={projectMetadata.revision}
+                          onChange={(e) => setProjectMetadata({ revision: e.target.value.toUpperCase() })}
+                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-accent-indigo transition-all"
+                          placeholder="00"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Logo URL (PNG/SVG)</label>
+                      <input 
+                        value={projectMetadata.logoUrl || ''}
+                        onChange={(e) => setProjectMetadata({ logoUrl: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-[10px] font-medium text-slate-500 outline-none focus:border-accent-indigo transition-all"
+                        placeholder="https://..."
+                      />
+                    </div>
+                  </div>
+                </div>
 
                 {/* File Management */}
                 <div className="space-y-3 pt-4 border-t border-slate-200">

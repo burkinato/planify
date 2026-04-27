@@ -10,6 +10,7 @@ import { EditorRightSidebar } from './EditorRightSidebar';
 import { EditorCanvas } from './EditorCanvas';
 import { EditorErrorBoundary } from './EditorErrorBoundary';
 import { TemplateSelectorModal } from './TemplateSelectorModal';
+import { ExportModal } from './ExportModal';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
@@ -22,6 +23,7 @@ export default function EditorApp() {
   const [isPreview, setIsPreview] = useState(false);
   const [mobileMenu, setMobileMenu] = useState<'tools' | 'properties' | null>(null);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(true);
   const stageRef = useRef<Konva.Stage | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -342,6 +344,7 @@ export default function EditorApp() {
           exportImage={exportImage}
           exportPdf={exportPdf}
           onOpenTemplateModal={() => setIsTemplateModalOpen(true)}
+          onOpenExportModal={() => setIsExportModalOpen(true)}
         />
         <div className="flex flex-1 overflow-hidden relative">
           {!isPro && !isPreview && showUpgradeBanner && (
@@ -408,6 +411,17 @@ export default function EditorApp() {
           <TemplateSelectorModal 
             isOpen={isTemplateModalOpen} 
             onClose={() => setIsTemplateModalOpen(false)} 
+          />
+        )}
+
+        {isExportModalOpen && (
+          <ExportModal
+            isOpen={isExportModalOpen}
+            onClose={() => setIsExportModalOpen(false)}
+            stageRef={stageRef}
+            containerRef={containerRef}
+            isPro={isPro}
+            projectName={projects.find(p => p.id === projectId)?.title || 'Yeni Proje'}
           />
         )}
       </div>
