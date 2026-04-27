@@ -1525,96 +1525,134 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                     style={{
                       left: isHeader ? `${region.x}%` : `calc(${region.x}% + 6px)`,
                       top: isHeader ? `${region.y}%` : `calc(${region.y}% + 6px)`,
-                      width: focused ? `max(${region.w}%, 260px)` : isHeader ? `${region.w}%` : `calc(${region.w}% - 12px)`,
-                      height: focused ? `max(${region.h}%, 320px)` : isHeader ? `${region.h}%` : `calc(${region.h}% - 12px)`,
+                      width: focused ? `max(${region.w}%, 280px)` : isHeader ? `${region.w}%` : `calc(${region.w}% - 12px)`,
+                      height: focused ? `max(${region.h}%, 280px)` : isHeader ? `${region.h}%` : `calc(${region.h}% - 12px)`,
                       zIndex: focused ? 40 : undefined,
                       background: isHeader ? activeTemplateLayout.layout_json.accent : undefined,
                     }}
                   >
                     {focused ? (
-                      <div className="flex flex-col h-full bg-white/5 backdrop-blur-sm p-4 animate-fade-in relative z-10">
-                        <div className="flex items-center justify-between mb-3 border-b border-slate-200/20 pb-2">
-                          <div className={cn("text-xs font-black uppercase tracking-widest", isHeader ? "text-white" : "text-slate-500")}>
-                            {region.label} DÜZENLE
+                      <div className="flex flex-col h-full bg-white animate-fade-in relative z-10 overflow-hidden">
+                        {/* Title Bar with Tone-Specific Gradient */}
+                        <div className={cn(
+                          "flex items-center justify-between p-3 border-b shrink-0",
+                          tone === 'red' ? "bg-red-50 border-red-100" :
+                          tone === 'blue' ? "bg-blue-50 border-blue-100" :
+                          tone === 'green' ? "bg-emerald-50 border-emerald-100" :
+                          "bg-slate-50 border-slate-200"
+                        )}>
+                          <div className={cn(
+                            "text-[10px] font-black uppercase tracking-widest flex items-center gap-2",
+                            tone === 'red' ? "text-red-600" :
+                            tone === 'blue' ? "text-blue-600" :
+                            tone === 'green' ? "text-emerald-600" :
+                            "text-slate-500"
+                          )}>
+                            <div className={cn("w-1.5 h-3 rounded-full", 
+                              tone === 'red' ? "bg-red-500" : 
+                              tone === 'blue' ? "bg-blue-500" : 
+                              tone === 'green' ? "bg-emerald-500" : 
+                              "bg-slate-400"
+                            )} />
+                            {region.label}
                           </div>
-                          <button onClick={(e) => { e.stopPropagation(); setFocusedRegionId(null); }} className={cn("w-6 h-6 flex items-center justify-center rounded-full transition-colors", isHeader ? "bg-white/20 hover:bg-white/30 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-600")}>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setFocusedRegionId(null); }} 
+                            className="w-6 h-6 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all active:scale-90"
+                          >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                           </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-1" onWheel={(e) => e.stopPropagation()}>
-                          <div className="space-y-1">
-                            <label className={cn("text-[9px] font-bold uppercase tracking-wider ml-1", isHeader ? "text-white/80" : "text-slate-400")}>Başlık</label>
+
+                        {/* Scrollable Form Content */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" onWheel={(e) => e.stopPropagation()}>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Başlık</label>
                             <input
                               value={content.title || ''}
                               onChange={(event) => updateTemplateRegion(region.id, { title: event.target.value })}
-                              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black uppercase tracking-wide text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all shadow-sm"
+                              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-sm font-black uppercase tracking-wide text-slate-900 outline-none focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-500/10 transition-all shadow-sm placeholder:text-slate-300"
                               placeholder={region.label}
                             />
                           </div>
-                          <div className="space-y-1 flex-1 flex flex-col min-h-0">
-                            <label className={cn("text-[9px] font-bold uppercase tracking-wider ml-1", isHeader ? "text-white/80" : "text-slate-400")}>İçerik</label>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">İçerik</label>
                             <textarea
                               value={content.body || ''}
                               onChange={(event) => updateTemplateRegion(region.id, { body: event.target.value })}
                               onWheel={(e) => e.stopPropagation()}
-                              className="flex-1 w-full resize-none overflow-y-auto rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium leading-relaxed text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all shadow-sm min-h-[120px]"
-                              placeholder={region.type === 'instruction' ? "Ek acil durum talimatlarını veya diğer telefon numaralarını (İtfaiye, İş Güvenliği vb.) buraya girin..." : "Bölge içeriğini buraya girin..."}
+                              rows={4}
+                              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs font-bold leading-relaxed text-slate-700 outline-none focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-500/10 transition-all shadow-sm min-h-[100px] placeholder:text-slate-300"
+                              placeholder={region.type === 'instruction' ? "Ek acil durum talimatlarını veya diğer telefon numaralarını buraya girin..." : "Bölge içeriğini buraya girin..."}
                             />
                           </div>
+
                           {(!isHeader || content.meta !== undefined) && (
-                            <div className="space-y-1">
-                              <label className={cn("text-[9px] font-bold uppercase tracking-wider ml-1", isHeader ? "text-white/80" : "text-slate-400")}>Alt Bilgi / Meta</label>
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Alt Bilgi / Meta</label>
                               <input
                                 value={content.meta || ''}
                                 onChange={(event) => updateTemplateRegion(region.id, { meta: event.target.value })}
-                                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all shadow-sm"
+                                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600 outline-none focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-500/10 transition-all shadow-sm"
                                 placeholder="Kat / Revizyon vs."
                               />
                             </div>
                           )}
+
                           {region.type === 'assembly' && (
-                            <div className="space-y-1">
-                              <label className={cn("text-[9px] font-bold uppercase tracking-wider ml-1", isHeader ? "text-white/80" : "text-slate-400")}>Vaziyet Planı (Resim URL)</label>
+                            <div className="space-y-1.5 pb-2">
+                              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Vaziyet Planı (URL)</label>
                               <input
                                 type="text"
                                 value={content.imageUrl || ''}
                                 onChange={(event) => updateTemplateRegion(region.id, { imageUrl: event.target.value })}
-                                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all shadow-sm"
-                                placeholder="https://... (Resim Linki)"
+                                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-[10px] font-medium text-slate-600 outline-none focus:border-cyan-500 focus:bg-white transition-all shadow-sm"
+                                placeholder="https://..."
                               />
                             </div>
                           )}
                         </div>
                       </div>
                     ) : isHeader ? (
-                      // ── FULL-WIDTH HEADER BLOCK (ISO 23601 style) ──────────────────
-                      <div className="w-full h-full flex items-center" style={{ containerType: 'size' } as React.CSSProperties}>
-                        {/* Left: ISO exit icon block */}
-                        <div className="h-full flex items-center justify-center bg-black/15 flex-shrink-0" style={{ width: 'min(8cqh, 6cqw)' }}>
-                          <svg style={{ width: 'min(5cqh, 4cqw)', height: 'min(5cqh, 4cqw)' }} viewBox="0 0 24 24" fill="white">
+                      // ── IMPROVED HEADER BLOCK ───────────────────────────────────────
+                      <div className="w-full h-full flex items-center group/header relative" style={{ containerType: 'size' } as React.CSSProperties}>
+                        {/* ISO Exit Icon - Clickable to focus */}
+                        <div 
+                          onClick={(e) => { e.stopPropagation(); setFocusedRegionId(region.id); }}
+                          className="h-full flex items-center justify-center bg-black/15 flex-shrink-0 cursor-pointer hover:bg-black/25 transition-colors" 
+                          style={{ width: 'min(10cqh, 7cqw)' }}
+                        >
+                          <svg style={{ width: 'min(6cqh, 5cqw)', height: 'min(6cqh, 5cqw)' }} viewBox="0 0 24 24" fill="white">
                             <path d="M13.5 5a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0zm-1.5 4.5L10 14h4l-1-3 2.5 2 1.5-3-3-1-2 1.5zM3 3h7v2H5v14h14v-6h2v8H3V3z" />
                           </svg>
                         </div>
-                        {/* Center: Main title */}
-                        <div className="flex-1 flex flex-col items-center justify-center text-center px-[2cqw]">
-                          <div
-                            className="font-black uppercase tracking-widest text-white leading-[1.05]"
-                            style={{ fontSize: 'min(28cqh, 4.5cqw)' }}
-                          >
-                            {content.title || region.label}
-                          </div>
-                          {content.meta && (
-                            <div
-                              className="font-semibold uppercase tracking-wider text-white/85 mt-[1.5cqh]"
-                              style={{ fontSize: 'min(14cqh, 2cqw)' }}
-                            >
-                              {content.meta}
-                            </div>
-                          )}
+
+                        {/* Title & Meta Group */}
+                        <div className="flex-1 flex flex-col items-center justify-center text-center px-[3cqw] overflow-hidden">
+                          {/* Title - Transparent Inline Input */}
+                          <input 
+                            value={content.title || ''}
+                            onChange={(e) => updateTemplateRegion(region.id, { title: e.target.value })}
+                            placeholder={region.label}
+                            className="w-full bg-transparent border-none outline-none text-center font-black uppercase tracking-[0.05em] text-white placeholder:text-white/30 leading-[1.1]"
+                            style={{ fontSize: 'min(32cqh, 5cqw)' }}
+                          />
+                          
+                          {/* Meta - Transparent Inline Input (Optional) */}
+                          <input 
+                            value={content.meta || ''}
+                            onChange={(e) => updateTemplateRegion(region.id, { meta: e.target.value })}
+                            placeholder="META BİLGİ"
+                            className="w-full bg-transparent border-none outline-none text-center font-black uppercase tracking-widest text-white/70 placeholder:text-white/20 mt-[1.5cqh] leading-none"
+                            style={{ fontSize: 'min(14cqh, 2cqw)' }}
+                          />
                         </div>
-                        {/* Right: mirror icon block for symmetry */}
-                        <div className="h-full bg-black/10 flex-shrink-0" style={{ width: 'min(4cqh, 3cqw)' }} />
+
+                        {/* Symmetry Block */}
+                        <div className="h-full bg-black/5 flex-shrink-0" style={{ width: 'min(4cqh, 3cqw)' }} />
                       </div>
+
                     ) : (
                       <div className="w-full h-full flex flex-col overflow-hidden" style={{ containerType: 'size' } as React.CSSProperties}>
                         {/* Gradient Pill Header */}
@@ -1708,27 +1746,30 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                               </div>
                               {/* Additional Instructions */}
                               {content.body && (
-                                <div className="flex-1 overflow-hidden relative">
-                                  <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.35]"
+                                <div className="flex-1 overflow-hidden relative flex flex-col justify-center">
+                                  <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.3]"
                                     style={{
-                                      fontSize: `max(13px, min(4cqw, ${65 / ((content.body.split('\n').length || 1) * 1.4)}cqh))`
+                                      fontSize: `max(12px, min(3.8cqw, ${65 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`,
+                                      lineHeight: (content.body.split('\n').length || 1) > 6 ? 1.15 : 1.35
                                     }}>
                                     {content.body}
                                   </p>
                                 </div>
                               )}
+
                             </div>
-                          ) : content.body && (
-                            <div className="flex-1 min-h-0 flex flex-col justify-center">
-                              <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.3]"
-                                style={{
-                                  /* Improved scaling: Uses more of the container height while respecting line count */
-                                  fontSize: `max(11px, min(4cqw, ${85 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`
-                                }}>
-                                {content.body}
-                              </p>
-                            </div>
-                          )}
+                            ) : content.body && (
+                              <div className="flex-1 min-h-0 flex flex-col justify-center">
+                                <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.3]"
+                                  style={{
+                                    fontSize: `max(11px, min(4cqw, ${85 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`,
+                                    lineHeight: (content.body.split('\n').length || 1) > 6 ? 1.15 : 1.3
+                                  }}>
+                                  {content.body}
+                                </p>
+                              </div>
+                            )}
+
 
                           {content.meta && (
                             <p className="shrink-0 mt-auto pt-[2cqh] font-black uppercase tracking-widest text-slate-400"

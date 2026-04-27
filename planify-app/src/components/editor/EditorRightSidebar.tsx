@@ -113,43 +113,87 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
         ) : (
           <div className="flex-1 p-3 overflow-y-auto space-y-4">
             {focusedRegion && focusedRegion.type !== 'drawing' ? (
-              <div className="space-y-4 animate-fade-in">
-                <div>
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Sablon Bolgesi</label>
-                  <div className="mt-2 rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
-                    <div className="text-xs font-black uppercase tracking-widest text-cyan-800">{focusedRegion.label}</div>
-                    <div className="mt-1 text-[10px] font-bold text-cyan-700">{focusedRegion.type}</div>
+              <div className="space-y-5 animate-fade-in">
+                {/* Region Info Header */}
+                <div className={cn(
+                  "rounded-2xl border p-4 shadow-sm transition-all",
+                  focusedRegion.tone === 'red' ? "border-red-100 bg-red-50" : 
+                  focusedRegion.tone === 'blue' ? "border-blue-100 bg-blue-50" : 
+                  focusedRegion.tone === 'green' ? "border-emerald-100 bg-emerald-50" : 
+                  "border-slate-100 bg-slate-50"
+                )}>
+                  <div className={cn(
+                    "text-[10px] font-black uppercase tracking-[0.2em]",
+                    focusedRegion.tone === 'red' ? "text-red-800" : 
+                    focusedRegion.tone === 'blue' ? "text-blue-800" : 
+                    focusedRegion.tone === 'green' ? "text-emerald-800" : 
+                    "text-slate-500"
+                  )}>
+                    {focusedRegion.label}
                   </div>
+                  <div className="mt-1 text-[9px] font-bold opacity-60 uppercase tracking-widest">{focusedRegion.type} BÖLGESİ</div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Baslik</label>
-                  <input
-                    value={focusedRegionState?.title || ''}
-                    onChange={(event) => updateTemplateRegion(focusedRegion.id, { title: event.target.value })}
-                    className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs font-black text-slate-800 outline-none focus:border-cyan-500"
-                  />
+
+                {/* Edit Fields */}
+                <div className="space-y-4">
+                  {/* Title */}
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Başlık</label>
+                    <input
+                      value={focusedRegionState?.title || ''}
+                      onChange={(event) => updateTemplateRegion(focusedRegion.id, { title: event.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs font-black text-slate-800 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm"
+                      placeholder={focusedRegion.label}
+                    />
+                  </div>
+
+                  {/* Body / Content (HIDDEN for Header) */}
+                  {focusedRegion.type !== 'header' && (
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">İçerik Detayları</label>
+                      <textarea
+                        value={focusedRegionState?.body || ''}
+                        onChange={(event) => updateTemplateRegion(focusedRegion.id, { body: event.target.value })}
+                        className="min-h-[160px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-xs font-semibold leading-relaxed text-slate-700 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm"
+                        placeholder="Satır satır talimatları veya içeriği girin..."
+                      />
+                    </div>
+                  )}
+
+                  {/* Meta / Subtext (Smart visibility) */}
+                  {(focusedRegionState?.meta || focusedRegion.type === 'approval' || focusedRegion.type === 'header') && (
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">
+                        {focusedRegion.type === 'header' ? 'Alt Başlık / Kat Bilgisi' : 'Alt Bilgi / Meta'}
+                      </label>
+                      <input
+                        value={focusedRegionState?.meta || ''}
+                        onChange={(event) => updateTemplateRegion(focusedRegion.id, { meta: event.target.value })}
+                        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs font-bold text-slate-600 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm"
+                        placeholder="Örn: 2. Kat / Rev-01"
+                      />
+                    </div>
+                  )}
+
+                  {/* Image URL for specific types */}
+                  {(focusedRegion.type === 'assembly' || focusedRegionState?.imageUrl) && (
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Görsel URL</label>
+                      <input
+                        value={focusedRegionState?.imageUrl || ''}
+                        onChange={(event) => updateTemplateRegion(focusedRegion.id, { imageUrl: event.target.value })}
+                        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-[10px] font-medium text-slate-500 outline-none focus:border-cyan-500 shadow-sm"
+                        placeholder="https://..."
+                      />
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Icerik</label>
-                  <textarea
-                    value={focusedRegionState?.body || ''}
-                    onChange={(event) => updateTemplateRegion(focusedRegion.id, { body: event.target.value })}
-                    className="min-h-40 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-xs font-semibold leading-relaxed text-slate-700 outline-none focus:border-cyan-500"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Meta / Revizyon</label>
-                  <input
-                    value={focusedRegionState?.meta || ''}
-                    onChange={(event) => updateTemplateRegion(focusedRegion.id, { meta: event.target.value })}
-                    className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs font-bold text-slate-700 outline-none focus:border-cyan-500"
-                  />
-                </div>
+
                 <button
                   onClick={() => setFocusedRegionId(null)}
-                  className="w-full rounded-xl bg-slate-900 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-slate-800"
+                  className="w-full rounded-xl bg-slate-900 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-slate-800 shadow-lg"
                 >
-                  Geri Gel
+                  Tamamla ve Dön
                 </button>
               </div>
             ) : selectedElement ? (
