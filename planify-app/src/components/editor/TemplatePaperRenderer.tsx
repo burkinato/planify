@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, BadgeCheck, ClipboardList, Flame, MapPinned, ShieldCheck, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, ClipboardList, Flame, MapPinned, ShieldCheck, Image as ImageIcon, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/store/useEditorStore';
 import { mergeTemplateState } from '@/lib/editor/templateLayouts';
@@ -55,17 +55,43 @@ function ReadOnlyRegion({ region, title, body, meta }: { region: TemplateRegion;
   }
 
   if (region.type === 'header') {
-    const { projectMetadata } = useEditorStore();
+    const { projectMetadata, setProjectMetadata } = useEditorStore();
+    
+    const handleLogoClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (ev) => {
+        const file = (ev.target as HTMLInputElement).files?.[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (re) => {
+            setProjectMetadata({ logoUrl: re.target?.result as string });
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      input.click();
+    };
+
     return (
-      <div className="flex h-full items-center justify-between px-6 gap-4 overflow-hidden">
+      <div className="flex h-full items-center justify-between px-6 gap-4 overflow-hidden relative">
         {/* Logo Section */}
-        <div className="flex-shrink-0 w-[clamp(40px,6vw,80px)] aspect-square bg-white/10 rounded-xl border border-white/10 flex items-center justify-center p-1.5 backdrop-blur-sm shadow-inner group-hover:bg-white/20 transition-colors">
+        <button 
+          onClick={handleLogoClick}
+          title="Logo Yükle / Değiştir"
+          className="flex-shrink-0 w-[clamp(40px,6vw,80px)] aspect-square bg-white/10 rounded-xl border border-white/10 flex items-center justify-center p-1.5 backdrop-blur-sm shadow-inner hover:bg-white/20 transition-all group/logo relative overflow-hidden"
+        >
            {projectMetadata.logoUrl ? (
              <img src={projectMetadata.logoUrl} alt="Logo" className="max-h-full max-w-full object-contain filter brightness-0 invert" />
            ) : (
              <ImageIcon className="w-1/2 h-1/2 text-white/40" />
            )}
-        </div>
+           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/logo:opacity-100 transition-opacity flex items-center justify-center">
+             <Plus className="w-4 h-4 text-white" />
+           </div>
+        </button>
 
         {/* Title Section */}
         <div className="flex-1 flex flex-col items-center justify-center text-center">
@@ -102,9 +128,6 @@ function ReadOnlyRegion({ region, title, body, meta }: { region: TemplateRegion;
 function RegionEditor({
   region,
   title,
-  body,
-  meta,
-  onUpdate,
 }: {
   region: TemplateRegion;
   title?: string;
@@ -112,37 +135,28 @@ function RegionEditor({
   meta?: string;
   onUpdate: (updates: { title?: string; body?: string; meta?: string }) => void;
 }) {
-  if (region.type === 'header') {
-    return (
-      <div className="flex h-full items-center justify-center p-4">
-        <div className="text-center space-y-2 animate-pulse">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Başlık Düzenleme Modu</div>
-          <div className="text-[9px] font-bold text-white/20 uppercase">İçeriği sağ panelden değiştirebilirsiniz</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="grid h-full grid-rows-[auto_1fr_auto] gap-2 p-3">
-      <input
-        value={title || ''}
-        onChange={(event) => onUpdate({ title: event.target.value })}
-        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black uppercase tracking-wider text-slate-900 outline-none focus:border-cyan-500"
-        placeholder={region.label}
-      />
-      <textarea
-        value={body || ''}
-        onChange={(event) => onUpdate({ body: event.target.value })}
-        className="min-h-0 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold leading-relaxed text-slate-700 outline-none focus:border-cyan-500"
-        placeholder="Bolge icerigi"
-      />
-      <input
-        value={meta || ''}
-        onChange={(event) => onUpdate({ meta: event.target.value })}
-        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600 outline-none focus:border-cyan-500"
-        placeholder="Meta / revizyon / kat bilgisi"
-      />
+    <div className="relative h-full w-full flex flex-col items-center justify-center p-4 bg-cyan-500/5 backdrop-blur-[2px]">
+      {/* CAD-style corner markers */}
+      <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-cyan-500" />
+      <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-cyan-500" />
+      <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-cyan-500" />
+      <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-cyan-500" />
+      
+      <div className="text-center space-y-2">
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-600">Düzenleme Modu</span>
+        </div>
+        <div className="text-[11px] font-black text-slate-800 uppercase tracking-tight truncate max-w-[200px]">
+          {title || region.label}
+        </div>
+        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+          Detaylar için sağ paneli kullanın
+        </p>
+      </div>
+
+      {/* Floating quick actions could go here, but keep it clean for now */}
     </div>
   );
 }
@@ -205,9 +219,9 @@ export function TemplatePaperRenderer({
                 'absolute overflow-hidden rounded-[8px] border transition-all duration-300',
                 toneStyles[region.tone || 'neutral'],
                 isHeader && 'border-none',
-                focused && 'z-30 scale-[1.015] shadow-[0_18px_45px_rgba(8,145,178,0.24)] ring-2 ring-cyan-500',
+                focused && 'z-30 ring-2 ring-cyan-500 shadow-[0_0_0_4px_rgba(6,182,212,0.1),0_20px_50px_rgba(0,0,0,0.3)]',
                 dimmed && 'pointer-events-none opacity-25 grayscale',
-                !focused && 'cursor-pointer hover:shadow-lg'
+                !focused && 'cursor-pointer hover:shadow-lg hover:border-cyan-500/50'
               )}
               style={{
                 left: `${region.x}%`,

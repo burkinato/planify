@@ -557,14 +557,40 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Logo URL (PNG/SVG)</label>
-                      <input 
-                        value={projectMetadata.logoUrl || ''}
-                        onChange={(e) => setProjectMetadata({ logoUrl: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-[10px] font-medium text-slate-500 outline-none focus:border-accent-indigo transition-all"
-                        placeholder="https://..."
-                      />
+                    <div className="space-y-2">
+                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Kurumsal Logo (PNG/SVG)</label>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'image/*';
+                            input.onchange = (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (re) => {
+                                  setProjectMetadata({ logoUrl: re.target?.result as string });
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            };
+                            input.click();
+                          }}
+                          className="flex-1 bg-white border border-slate-200 p-2 rounded-lg text-[10px] font-black text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Plus className="w-3 h-3" /> Logo Yükle
+                        </button>
+                        {projectMetadata.logoUrl && (
+                          <button 
+                            onClick={() => setProjectMetadata({ logoUrl: '' })}
+                            className="p-2 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-all"
+                            title="Logoyu Kaldır"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
