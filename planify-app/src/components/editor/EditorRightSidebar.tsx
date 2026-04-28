@@ -151,18 +151,18 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                     />
                   </div>
 
-                  {/* Body / Content (HIDDEN for Header) */}
-                  {focusedRegion.type !== 'header' && (
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">İçerik Detayları</label>
-                      <textarea
-                        value={focusedRegionState?.body || ''}
-                        onChange={(event) => updateTemplateRegion(focusedRegion.id, { body: event.target.value })}
-                        className="min-h-[160px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-xs font-semibold leading-relaxed text-slate-700 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm"
-                        placeholder="Satır satır talimatları veya içeriği girin..."
-                      />
-                    </div>
-                  )}
+                  {/* Body / Content */}
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">
+                      {focusedRegion.type === 'header' ? 'Alt Başlık (İngilizce/Detay)' : 'İçerik Detayları'}
+                    </label>
+                    <textarea
+                      value={focusedRegionState?.body || ''}
+                      onChange={(event) => updateTemplateRegion(focusedRegion.id, { body: event.target.value })}
+                      className="min-h-[120px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-xs font-semibold leading-relaxed text-slate-700 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm"
+                      placeholder={focusedRegion.type === 'header' ? "Örn: Emergency Evacuation Plan" : "Satır satır talimatları veya içeriği girin..."}
+                    />
+                  </div>
 
                   {/* Meta / Subtext (Smart visibility) */}
                   {(focusedRegionState?.meta || focusedRegion.type === 'approval' || focusedRegion.type === 'header') && (

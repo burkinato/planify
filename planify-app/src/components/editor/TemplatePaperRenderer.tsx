@@ -1,7 +1,8 @@
 'use client';
 
-import { ArrowLeft, BadgeCheck, ClipboardList, Flame, MapPinned, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, ClipboardList, Flame, MapPinned, ShieldCheck, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useEditorStore } from '@/store/useEditorStore';
 import { mergeTemplateState } from '@/lib/editor/templateLayouts';
 import type { TemplateLayout, TemplateRegion, TemplateState } from '@/types/editor';
 
@@ -54,11 +55,34 @@ function ReadOnlyRegion({ region, title, body, meta }: { region: TemplateRegion;
   }
 
   if (region.type === 'header') {
+    const { projectMetadata } = useEditorStore();
     return (
-      <div className="flex h-full flex-col justify-center overflow-hidden px-4">
-        <div className="text-[clamp(12px,1.7vw,28px)] font-black uppercase leading-none tracking-wide text-white">{title || region.label}</div>
-        <div className="mt-1 text-[clamp(8px,0.75vw,13px)] font-bold text-white/85">{body}</div>
-        {meta && <div className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/80">{meta}</div>}
+      <div className="flex h-full items-center justify-between px-6 gap-4 overflow-hidden">
+        {/* Logo Section */}
+        <div className="flex-shrink-0 w-[clamp(40px,6vw,80px)] aspect-square bg-white/10 rounded-xl border border-white/10 flex items-center justify-center p-1.5 backdrop-blur-sm shadow-inner group-hover:bg-white/20 transition-colors">
+           {projectMetadata.logoUrl ? (
+             <img src={projectMetadata.logoUrl} alt="Logo" className="max-h-full max-w-full object-contain filter brightness-0 invert" />
+           ) : (
+             <ImageIcon className="w-1/2 h-1/2 text-white/40" />
+           )}
+        </div>
+
+        {/* Title Section */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <div className="text-[clamp(14px,2.2vw,34px)] font-black uppercase leading-tight tracking-tight text-white drop-shadow-md">
+            {title || region.label}
+          </div>
+          <div className="mt-1 text-[clamp(8px,0.85vw,15px)] font-bold text-white/75 uppercase tracking-[0.1em]">
+            {body}
+          </div>
+        </div>
+
+        {/* Meta Section */}
+        <div className="flex-shrink-0 text-right min-w-[clamp(80px,10vw,150px)] hidden sm:block border-l border-white/10 pl-4 h-1/2 flex flex-col justify-center">
+          <div className="text-[clamp(8px,0.7vw,11px)] font-black uppercase tracking-[0.15em] text-white/90 whitespace-pre-line leading-relaxed">
+            {meta || 'KAT: ZEMİN KAT\nREV: 00'}
+          </div>
+        </div>
       </div>
     );
   }
@@ -88,6 +112,17 @@ function RegionEditor({
   meta?: string;
   onUpdate: (updates: { title?: string; body?: string; meta?: string }) => void;
 }) {
+  if (region.type === 'header') {
+    return (
+      <div className="flex h-full items-center justify-center p-4">
+        <div className="text-center space-y-2 animate-pulse">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Başlık Düzenleme Modu</div>
+          <div className="text-[9px] font-bold text-white/20 uppercase">İçeriği sağ panelden değiştirebilirsiniz</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid h-full grid-rows-[auto_1fr_auto] gap-2 p-3">
       <input
