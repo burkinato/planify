@@ -4,7 +4,8 @@ import { ArrowLeft, BadgeCheck, ClipboardList, Flame, MapPinned, ShieldCheck, Im
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/store/useEditorStore';
 import { mergeTemplateState } from '@/lib/editor/templateLayouts';
-import type { TemplateLayout, TemplateRegion, TemplateState } from '@/types/editor';
+import { SYMBOLS } from '@/types/editor';
+import type { TemplateLayout, TemplateRegion, TemplateState, SymbolTemplate } from '@/types/editor';
 
 interface TemplatePaperRendererProps {
   layout: TemplateLayout;
@@ -34,19 +35,54 @@ function RegionIcon({ region }: { region: TemplateRegion }) {
   return <ClipboardList className="h-4 w-4" />;
 }
 
+function getDynamicFontSize(text: string, baseSize: number, maxLength: number = 100) {
+  if (!text) return `${baseSize}px`;
+  const length = text.length;
+  if (length <= maxLength) return `${baseSize}px`;
+  const scaleFactor = Math.max(0.6, maxLength / length);
+  return `${baseSize * scaleFactor}px`;
+}
+
 function ReadOnlyRegion({ region, title, body, meta }: { region: TemplateRegion; title?: string; body?: string; meta?: string }) {
+  const { elements } = useEditorStore();
+
   if (region.type === 'legend') {
+    // ... (rest of the logic same as before, but with dynamic sizing for symbol names)
+    const usedSymbolTypes = Array.from(new Set(
+      elements
+        .filter(el => el.type === 'symbol' && el.symbolType)
+        .map(el => el.symbolType)
+    ));
+
+    const usedSymbols = usedSymbolTypes
+      .map(type => SYMBOLS.find(s => s.id === type))
+      .filter(Boolean) as SymbolTemplate[];
+
+    const displaySymbols = usedSymbols.length > 0 
+      ? usedSymbols 
+      : SYMBOLS.filter(s => ['E001', 'E003', 'F001', 'F004', 'E007', 'E004'].includes(s.id));
+
     return (
-      <div className="h-full overflow-hidden p-3">
-        <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-700">
+      <div className="h-full overflow-hidden p-3 flex flex-col">
+        <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-700 flex-shrink-0">
           <RegionIcon region={region} />
           {title || region.label}
         </div>
-        <div className="grid grid-cols-1 gap-1 text-[9px] font-bold text-slate-600">
-          {['Acil Cikis', 'Tahliye Yolu', 'Yangin Tupu', 'Yangin Alarmi', 'Toplanma Alani', 'Buradasiniz'].map((item, index) => (
-            <div key={item} className="flex items-center gap-2">
-              <span className={cn('h-3 w-3 rounded-sm', index < 2 ? 'bg-emerald-600' : index < 4 ? 'bg-red-600' : 'bg-blue-700')} />
-              {item}
+        <div className="grid grid-cols-1 gap-1.5 overflow-y-auto pr-1 custom-scrollbar">
+          {displaySymbols.map((symbol) => (
+            <div key={symbol.id} className="flex items-center gap-2">
+               <div 
+                className="h-3.5 w-3.5 rounded-sm flex-shrink-0 flex items-center justify-center border border-black/5"
+                style={{ backgroundColor: symbol.color }}
+              >
+                <div className="w-1.5 h-1.5 bg-white/20 rounded-full" />
+              </div>
+              <span 
+                className="font-bold text-slate-700 truncate uppercase tracking-tight"
+                style={{ fontSize: getDynamicFontSize(symbol.name, 9, 20) }}
+              >
+                {symbol.name}
+              </span>
             </div>
           ))}
         </div>
@@ -55,6 +91,7 @@ function ReadOnlyRegion({ region, title, body, meta }: { region: TemplateRegion;
   }
 
   if (region.type === 'header') {
+    // ... (rest of the header logic as before)
     const { projectMetadata, setProjectMetadata } = useEditorStore();
     
     const handleLogoClick = (e: React.MouseEvent) => {
@@ -96,17 +133,17 @@ function ReadOnlyRegion({ region, title, body, meta }: { region: TemplateRegion;
         {/* Title Section */}
         <div className="flex-1 flex flex-col items-center justify-center text-center">
           <div className="text-[clamp(14px,2.2vw,34px)] font-black uppercase leading-tight tracking-tight text-white drop-shadow-md">
-            {title || region.label}
+            {title || 'ACİL DURUM TAHLİYE PLANI'}
           </div>
           <div className="mt-1 text-[clamp(8px,0.85vw,15px)] font-bold text-white/75 uppercase tracking-[0.1em]">
-            {body}
+            {body || 'Emergency Evacuation Plan'}
           </div>
         </div>
 
         {/* Meta Section */}
         <div className="flex-shrink-0 text-right min-w-[clamp(80px,10vw,150px)] hidden sm:block border-l border-white/10 pl-4 h-1/2 flex flex-col justify-center">
           <div className="text-[clamp(8px,0.7vw,11px)] font-black uppercase tracking-[0.15em] text-white/90 whitespace-pre-line leading-relaxed">
-            {meta || 'KAT: ZEMİN KAT\nREV: 00'}
+            {meta || `PROJE: ${projectMetadata.name}\nREV: ${projectMetadata.revision}`}
           </div>
         </div>
       </div>
@@ -114,13 +151,25 @@ function ReadOnlyRegion({ region, title, body, meta }: { region: TemplateRegion;
   }
 
   return (
-    <div className="h-full overflow-hidden p-3">
-      <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-800">
+    <div className="h-full overflow-hidden p-3 flex flex-col">
+      <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-800 flex-shrink-0">
         <RegionIcon region={region} />
         {title || region.label}
       </div>
-      <p className="whitespace-pre-line text-[10px] font-semibold leading-relaxed text-slate-700">{body}</p>
-      {meta && <p className="mt-2 text-[9px] font-bold uppercase tracking-widest text-slate-500">{meta}</p>}
+      <p 
+        className="whitespace-pre-line font-semibold leading-relaxed text-slate-700 overflow-y-auto custom-scrollbar"
+        style={{ fontSize: getDynamicFontSize(body || '', 10, 150) }}
+      >
+        {body}
+      </p>
+      {meta && (
+        <p 
+          className="mt-2 font-bold uppercase tracking-widest text-slate-500 flex-shrink-0"
+          style={{ fontSize: getDynamicFontSize(meta, 9, 50) }}
+        >
+          {meta}
+        </p>
+      )}
     </div>
   );
 }
