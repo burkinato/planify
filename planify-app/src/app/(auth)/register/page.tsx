@@ -255,6 +255,7 @@ export default function RegisterPage() {
               className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-xs"
             />
           </div>
+          <PasswordStrength password={formData.password} />
         </div>
 
         <div>

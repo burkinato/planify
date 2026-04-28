@@ -7,7 +7,6 @@ import {
   Filter, 
   MoreVertical, 
   UserPlus, 
-  Shield, 
   Mail, 
   Calendar,
   CreditCard
@@ -16,7 +15,16 @@ import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
 export default function UserManagement() {
-  const [users, setUsers] = useState<any[]>([]);
+  type AdminUser = {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    company: string | null;
+    subscription_tier: 'free' | 'pro' | string | null;
+    created_at: string;
+  };
+
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 

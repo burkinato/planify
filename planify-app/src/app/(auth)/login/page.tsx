@@ -15,30 +15,6 @@ import {
 } from '@/lib/auth/session';
 import { useAuthStore } from '@/store/useAuthStore';
 
-function OAuthButton({
-  onClick,
-  icon,
-  label,
-  disabled,
-}: {
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      type="button"
-      disabled={disabled}
-      className="w-full py-3 px-4 bg-white border border-slate-200 rounded-xl text-slate-700 font-semibold text-sm hover:bg-slate-50 hover:border-slate-300 hover:shadow-md transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
-
 const GoogleIcon = () => (
   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

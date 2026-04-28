@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import type Konva from 'konva';
 import { Line, Group, Shape } from 'react-konva';
-import { computeRenderPoints, wallPoints, wallLength, type WallElement } from '@/lib/editor/wallGeometry';
+import { computeRenderPoints, wallLength, type WallElement } from '@/lib/editor/wallGeometry';
 import type { EditorTheme, THEME_CONFIGS } from '@/types/editor';
+
+type WallMoveUpdateMap = Record<string, Partial<WallElement>>;
 
 interface WallRendererProps {
   walls: WallElement[];
@@ -11,13 +14,13 @@ interface WallRendererProps {
   themeConfig: (typeof THEME_CONFIGS)[EditorTheme];
   isLockedMap: Record<string, boolean>;
   tool: string;
-  onSelect: (id: string, isLocked: boolean, e: any) => void;
+  onSelect: (id: string, isLocked: boolean, e: Konva.KonvaEventObject<Event>) => void;
   onUpdate: (id: string, updates: Partial<WallElement>) => void;
-  onDragStart: (id: string, isLocked: boolean, e: any) => void;
+  onDragStart: (id: string, isLocked: boolean, e: Konva.KonvaEventObject<DragEvent>) => void;
   onRemove: (ids: string[]) => void;
-  onUpdateBatch: (updates: any) => void;
+  onUpdateBatch: (updates: WallMoveUpdateMap) => void;
   getHatchPattern: () => CanvasPattern | null;
-  buildWallMoveUpdates: any;
+  buildWallMoveUpdates: (wall: WallElement, walls: WallElement[], dx: number, dy: number) => WallMoveUpdateMap;
 }
 
 export const WallRenderer = React.memo(({
@@ -27,7 +30,6 @@ export const WallRenderer = React.memo(({
   isLockedMap,
   tool,
   onSelect,
-  onUpdate,
   onDragStart,
   onRemove,
   onUpdateBatch,

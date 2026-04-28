@@ -121,7 +121,12 @@ function sanitizeTemplateRegionState(value: unknown): TemplateRegionState {
   if (typeof value.title === 'string') nextState.title = value.title;
   if (typeof value.body === 'string') nextState.body = value.body;
   if (typeof value.meta === 'string') nextState.meta = value.meta;
+  if (typeof value.imagePath === 'string') nextState.imagePath = value.imagePath;
   if (typeof value.imageUrl === 'string') nextState.imageUrl = value.imageUrl;
+  if (typeof value.imageAlt === 'string') nextState.imageAlt = value.imageAlt;
+  if (value.mediaMode === 'visual-first' || value.mediaMode === 'text-first') {
+    nextState.mediaMode = value.mediaMode;
+  }
 
   return nextState;
 }

@@ -1,11 +1,27 @@
 'use client';
 
 import React from 'react';
+import type Konva from 'konva';
 import { Group, Rect, Line, Text, Circle, Shape } from 'react-konva';
-import { wallPoints } from '@/lib/editor/wallGeometry';
+import type { EditorElement, EditorTheme, THEME_CONFIGS } from '@/types/editor';
+
+type ElementRendererProps = {
+  el: EditorElement;
+  isSelected: boolean;
+  canInteract: boolean;
+  isLocked: boolean;
+  themeConfig: (typeof THEME_CONFIGS)[EditorTheme];
+  onSelect: (id: string, isLocked: boolean, e: Konva.KonvaEventObject<Event>) => void;
+  onDragStart: (id: string, isLocked: boolean, e: Konva.KonvaEventObject<DragEvent>) => void;
+  onUpdate: (id: string, updates: Partial<EditorElement>) => void;
+};
+
+type SnappingElementRendererProps = ElementRendererProps & {
+  calculateSnapToWall: (el: EditorElement, x: number, y: number) => Partial<EditorElement>;
+};
 
 // STAIRS
-export const StairRenderer = React.memo(({ el, isSelected, canInteract, isLocked, themeConfig, onSelect, onDragStart, onUpdate }: any) => {
+export const StairRenderer = React.memo(({ el, isSelected, canInteract, isLocked, themeConfig, onSelect, onDragStart, onUpdate }: ElementRendererProps) => {
     const w = el.width || 100;
     const h = el.height || 120;
     const type = el.stairsType || 'straight';
@@ -14,9 +30,9 @@ export const StairRenderer = React.memo(({ el, isSelected, canInteract, isLocked
     
     const dragProps = {
       draggable: canInteract,
-      onClick: (e: any) => onSelect(el.id, isLocked, e),
-      onDragStart: (e: any) => onDragStart(el.id, isLocked, e),
-      onDragEnd: (e: any) => onUpdate(el.id, { x: e.target.x(), y: e.target.y() }),
+      onClick: (e: Konva.KonvaEventObject<Event>) => onSelect(el.id, isLocked, e),
+      onDragStart: (e: Konva.KonvaEventObject<DragEvent>) => onDragStart(el.id, isLocked, e),
+      onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => onUpdate(el.id, { x: e.target.x(), y: e.target.y() }),
     };
 
     if (type === 'straight') {
@@ -39,9 +55,10 @@ export const StairRenderer = React.memo(({ el, isSelected, canInteract, isLocked
     }
     return null;
 });
+StairRenderer.displayName = 'StairRenderer';
 
 // ELEVATOR
-export const ElevatorRenderer = React.memo(({ el, isSelected, canInteract, isLocked, themeConfig, onSelect, onDragStart, onUpdate }: any) => {
+export const ElevatorRenderer = React.memo(({ el, isSelected, canInteract, isLocked, themeConfig, onSelect, onDragStart, onUpdate }: ElementRendererProps) => {
     const w = el.width || 80;
     const h = el.height || 80;
     return (
@@ -61,9 +78,10 @@ export const ElevatorRenderer = React.memo(({ el, isSelected, canInteract, isLoc
       </Group>
     );
 });
+ElevatorRenderer.displayName = 'ElevatorRenderer';
 
 // COLUMN
-export const ColumnRenderer = React.memo(({ el, isSelected, canInteract, isLocked, themeConfig, onSelect, onDragStart, onUpdate, calculateSnapToWall }: any) => {
+export const ColumnRenderer = React.memo(({ el, isSelected, canInteract, isLocked, themeConfig, onSelect, onDragStart, onUpdate, calculateSnapToWall }: SnappingElementRendererProps) => {
     const size = el.width || 30;
     return (
       <Group
@@ -84,9 +102,10 @@ export const ColumnRenderer = React.memo(({ el, isSelected, canInteract, isLocke
       </Group>
     );
 });
+ColumnRenderer.displayName = 'ColumnRenderer';
 
 // DOOR
-export const DoorRenderer = React.memo(({ el, isSelected, canInteract, isLocked, themeConfig, onSelect, onDragStart, onUpdate, calculateSnapToWall }: any) => {
+export const DoorRenderer = React.memo(({ el, isSelected, canInteract, isLocked, themeConfig, onSelect, onDragStart, onUpdate, calculateSnapToWall }: SnappingElementRendererProps) => {
     const pts = el.points || [0,0,80,0];
     const dx = pts[2] - pts[0]; const dy = pts[3] - pts[1];
     const length = Math.sqrt(dx*dx + dy*dy);
@@ -118,9 +137,10 @@ export const DoorRenderer = React.memo(({ el, isSelected, canInteract, isLocked,
       </Group>
     );
 });
+DoorRenderer.displayName = 'DoorRenderer';
 
 // WINDOW
-export const WindowRenderer = React.memo(({ el, isSelected, canInteract, isLocked, themeConfig, onSelect, onDragStart, onUpdate, calculateSnapToWall }: any) => {
+export const WindowRenderer = React.memo(({ el, isSelected, canInteract, isLocked, themeConfig, onSelect, onDragStart, onUpdate, calculateSnapToWall }: SnappingElementRendererProps) => {
     const pts = el.points || [0,0,0,0];
     const dx = pts[2] - pts[0]; const dy = pts[3] - pts[1];
     const length = Math.sqrt(dx*dx + dy*dy);
@@ -147,3 +167,4 @@ export const WindowRenderer = React.memo(({ el, isSelected, canInteract, isLocke
       </Group>
     );
 });
+WindowRenderer.displayName = 'WindowRenderer';

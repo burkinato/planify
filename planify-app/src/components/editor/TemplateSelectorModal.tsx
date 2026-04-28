@@ -1,16 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { 
-  Check, Database, LayoutTemplate, Monitor, Smartphone, X, 
-  Lock, Crown, ShieldCheck, Zap, Building2, Wrench, Palette, Filter,
-  ArrowRight, Sparkles, AlertCircle, MapPin
+import {
+  Check, Database, LayoutTemplate, Monitor, Smartphone, Sparkles, X,
+  Lock, ShieldCheck, Building2, Wrench, Palette, Filter,
+  ArrowRight, AlertCircle, MapPin
 } from 'lucide-react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { useProjectStore } from '@/store/useProjectStore';
-import { useAuthStore } from '@/store/useAuthStore';
 import { cn } from '@/lib/utils';
 import { FALLBACK_TEMPLATE_LAYOUTS } from '@/lib/editor/templateLayouts';
 import type { PagePreset, TemplateLayout, TemplateRegion } from '@/types/editor';
-import { toast } from 'sonner';
 
 interface TemplateSelectorModalProps {
   isOpen: boolean;
@@ -31,6 +29,7 @@ const CATEGORY_META: Record<string, { label: string; Icon: React.ElementType; co
   SAHA:      { label: 'Saha / Şantiye', Icon: MapPin,         color: 'text-emerald-600' },
   KAMU:      { label: 'Kamu / Devlet', Icon: Building2,      color: 'text-blue-700' },
   GENEL:     { label: 'Genel Amaçlı', Icon: LayoutTemplate, color: 'text-slate-500' },
+  PREMIUM:   { label: 'Premium 3D', Icon: Sparkles, color: 'text-indigo-600' },
 };
 
 const PRESETS: { id: PagePreset; label: string; sub: string; Icon: React.ElementType }[] = [
@@ -46,7 +45,8 @@ function TemplateThumbnail({ layout }: { layout: TemplateLayout }) {
   const toneStyle = (region: TemplateRegion): React.CSSProperties => {
     if (region.type === 'header')  return { background: `linear-gradient(135deg, ${accent}, ${accent}dd)`, borderColor: accent, color: 'white' };
     if (region.type === 'drawing') return { background: '#fcfdfd', borderColor: '#0ea5e9', borderWidth: 2, borderStyle: 'dashed' };
-    
+    if (region.type === 'emergency') return { background: 'linear-gradient(135deg,#dc2626,#ef4444)', borderColor: '#dc2626', color: 'white', boxShadow: '0 10px 22px rgba(220,38,38,.18)' };
+
     const map: Record<string, React.CSSProperties> = {
       red:     { background: '#fef2f2', borderColor: '#ef4444', borderLeftWidth: 4 },
       blue:    { background: '#eff6ff', borderColor: '#3b82f6', borderLeftWidth: 4 },
@@ -115,9 +115,9 @@ function TemplateThumbnail({ layout }: { layout: TemplateLayout }) {
 }
 
 // ── Ana modal ─────────────────────────────────────────────────────────────────
-export function TemplateSelectorModal({ 
-  isOpen, 
-  onClose, 
+export function TemplateSelectorModal({
+  isOpen,
+  onClose,
   onSelect,
   initialLayout,
   initialPreset
@@ -130,10 +130,8 @@ export function TemplateSelectorModal({
     setProjectTemplate,
   } = useEditorStore();
   const { templateLayouts, fetchTemplateLayouts } = useProjectStore();
-  const { profile } = useAuthStore();
-  
   const isPro = true; // Force all users to be treated as Pro for templates
-  
+
   const [activeCategory, setActiveCategory] = useState('TUMU');
   const [localSelectedLayout, setLocalSelectedLayout] = useState<TemplateLayout | null>(
     initialLayout !== undefined ? initialLayout : activeTemplateLayout
@@ -166,7 +164,7 @@ export function TemplateSelectorModal({
     return layouts.filter((layout) => {
       // Kategori filtresi
       const categoryMatch = activeCategory === 'TUMU' || layout.category?.toUpperCase() === activeCategory.toUpperCase();
-      
+
       // Sayfa yönü filtresi
       const lp = layout.normalizedPreset;
       const cp = localPagePreset.toLowerCase();
@@ -227,7 +225,7 @@ export function TemplateSelectorModal({
 
         {/* ── İçerik alanı ── */}
         <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[240px_1fr_320px]">
-          
+
           {/* Sol: Filtreler ve Kategoriler */}
           <div className="hidden lg:flex flex-col border-r border-slate-100 p-5 bg-slate-50/50 overflow-y-auto custom-scrollbar">
             <div className="mb-8">
@@ -244,8 +242,8 @@ export function TemplateSelectorModal({
                       setLocalPagePreset(id);
                       if (localSelectedLayout) {
                         const style = localSelectedLayout.layout_json.style;
-                        const next = layouts.find(l => 
-                          l.layout_json.style === style && 
+                        const next = layouts.find(l =>
+                          l.layout_json.style === style &&
                           l.normalizedPreset === targetPreset
                         );
                         if (next) setLocalSelectedLayout(next);
@@ -335,7 +333,6 @@ export function TemplateSelectorModal({
               {/* Şablonlar */}
               {visibleLayouts.map((layout) => {
                 const isSelected = localSelectedLayout?.id === layout.id;
-                const isLocked = layout.is_pro && !isPro;
                 return (
                   <button
                     key={layout.id}
@@ -349,7 +346,7 @@ export function TemplateSelectorModal({
                   >
                     <div className="mb-4 aspect-[4/3] relative rounded-2xl overflow-hidden shadow-inner bg-slate-100">
                       <TemplateThumbnail layout={layout} />
-                      
+
                       {/* Pro Badge */}
                       {/* Pro Badge removed */}
 
@@ -381,7 +378,7 @@ export function TemplateSelectorModal({
                   <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Şablon Detayı</h3>
                   {/* PREMIUM badge removed */}
                 </div>
-                
+
                 <div className="space-y-6">
                   <div className="aspect-video md:aspect-square rounded-[24px] border border-slate-200 bg-slate-50 shadow-inner overflow-hidden p-3 group relative">
                     {localSelectedLayout ? (
@@ -418,7 +415,7 @@ export function TemplateSelectorModal({
                       </span>
                     ))}
                   </div>
-                  
+
                   <div className="space-y-3">
                     {[
                       { label: 'Format', value: 'ISO A3 Standard' },
@@ -444,8 +441,8 @@ export function TemplateSelectorModal({
                 disabled={isSelectionPro}
                 className={cn(
                   "w-full group relative overflow-hidden rounded-[20px] py-5 text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-2xl",
-                  isSelectionPro 
-                    ? "bg-slate-100 text-slate-400 cursor-not-allowed shadow-none" 
+                  isSelectionPro
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed shadow-none"
                     : "bg-slate-900 text-white hover:bg-slate-800 hover:-translate-y-1 shadow-slate-900/10"
                 )}
               >
@@ -457,7 +454,7 @@ export function TemplateSelectorModal({
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-violet-700 opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
               </button>
-              
+
               {/* Plans button removed */}
             </div>
           </aside>

@@ -19,8 +19,10 @@ export type TemplateRegionType =
   | 'header'
   | 'drawing'
   | 'instruction'
+  | 'emergency'
   | 'legend'
   | 'assembly'
+  | 'media'
   | 'approval'
   | 'team'
   | 'info';
@@ -69,7 +71,10 @@ export interface TemplateRegionState {
   title?: string;
   body?: string;
   meta?: string;
+  imagePath?: string;
   imageUrl?: string;
+  imageAlt?: string;
+  mediaMode?: 'visual-first' | 'text-first';
 }
 
 export type TemplateState = Record<string, TemplateRegionState>;

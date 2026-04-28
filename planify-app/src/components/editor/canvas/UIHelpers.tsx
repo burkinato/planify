@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { Group, Text, Rect, Line, Image as KonvaImage } from 'react-konva';
-import { cn } from '@/lib/utils';
-import { Layers } from 'lucide-react';
+import type { EditorTheme, THEME_CONFIGS } from '@/types/editor';
 
 export const LegendItem = ({ color, label, type = 'line' }: { color: string; label: string; type?: 'line' | 'dash' | 'bold' }) => {
   return (
@@ -77,7 +76,15 @@ export const renderCorporateIcon = (symbolId: string, size: number, color: strin
   );
 };
 
-export const MemoizedGrid = React.memo(({ gridVisible, themeConfig, editorTheme, gridSize, size = 2000 }: any) => {
+type MemoizedGridProps = {
+  gridVisible: boolean;
+  themeConfig: (typeof THEME_CONFIGS)[EditorTheme];
+  editorTheme: EditorTheme;
+  gridSize: number;
+  size?: number;
+};
+
+export const MemoizedGrid = React.memo(({ gridVisible, themeConfig, editorTheme, gridSize, size = 2000 }: MemoizedGridProps) => {
   if (!gridVisible) return null;
   return (
     <Group listening={false}>

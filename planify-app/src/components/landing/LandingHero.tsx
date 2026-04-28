@@ -153,7 +153,7 @@ export default function LandingHero() {
             <div className="flex flex-col sm:flex-row gap-4 pt-2">
               {user ? (
                 <Link href="/dashboard" className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-xl shadow-blue-500/20 hover:shadow-2xl hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all duration-300">
-                  Dashboard'a Git <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  Dashboard&apos;a Git <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               ) : (
                 <Link href="/register" className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-slate-900 text-white font-bold rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-0.5 transition-all duration-300">

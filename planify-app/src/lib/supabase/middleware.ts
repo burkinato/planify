@@ -159,7 +159,11 @@ function clearAuthCookies(response: NextResponse, request: NextRequest, isAdmin 
   const authCookiePrefix = isAdmin ? 'sb-planify-admin' : getSupabaseAuthCookiePrefix()
 
   for (const { name } of request.cookies.getAll()) {
-    if (name === activeCookie || (authCookiePrefix && name.includes(authCookiePrefix)) || (name.startsWith('sb-') && name.includes('auth-token'))) {
+    const isAuthCookie = isAdmin
+      ? Boolean(authCookiePrefix && name.includes(authCookiePrefix))
+      : isSupabaseAuthCookieName(name)
+
+    if (name === activeCookie || isAuthCookie) {
       response.cookies.set(name, '', { path: '/', maxAge: 0 })
     }
   }

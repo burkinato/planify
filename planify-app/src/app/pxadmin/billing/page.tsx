@@ -2,22 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import { AdminCard } from '@/components/admin/AdminCard';
-import { 
-  Plus, 
-  Search, 
-  FileText, 
-  Send, 
-  CheckCircle2, 
-  XCircle, 
-  Clock,
-  ExternalLink,
-  User
-} from 'lucide-react';
+import { Plus, FileText, Send, Clock, ExternalLink } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
 export default function BillingManagement() {
-  const [invoices, setInvoices] = useState<any[]>([]);
+  type Invoice = {
+    id: string;
+    invoice_no: string;
+    billing_date: string;
+    amount: number | string;
+    status: string;
+    profiles?: {
+      full_name?: string | null;
+      email?: string | null;
+      company?: string | null;
+    } | null;
+  };
+
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

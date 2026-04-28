@@ -186,9 +186,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
           }
 
           return profile;
-        } catch (error: any) {
+        } catch (error: unknown) {
           // PGRST116 means no rows found. If profile is missing, try to create a fallback one.
-          if (error?.code === 'PGRST116') {
+          if (isPostgrestError(error) && error.code === 'PGRST116') {
             console.warn('Profile not found for user, attempting to create fallback profile...');
             try {
               const currentUser = get().user;
@@ -306,4 +306,8 @@ export function getAuthenticatedUserId(
   }
 
   return userId;
+}
+
+function isPostgrestError(error: unknown): error is { code: string } {
+  return typeof error === 'object' && error !== null && 'code' in error;
 }

@@ -2,23 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { AdminCard } from '@/components/admin/AdminCard';
-import { 
-  Plus, 
-  Minus, 
-  TrendingUp, 
-  TrendingDown, 
-  Search, 
-  Download,
-  DollarSign,
-  Tag,
-  Clock,
-  Trash2
-} from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Download, Tag, Clock, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
 export default function FinanceManagement() {
-  const [entries, setEntries] = useState<any[]>([]);
+  type FinanceEntry = {
+    id: string;
+    type: 'revenue' | 'expense';
+    category: string;
+    amount: number | string;
+    description: string | null;
+    entry_date: string;
+  };
+
+  const [entries, setEntries] = useState<FinanceEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -44,7 +42,9 @@ export default function FinanceManagement() {
   }
 
   useEffect(() => {
-    void fetchFinance();
+    queueMicrotask(() => {
+      void fetchFinance();
+    });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

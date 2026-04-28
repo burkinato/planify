@@ -21,7 +21,6 @@ export function useProAccess(): ProAccessInfo {
   const checkProAccess = useSubscriptionStore(s => s.checkProAccess);
   const initialized = useSubscriptionStore(s => s.initialized);
   const isLoading = useSubscriptionStore(s => s.isLoading);
-  const error = useSubscriptionStore(s => s.error);
 
   useEffect(() => {
     if (user?.id && !initialized && !isLoading) {

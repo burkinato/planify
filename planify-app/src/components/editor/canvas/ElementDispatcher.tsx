@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import type Konva from 'konva';
 import { Group, Rect, Line, Text } from 'react-konva';
-import type { EditorElement, EditorTheme, THEME_CONFIGS, CustomSymbol } from '@/types/editor';
+import type { CustomSymbol, EditorElement, EditorTheme, EditorTool, LayerDef, THEME_CONFIGS } from '@/types/editor';
 import { ISO_SYMBOLS } from '@/lib/editor/isoSymbols';
 import { SYMBOLS } from '@/types/editor';
 import { StairRenderer, ElevatorRenderer, ColumnRenderer, DoorRenderer, WindowRenderer } from './ElementRenderers';
@@ -10,16 +11,16 @@ import { StairRenderer, ElevatorRenderer, ColumnRenderer, DoorRenderer, WindowRe
 interface ElementDispatcherProps {
   elements: EditorElement[];
   selectedIds: string[];
-  layers: any[];
-  tool: string;
+  layers: LayerDef[];
+  tool: EditorTool | string;
   themeConfig: (typeof THEME_CONFIGS)[EditorTheme];
   customSymbols: CustomSymbol[];
-  onSelect: (id: string, isLocked: boolean, e: any) => void;
+  onSelect: (id: string, isLocked: boolean, e: Konva.KonvaEventObject<Event>) => void;
   onUpdate: (id: string, updates: Partial<EditorElement>) => void;
-  onDragStart: (id: string, isLocked: boolean, e: any) => void;
-  renderCorporateIcon: any;
-  CustomSymbolImage: any;
-  calculateSnapToWall: any;
+  onDragStart: (id: string, isLocked: boolean, e: Konva.KonvaEventObject<DragEvent>) => void;
+  renderCorporateIcon: (symbolId: string, size: number, color: string, isSelected?: boolean) => React.ReactNode;
+  CustomSymbolImage: React.ComponentType<{ src: string; size: number; isSelected: boolean }>;
+  calculateSnapToWall: (el: EditorElement, x: number, y: number) => Partial<EditorElement>;
 }
 
 export const ElementDispatcher = React.memo(({
@@ -40,7 +41,7 @@ export const ElementDispatcher = React.memo(({
     <>
       {elements.map((el) => {
         const isSelected = selectedIds.includes(el.id);
-        const isLocked = layers.find(l => l.id === el.layerId)?.locked;
+        const isLocked = layers.find(l => l.id === el.layerId)?.locked ?? false;
         const canInteract = tool === 'select' && !isLocked;
 
         const commonProps = { el, isSelected, canInteract, isLocked, themeConfig, onSelect, onDragStart, onUpdate };

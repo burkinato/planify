@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import type Konva from 'konva';
 import { 
   X, FileDown, Layers, Check, FileType, 
   Printer, Image as ImageIcon, Code, Sparkles,
@@ -13,13 +14,20 @@ import { toast } from 'sonner';
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  stageRef: React.RefObject<any>;
+  stageRef: React.RefObject<Konva.Stage | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
   isPro: boolean;
   projectName: string;
+  onExportComplete?: (format: 'pdf' | 'png', fileName: string) => Promise<void> | void;
 }
 
 type ExportFormat = 'pdf' | 'png' | 'svg';
+
+const waitForPaint = () =>
+  new Promise<void>((resolve) => {
+    if (typeof window === 'undefined') resolve();
+    else window.requestAnimationFrame(() => resolve());
+  });
 
 export function ExportModal({ 
   isOpen, 
@@ -27,7 +35,8 @@ export function ExportModal({
   stageRef, 
   containerRef, 
   isPro,
-  projectName 
+  projectName,
+  onExportComplete
 }: ExportModalProps) {
   const { layers, activeTemplateLayout, projectMetadata } = useEditorStore(useShallow(s => ({
     layers: s.layers,
@@ -69,7 +78,10 @@ export function ExportModal({
       });
 
       // 3. Trigger Export
+      useEditorStore.getState().setFocusedRegionId(null);
+      await waitForPaint();
       if (selectedFormat === 'pdf') {
+        const fileName = `${(projectName || projectMetadata.name).replace(/\s+/g, '-')}.pdf`;
         const { exportToPDF } = await import('@/lib/editor/export');
         await exportToPDF(
           containerRef, 
@@ -78,13 +90,44 @@ export function ExportModal({
           isPro,
           quality === 'ultra' ? 4 : quality === 'high' ? 3 : 2
         );
+        await onExportComplete?.('pdf', fileName);
       } else if (selectedFormat === 'png') {
-        const pixelRatio = quality === 'ultra' ? 5 : quality === 'high' ? 3 : 2;
-        const dataURL = stageRef.current.toDataURL({ pixelRatio });
-        const link = document.createElement('a');
-        link.download = `${projectName || projectMetadata.name}.png`;
-        link.href = dataURL;
-        link.click();
+        if (activeTemplateLayout && containerRef.current) {
+          const pixelRatio = quality === 'ultra' ? 4 : quality === 'high' ? 3 : 2;
+          const html2canvas = (await import('html2canvas')).default;
+          containerRef.current.dataset.exportMode = 'true';
+          let canvas: HTMLCanvasElement;
+          try {
+            canvas = await html2canvas(containerRef.current, {
+              scale: pixelRatio,
+              useCORS: true,
+              logging: false,
+              backgroundColor: '#ffffff',
+            });
+          } finally {
+            if (containerRef.current) {
+              delete containerRef.current.dataset.exportMode;
+            }
+          }
+          const fileName = `${projectName || projectMetadata.name}.png`;
+          const link = document.createElement('a');
+          link.download = fileName;
+          link.href = canvas.toDataURL('image/png', 1);
+          link.click();
+          await onExportComplete?.('png', fileName);
+        } else if (!stageRef.current) {
+          toast.error('Tuval hazır değil. Lütfen tekrar deneyin.');
+          return;
+        } else {
+          const pixelRatio = quality === 'ultra' ? 5 : quality === 'high' ? 3 : 2;
+          const dataURL = stageRef.current.toDataURL({ pixelRatio });
+          const link = document.createElement('a');
+          const fileName = `${projectName || projectMetadata.name}.png`;
+          link.download = fileName;
+          link.href = dataURL;
+          link.click();
+          await onExportComplete?.('png', fileName);
+        }
       } else if (selectedFormat === 'svg') {
         toast.info('SVG dışa aktarma yakında eklenecek. Şimdilik PDF (Vektörel) kullanın.');
       }

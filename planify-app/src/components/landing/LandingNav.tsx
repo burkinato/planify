@@ -15,7 +15,7 @@ const NAV_LINKS = [
 ] as const;
 
 export default function LandingNav() {
-  const { user, profile } = useAuthStore(useShallow((s) => ({ user: s.user, profile: s.profile })));
+  const { user } = useAuthStore(useShallow((s) => ({ user: s.user })));
   const [open, setOpen] = useState(false);
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">

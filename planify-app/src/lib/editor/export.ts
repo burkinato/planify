@@ -2,6 +2,11 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import type { TemplateLayout } from '@/types/editor';
 
+type JsPdfWithGState = jsPDF & {
+  GState: new (options: { opacity: number }) => unknown;
+  setGState: (gState: unknown) => jsPDF;
+};
+
 export async function exportToPDF(
   containerRef: React.RefObject<HTMLDivElement | null>, 
   projectName: string = 'Tahliye-Plani',
@@ -12,6 +17,7 @@ export async function exportToPDF(
   if (!containerRef.current) return;
 
   try {
+    containerRef.current.dataset.exportMode = 'true';
     const canvas = await html2canvas(containerRef.current, {
       scale: scale, 
       useCORS: true,
@@ -60,7 +66,8 @@ export async function exportToPDF(
     if (!isPro) {
       // Watermark for free users - diagonal text
       pdf.saveGraphicsState();
-      pdf.setGState(new (pdf as any).GState({ opacity: 0.12 }));
+      const pdfWithGState = pdf as JsPdfWithGState;
+      pdfWithGState.setGState(new pdfWithGState.GState({ opacity: 0.12 }));
       pdf.setFontSize(72);
       pdf.setTextColor(100, 100, 100);
       
@@ -91,5 +98,9 @@ export async function exportToPDF(
 
   } catch (error) {
     console.error('PDF Export Error:', error);
+  } finally {
+    if (containerRef.current) {
+      delete containerRef.current.dataset.exportMode;
+    }
   }
 }

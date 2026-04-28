@@ -20,6 +20,9 @@ const FAMILIES = [
   ['technical-slate',   'Teknik Slate Kompozit','ENDÜSTRİ', 'Teknik tesisler için koyu başlık raylı endüstriyel kağıt düzeni.', 'technical', '#475569', true],
   ['wide-legend',       'Geniş Lejand Dizini',  'GENEL', 'Çok sembollü projelerde geniş lejand ve açıklama alanı sağlar.', 'legendHeavy', '#00965e', false],
   ['response-team',     'Ekip ve Sorumlu Alanlı','KURUMSAL', 'Acil durum sorumlusu, yangın sorumlusu ve ekip bilgisi alanları içerir.', 'team', '#dc2626', true],
+  ['premium-audit',     'Premium Denetim',      'PREMIUM', 'Denetim skoru, acil telefon ve resmi onay blokları güçlü premium düzen.', 'premiumAudit', '#0f766e', true],
+  ['site-overview-pro',  'Saha Vaziyet Premium', 'PREMIUM', 'Vaziyet/toplanma görseli ve ana tahliye planını dengeli sunan saha düzeni.', 'sitePremium', '#2563eb', true],
+  ['corporate-3d-board', 'Kurumsal 3D Board',    'PREMIUM', 'Satış algısı yüksek, katmanlı resmi pano estetiği ve güçlü bilgi hiyerarşisi.', 'corporate3d', '#4f46e5', true],
 ] as const;
 
 const r = (
@@ -29,6 +32,34 @@ const r = (
 ): TemplateRegion => ({ id, type, label, x, y, w, h, tone });
 
 export function buildRegions(style: string): TemplateRegion[] {
+  if (style === 'premiumAudit') return [
+    r('header',          'header',      'ACİL DURUM VE YANGIN TAHLİYE PLANI',   2,   2, 96,  9, 'green'),
+    r('drawing',         'drawing',     'Ana Çizim Alanı',                       2,  13, 68, 66, 'paper'),
+    r('emergency',       'emergency',   '112 Acil Durum Telefonu',              72,  13, 26, 10, 'red'),
+    r('instructions',    'instruction', 'Acil Durum Talimatı',                  72,  25, 26, 22, 'green'),
+    r('legend',          'legend',      'Semboller Dizini',                     72,  49, 26, 18, 'info'),
+    r('assembly',        'assembly',    'Toplanma / Vaziyet',                   72,  69, 26, 10, 'blue'),
+    r('approval',        'approval',    'Revizyon ve Onay',                      2,  82, 96, 14, 'neutral'),
+  ];
+  if (style === 'sitePremium') return [
+    r('header',          'header',      'ACİL DURUM VE YANGIN TAHLİYE PLANI',   2,   2, 96,  9, 'green'),
+    r('drawing',         'drawing',     'Ana Çizim Alanı',                       2,  13, 64, 62, 'paper'),
+    r('assembly',        'assembly',    'Vaziyet / Toplanma Alanı',             68,  13, 30, 30, 'blue'),
+    r('emergency',       'emergency',   '112 Acil Durum Telefonu',              68,  45, 30, 10, 'red'),
+    r('legend',          'legend',      'Semboller Dizini',                     68,  57, 30, 18, 'info'),
+    r('instructions',    'instruction', 'Acil Durum Talimatı',                   2,  78, 45, 18, 'green'),
+    r('approval',        'approval',    'Revizyon ve Onay',                     49,  78, 49, 18, 'neutral'),
+  ];
+  if (style === 'corporate3d') return [
+    r('header',          'header',      'ACİL DURUM VE YANGIN TAHLİYE PLANI',   2,   2, 96, 10, 'green'),
+    r('emergency',       'emergency',   '112 Acil Durum Telefonu',               2,  14, 18, 10, 'red'),
+    r('instructions',    'instruction', 'Acil Durum Talimatı',                   2,  26, 18, 29, 'green'),
+    r('legend',          'legend',      'Semboller Dizini',                      2,  57, 18, 20, 'info'),
+    r('drawing',         'drawing',     'Ana Çizim Alanı',                      22,  14, 54, 63, 'paper'),
+    r('assembly',        'assembly',    'Toplanma / Vaziyet',                   78,  14, 20, 29, 'blue'),
+    r('fireInstruction', 'instruction', 'Yangın Talimatı',                      78,  45, 20, 32, 'red'),
+    r('approval',        'approval',    'Revizyon ve Onay',                      2,  80, 96, 16, 'neutral'),
+  ];
   if (style === 'panoramic') return [
     r('header',          'header',      'ACİL DURUM VE YANGIN TAHLİYE PLANI',   2,   2, 96, 10, 'green'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',                      2,  14, 76, 68, 'paper'),
@@ -82,12 +113,30 @@ export function buildRegions(style: string): TemplateRegion[] {
   ];
 }
 
+function clampRegion(region: TemplateRegion): TemplateRegion {
+  const x = Math.max(0, Math.min(98, region.x));
+  const y = Math.max(0, Math.min(98, region.y));
+  const w = Math.max(6, Math.min(region.w, 100 - x));
+  const h = Math.max(6, Math.min(region.h, 100 - y));
+  return { ...region, x, y, w, h };
+}
+
+export function validateTemplateLayout(layout: TemplateLayout): TemplateLayout {
+  return {
+    ...layout,
+    layout_json: {
+      ...layout.layout_json,
+      regions: (layout.layout_json.regions || []).map(clampRegion),
+    },
+  };
+}
+
 export const FALLBACK_TEMPLATE_LAYOUTS: TemplateLayout[] = FAMILIES.flatMap(
   ([slug, name, category, description, style, accent, is_pro], familyIndex) =>
     (Object.keys(PAGE_PRESETS) as PagePreset[]).map((preset, presetIndex) => {
       const page = PAGE_PRESETS[preset];
       const fullSlug = `${slug}-a3-${preset.toLowerCase()}`;
-      return {
+      return validateTemplateLayout({
         id: `fallback-${familyIndex}-${presetIndex}`,
         slug: fullSlug,
         name: `${name} (${preset === 'Landscape' ? 'Yatay' : 'Dikey'})`,
@@ -112,7 +161,7 @@ export const FALLBACK_TEMPLATE_LAYOUTS: TemplateLayout[] = FAMILIES.flatMap(
         compliance_tags: ['ISO 23601:2020', 'ISO 7010:2019', 'TR BYKHY', 'Sağlık Güvenlik İşaretleri'],
         version: 1,
         is_official: true,
-      };
+      });
     })
 );
 
@@ -125,7 +174,12 @@ export function getDefaultTemplateState(): TemplateState {
     },
     instructions: {
       title: 'ACİL DURUM TALİMATI',
-      body: '1. Sakin kalın, paniğe kapılmayın.\n2. 112 numarasını arayın.\n3. En yakın çıkışa yönelin.\n4. Toplanma alanına gidin.\n5. Asansör kullanmayın.',
+      body: '1. Sakin kalın, paniğe kapılmayın.\n2. En yakın çıkışa yönelin.\n3. Toplanma alanına gidin.\n4. Asansör kullanmayın.',
+    },
+    emergency: {
+      title: '112 ACİL DURUM TELEFONU',
+      body: 'Yangın, sağlık, güvenlik veya tahliye acil durumlarında 112 aranmalıdır.',
+      meta: 'EMERGENCY CALL',
     },
     fireInstruction: {
       title: 'YANGIN TALİMATI',

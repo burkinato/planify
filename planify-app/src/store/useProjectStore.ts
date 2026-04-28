@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
+import type { AuditStatus } from '@/lib/projects/compliance';
+import { validateTemplateLayout } from '@/lib/editor/templateLayouts';
 import type { PagePreset, TemplateLayout, TemplateState } from '@/types/editor';
 
 export interface Project {
@@ -9,11 +11,17 @@ export interface Project {
   title: string;
   description: string | null;
   floor_name: string | null;
+  client_name?: string | null;
+  facility_name?: string | null;
+  building_name?: string | null;
   canvas_data: unknown;
   scale_config: unknown;
   thumbnail_url: string | null;
   is_template: boolean;
   template_category: string | null;
+  audit_status?: AuditStatus | null;
+  last_exported_at?: string | null;
+  compliance_score?: number | null;
   template_layout_id?: string | null;
   page_preset?: PagePreset | null;
   template_state?: TemplateState | null;
@@ -21,24 +29,42 @@ export interface Project {
   updated_at: string;
 }
 
+export interface ProjectExport {
+  id: string;
+  user_id: string;
+  project_id: string;
+  format: 'pdf' | 'png' | 'jpeg' | 'svg';
+  file_name: string;
+  created_at: string;
+  projects?: {
+    title?: string | null;
+    client_name?: string | null;
+    facility_name?: string | null;
+  } | null;
+}
+
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Bilinmeyen hata';
 
 interface ProjectState {
   projects: Project[];
+  projectExports: ProjectExport[];
   templateLayouts: TemplateLayout[];
   isLoading: boolean;
   isLoadingTemplates: boolean;
   error: string | null;
   fetchProjects: () => Promise<void>;
+  fetchProjectExports: () => Promise<void>;
   fetchTemplateLayouts: () => Promise<void>;
   createProject: (data: Partial<Project>) => Promise<Project | null>;
   updateProject: (id: string, data: Partial<Project>) => Promise<void>;
+  recordProjectExport: (projectId: string, format: ProjectExport['format'], fileName: string) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
   projects: [],
+  projectExports: [],
   templateLayouts: [],
   isLoading: false,
   isLoadingTemplates: false,
@@ -65,6 +91,27 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   },
 
+  fetchProjectExports: async () => {
+    const supabase = createClient();
+
+    try {
+      const { data, error } = await supabase
+        .from('project_exports')
+        .select('*, projects(title, client_name, facility_name)')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        throw error;
+      }
+
+      set({ projectExports: (data || []) as ProjectExport[] });
+    } catch (error: unknown) {
+      console.error('Fetch project exports error:', error);
+      set({ error: getErrorMessage(error) });
+    }
+  },
+
   fetchTemplateLayouts: async () => {
     if (get().isLoadingTemplates) {
       return;
@@ -84,7 +131,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         throw error;
       }
 
-      set({ templateLayouts: data as TemplateLayout[], isLoadingTemplates: false });
+      set({ templateLayouts: (data as TemplateLayout[]).map(validateTemplateLayout), isLoadingTemplates: false });
     } catch (error: unknown) {
       console.error('Fetch template layouts error:', error);
       set({ error: getErrorMessage(error), isLoadingTemplates: false });
@@ -178,6 +225,48 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       });
       set({ error: getErrorMessage(error) });
       throw error;
+    }
+  },
+
+  recordProjectExport: async (projectId, format, fileName) => {
+    const supabase = createClient();
+
+    try {
+      const authState = useAuthStore.getState();
+      const userId = authState.user?.id ?? authState.session?.user.id;
+      if (!userId) throw new Error('Çıktı kaydı için lütfen oturum açın.');
+
+      const exportedAt = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('project_exports')
+        .insert([{ user_id: userId, project_id: projectId, format, file_name: fileName }])
+        .select('*, projects(title, client_name, facility_name)')
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      const { error: updateError } = await supabase
+        .from('projects')
+        .update({ last_exported_at: exportedAt, audit_status: 'exported' })
+        .eq('id', projectId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      set((state) => ({
+        projectExports: [data as ProjectExport, ...state.projectExports].slice(0, 20),
+        projects: state.projects.map((project) =>
+          project.id === projectId
+            ? { ...project, last_exported_at: exportedAt, audit_status: 'exported' }
+            : project
+        ),
+      }));
+    } catch (error: unknown) {
+      console.error('Record project export error:', error);
+      set({ error: getErrorMessage(error) });
     }
   },
 

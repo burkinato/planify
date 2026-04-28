@@ -20,14 +20,12 @@ import { toast } from 'sonner';
 
 export default function UpgradePage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, isInitialized } = useAuthStore();
   const { priceTry } = usePricing();
   const { isPro } = useProAccess();
 
   const [billingCycle, setBillingCycle] = useState<'month' | 'year'>('month');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showAddress, setShowAddress] = useState(false);
-  
   // Card Form State
   const [cardData, setCardData] = useState({
     number: '',
@@ -40,19 +38,19 @@ export default function UpgradePage() {
     zip: ''
   });
 
-  // Watch for card number to show address
-  useEffect(() => {
-    // Show address section when card number starts to be filled
-    if (cardData.number.replace(/\s/g, '').length >= 1 && !showAddress) {
-      setShowAddress(true);
-    }
-  }, [cardData.number, showAddress]);
+  const showAddress = cardData.number.replace(/\s/g, '').length >= 1;
 
   const priceInTRY = billingCycle === 'month' ? Math.round(priceTry) : Math.round(priceTry * 12 * 0.8);
 
+  useEffect(() => {
+    if (isInitialized && isPro) {
+      router.replace('/dashboard/profile');
+    }
+  }, [isInitialized, isPro, router]);
+
   const handleUpgrade = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || isPro) return;
 
     setIsProcessing(true);
     try {
@@ -83,6 +81,26 @@ export default function UpgradePage() {
       setIsProcessing(false);
     }
   };
+
+  if (!isInitialized || isPro) {
+    return (
+      <div className="min-h-[420px] flex items-center justify-center">
+        <div className="bg-white border border-slate-200 rounded-lg p-8 max-w-md text-center">
+          <div className="mx-auto mb-4 w-12 h-12 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+            {isPro ? <Shield className="w-6 h-6" /> : <Loader2 className="w-6 h-6 animate-spin" />}
+          </div>
+          <h1 className="text-xl font-black text-slate-950">
+            {isPro ? 'Pro hesabınız aktif' : 'Abonelik durumu kontrol ediliyor'}
+          </h1>
+          <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
+            {isPro
+              ? 'Yükseltme ekranına ihtiyacınız yok. Profil / Firma Bilgileri sayfasına yönlendiriliyorsunuz.'
+              : 'Hesap bilgileriniz hazırlanıyor.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900 selection:bg-orange-100 font-sans">
@@ -378,4 +396,3 @@ export default function UpgradePage() {
     </div>
   );
 }
-

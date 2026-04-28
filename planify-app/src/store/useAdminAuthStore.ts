@@ -1,11 +1,7 @@
 import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
-import {
-  activateBrowserSession,
-  clearBrowserSession,
-  reconcileBrowserSession,
-} from '@/lib/auth/session';
+import { clearBrowserSession } from '@/lib/auth/session';
 
 export interface Profile {
   id: string;
@@ -118,7 +114,7 @@ export const useAdminAuthStore = create<AdminAuthState>((set, get) => {
 
         set({ profile, error: null });
         return profile;
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error fetching admin profile:', error);
         return null;
       }

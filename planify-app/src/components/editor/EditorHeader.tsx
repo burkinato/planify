@@ -1,12 +1,11 @@
 'use client';
 
-import { MapPin, ZoomOut, ZoomIn, Grid, Undo2, Redo2,
-  Keyboard, X, Eye, EyeOff, Download, FileImage, FileText, Layers, Pencil, Check, Lock, Sparkles, XCircle, ArrowLeft
+import { ZoomOut, ZoomIn, Grid, Undo2, Redo2,
+  Keyboard, X, Eye, EyeOff, Download, FileImage, FileText, Layers, Pencil, Check, Sparkles, ArrowLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/store/useEditorStore';
 import { useProjectStore } from '@/store/useProjectStore';
-import { useAuthStore } from '@/store/useAuthStore';
 import { useProAccess } from '@/hooks/useProAccess';
 import { Logo } from '@/components/shared/Logo';
 import { useState, useRef } from 'react';
@@ -33,7 +32,6 @@ export function EditorHeader({
     scaleConfig, setScaleConfig, editorTheme, setEditorTheme
   } = useEditorStore();
   const { projects, updateProject } = useProjectStore();
-  const { profile } = useAuthStore();
   const { isPro } = useProAccess();
   
   const project = projects.find(p => p.id === projectId);

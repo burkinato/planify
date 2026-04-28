@@ -1,14 +1,14 @@
-# Developer Notes & Credentials
+# Planify Codex Developer Notes
 
-> [!IMPORTANT]
-> This file contains sensitive test credentials and developer-specific configurations. Do NOT share this outside the development environment.
+This file is intentionally small. The previous Antigravity notes were too large
+for efficient Codex context loading.
 
-## 🔑 Test Credentials
-- **Account**: `isilgin2026@outlook.com`
-- **Password**: `Sifre123$$`
+Use these files instead:
 
-## 🛠️ Testing Procedures
-When testing the application (especially via browser agents), use the above credentials to bypass registration/verification flows if the goal is to test internal pages like Dashboard or Editor.
+- `../AGENTS.md`
+- `../.codex/PROJECT.md`
+- `../.codex/TESTING.md`
+- `../.codex/DEPLOYMENT.md`
 
-## 📌 Persistence
-This file is used by the Antigravity AI to maintain context across sessions regarding the developer's preferred testing identity.
+Sensitive test credentials and test flows live in `../.codex/TESTING.md`.
+Do not print credentials in summaries, screenshots, commits, or public logs.

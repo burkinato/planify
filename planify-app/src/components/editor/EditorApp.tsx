@@ -18,6 +18,28 @@ import { useEditorStore } from '@/store/useEditorStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'sonner';
 import { FALLBACK_TEMPLATE_LAYOUTS } from '@/lib/editor/templateLayouts';
+import { analyzeProjectCompliance } from '@/lib/projects/compliance';
+
+type PersistedCanvasData = {
+  elements?: typeof useEditorStore.getState extends () => infer State
+    ? State extends { elements: infer Elements }
+      ? Elements
+      : never
+    : never;
+  layers?: typeof useEditorStore.getState extends () => infer State
+    ? State extends { layers: infer Layers }
+      ? Layers
+      : never
+    : never;
+  innerZoom?: number;
+  innerPan?: { x: number; y: number };
+};
+
+const waitForPaint = () =>
+  new Promise<void>((resolve) => {
+    if (typeof window === 'undefined') resolve();
+    else window.requestAnimationFrame(() => resolve());
+  });
 
 export default function EditorApp() {
   const [isPreview, setIsPreview] = useState(false);
@@ -32,15 +54,15 @@ export default function EditorApp() {
   const handleContainerNode = useCallback((node: HTMLDivElement | null) => {
     containerRef.current = node;
   }, []);
-  
+
   const searchParams = useSearchParams();
   const projectId = searchParams.get('id');
   const templateSlug = searchParams.get('template');
-  const { projects, fetchProjects, templateLayouts, fetchTemplateLayouts, updateProject } = useProjectStore();
-  const { 
-    loadProject, templateLayoutId, projectTemplate, setTemplateLayout, 
+  const { projects, fetchProjects, templateLayouts, fetchTemplateLayouts, updateProject, recordProjectExport } = useProjectStore();
+  const {
+    loadProject, templateLayoutId, projectTemplate, setTemplateLayout,
     elements, layers, activeTemplateLayout, scaleConfig, pagePreset, templateState,
-    innerZoom, innerPan, setInnerZoom, setInnerPan
+    innerZoom, innerPan
   } = useEditorStore();
   const { profile, user, isLoading } = useAuthStore();
   const isPro = profile?.subscription_tier === 'pro';
@@ -49,21 +71,10 @@ export default function EditorApp() {
   // Auth Guard: Redirect unauthenticated users
   useEffect(() => {
     if (!isLoading && !user && !profile) {
-      toast.error('Editorü kullanmak için giriş yapmalısınız.');
+      toast.error('EditorÃ¼ kullanmak iÃ§in giriÅŸ yapmalÄ±sÄ±nÄ±z.');
       router.push('/login');
     }
   }, [user, profile, isLoading, router]);
-
-  // Show loading state while checking auth or loading project
-  if (isLoading && !profile) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-slate-50">
-        <div className="animate-pulse text-slate-400 font-bold uppercase tracking-widest text-xs">
-          Kullanıcı Doğrulanıyor...
-        </div>
-      </div>
-    );
-  }
 
   useEffect(() => {
     if (projectId) {
@@ -76,15 +87,16 @@ export default function EditorApp() {
     if (projectId && projects.length > 0) {
       const proj = projects.find(p => p.id === projectId);
       if (proj) {
-        // If we haven't loaded this specific project yet, or it's a new one
         if (!hasLoadedProjectRef.current) {
-          const canvasData = (typeof proj.canvas_data === 'object' && proj.canvas_data ? proj.canvas_data : {}) as any;
-          
-          // If it's a brand new project (no canvas_data) and we have a template in URL
+          const canvasData: PersistedCanvasData =
+            typeof proj.canvas_data === 'object' && proj.canvas_data
+              ? proj.canvas_data as PersistedCanvasData
+              : {};
+
           if (!proj.canvas_data && templateSlug) {
             const sourceLayouts = templateLayouts.length > 0 ? templateLayouts : FALLBACK_TEMPLATE_LAYOUTS;
             const targetLayout = sourceLayouts.find(l => l.slug === templateSlug);
-            
+
             loadProject(JSON.stringify({
               elements: [],
               layers: [{ id: 'default', name: 'Ana Katman', visible: true, locked: false, order: 0 }],
@@ -98,7 +110,6 @@ export default function EditorApp() {
               innerPan: { x: 0, y: 0 },
             }));
           } else {
-            // Normal load
             loadProject(JSON.stringify({
               elements: canvasData.elements || [],
               layers: canvasData.layers || [{ id: 'default', name: 'Ana Katman', visible: true, locked: false, order: 0 }],
@@ -131,22 +142,19 @@ export default function EditorApp() {
     if (layout) setTemplateLayout(layout);
   }, [templateLayouts, templateLayoutId, projectTemplate, setTemplateLayout]);
 
-  // Debounced Auto-Save with toast feedback and thumbnail generation
   useEffect(() => {
     if (!projectId) return;
 
     const timeoutId = setTimeout(async () => {
-      if (!hasLoadedProjectRef.current) {
-        return;
-      }
+      if (!hasLoadedProjectRef.current) return;
 
       try {
-        const canvas_data = { 
-          elements, 
-          layers, 
-          projectTemplate, 
-          templateLayoutId, 
-          pagePreset, 
+        const canvas_data = {
+          elements,
+          layers,
+          projectTemplate,
+          templateLayoutId,
+          pagePreset,
           templateState,
           innerZoom,
           innerPan
@@ -159,32 +167,33 @@ export default function EditorApp() {
           template_state: templateState,
         });
 
-        if (snapshot === lastSavedSnapshotRef.current) {
-          return;
-        }
-        
-        // Generate thumbnail
+        if (snapshot === lastSavedSnapshotRef.current) return;
+
         let thumbnail_url = null;
         if (stageRef.current) {
           try {
-            // Low-res thumbnail for dashboard preview
-            thumbnail_url = stageRef.current.toDataURL({ 
-              pixelRatio: 0.1, // Very small for DB storage
+            thumbnail_url = stageRef.current.toDataURL({
+              pixelRatio: 0.1,
               mimeType: 'image/jpeg',
-              quality: 0.5 
+              quality: 0.5
             });
           } catch (e) {
             console.warn('Thumbnail generation failed', e);
           }
         }
 
-        // Ensure template_layout_id is a valid UUID or null
         let validLayoutId = templateLayoutId;
         if (templateLayoutId && templateLayoutId.startsWith('fallback-')) {
-          // Try to find the real database ID for this template by slug
           const dbLayout = templateLayouts.find(l => l.slug === projectTemplate);
           validLayoutId = dbLayout ? dbLayout.id : null;
         }
+
+        const audit = analyzeProjectCompliance({
+          canvas_data,
+          template_layout_id: validLayoutId,
+          page_preset: pagePreset,
+          last_exported_at: projects.find((project) => project.id === projectId)?.last_exported_at,
+        });
 
         await updateProject(projectId, {
           canvas_data,
@@ -193,66 +202,77 @@ export default function EditorApp() {
           page_preset: pagePreset,
           template_state: templateState,
           thumbnail_url: thumbnail_url || undefined,
+          compliance_score: audit.score,
+          audit_status: audit.status,
         });
 
         lastSavedSnapshotRef.current = snapshot;
-        
+
         toast.success('Otomatik kaydedildi', {
           id: 'autosave-status',
           duration: 2000,
           position: 'bottom-right',
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Auto-save failed', error);
-        
         const isOffline = typeof window !== 'undefined' && !window.navigator.onLine;
-        let errorMessage = 'Bilinmeyen bir hata oluştu';
-        
-        if (isOffline) {
-          errorMessage = 'İnternet bağlantınız koptu. Bağlantı gelene kadar değişiklikleriniz tarayıcıda saklanacak.';
-        } else if (error?.message) {
-          if (error.message === 'Failed to fetch') {
-            errorMessage = 'Sunucuya bağlanılamadı veya proje boyutu çok büyük (Failed to fetch). İnternet bağlantınızı ve projeye eklediğiniz görsellerin boyutunu kontrol edin.';
-          } else {
-            errorMessage = error.message;
-          }
-        } else if (typeof error === 'string') {
-          errorMessage = error;
-        }
-
-        toast.error(`Otomatik kayıt başarısız: ${errorMessage}`, {
+        const errorMessage = isOffline
+          ? 'Ä°nternet baÄŸlantÄ±nÄ±z koptu.'
+          : error instanceof Error
+            ? error.message
+            : 'Bilinmeyen bir hata oluÅŸtu';
+        toast.error(`Otomatik kayÄ±t baÅŸarÄ±sÄ±z: ${errorMessage}`, {
           id: 'autosave-error',
           duration: 5000,
         });
       }
-    }, 5000); // Increased to 5s to be less aggressive with thumbnails
+    }, 5000);
 
     return () => clearTimeout(timeoutId);
-  }, [elements, layers, templateLayoutId, pagePreset, templateState, scaleConfig, projectId, updateProject, projectTemplate, templateLayouts, innerZoom, innerPan]);
+  }, [elements, layers, templateLayoutId, pagePreset, templateState, scaleConfig, projectId, updateProject, projectTemplate, templateLayouts, innerZoom, innerPan, projects]);
 
   const validateCompliance = () => {
     const missing: string[] = [];
-    if (!elements.some((el) => el.type === 'symbol' && el.symbolType === 'here')) missing.push('Buradasiniz isareti');
-    if (!elements.some((el) => el.type === 'route' && el.routeType === 'evacuation')) missing.push('Tahliye rotasi');
-    if (!elements.some((el) => el.type === 'symbol' && el.symbolType === 'assembly')) missing.push('Toplanma alani');
-    if (!activeTemplateLayout && !elements.some((el) => el.type === 'symbol')) missing.push('Lejand/sembol bilgisi');
+    // E004 = BuradasÄ±nÄ±z iÅŸareti
+    if (!elements.some((el) => el.type === 'symbol' && el.symbolType === 'E004')) {
+      missing.push('BuradasÄ±nÄ±z iÅŸareti');
+    }
+    // Tahliye rotasÄ±
+    if (!elements.some((el) => el.type === 'route' && el.routeType === 'evacuation')) {
+      missing.push('Tahliye rotasÄ±');
+    }
+    // Lejand kontrolÃ¼
+    if (!activeTemplateLayout && !elements.some((el) => el.type === 'symbol')) {
+      missing.push('Lejand/sembol bilgisi');
+    }
+
     if (missing.length > 0) {
-      toast.warning(`ISO kontrol uyarisi: ${missing.join(', ')} eksik gorunuyor.`);
+      toast.warning(`ISO kontrol uyarÄ±sÄ±: ${missing.join(', ')} eksik gÃ¶rÃ¼nÃ¼yor.`);
     }
   };
 
   const exportImage = async (format: 'png' | 'jpeg' = 'png') => {
     validateCompliance();
+    useEditorStore.getState().setFocusedRegionId(null);
+    await waitForPaint();
+    const fileName = `planify-tahliye-plani.${format}`;
     if (activeTemplateLayout && containerRef.current) {
       const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(containerRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      });
+      containerRef.current.dataset.exportMode = 'true';
+      let canvas: HTMLCanvasElement;
+      try {
+        canvas = await html2canvas(containerRef.current, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+        });
+      } finally {
+        if (containerRef.current) {
+          delete containerRef.current.dataset.exportMode;
+        }
+      }
 
-      // Add watermark for free users
       if (!isPro) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
@@ -271,22 +291,21 @@ export default function EditorApp() {
 
       const dataURL = canvas.toDataURL(format === 'jpeg' ? 'image/jpeg' : 'image/png', format === 'jpeg' ? 0.95 : 1);
       const link = document.createElement('a');
-      link.download = `planify-tahliye-plani.${format}`;
+      link.download = fileName;
       link.href = dataURL;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      if (projectId) await recordProjectExport(projectId, format, fileName);
       return;
     }
-    if (!stageRef.current) return;
 
-    // For Konva stage export
+    if (!stageRef.current) return;
     const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
     const quality = format === 'jpeg' ? 0.95 : 1;
     const dataURL = stageRef.current.toDataURL({ pixelRatio: 3, mimeType, quality });
 
     if (!isPro) {
-      // Add watermark via temp canvas
       const img = new Image();
       img.onload = () => {
         const watermarkCanvas = document.createElement('canvas');
@@ -307,32 +326,49 @@ export default function EditorApp() {
           ctx.restore();
         }
         const link = document.createElement('a');
-        link.download = `planify-tahliye-plani.${format}`;
+        link.download = fileName;
         link.href = watermarkCanvas.toDataURL(mimeType, quality);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        if (projectId) void recordProjectExport(projectId, format, fileName);
       };
       img.src = dataURL;
       return;
     }
 
     const link = document.createElement('a');
-    link.download = `planify-tahliye-plani.${format}`;
+    link.download = fileName;
     link.href = dataURL;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    if (projectId) await recordProjectExport(projectId, format, fileName);
   };
 
   const exportPdf = async () => {
     validateCompliance();
+    useEditorStore.getState().setFocusedRegionId(null);
+    await waitForPaint();
     const { exportToPDF } = await import('@/lib/editor/export');
     const project = projects.find(p => p.id === projectId);
+    const fileName = `${(project?.title || 'Tahliye-Plani').replace(/\s+/g, '-')}.pdf`;
     await exportToPDF(containerRef, project?.title || 'Tahliye-Plani', activeTemplateLayout, isPro);
+    if (projectId) await recordProjectExport(projectId, 'pdf', fileName);
   };
 
   useKeyboardShortcuts(() => exportImage());
+
+  // Show loading state while checking auth or loading project
+  if (isLoading && !profile) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-50">
+        <div className="animate-pulse text-slate-400 font-bold uppercase tracking-widest text-xs">
+          KullanÄ±cÄ± DoÄŸrulanÄ±yor...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <EditorErrorBoundary onReset={() => window.location.reload()}>
@@ -350,34 +386,27 @@ export default function EditorApp() {
           {!isPro && !isPreview && showUpgradeBanner && (
             <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[35]">
               <div className="relative group">
-                <Link 
+                <Link
                   href="/dashboard/upgrade"
                   className="flex items-center gap-5 px-6 py-3 bg-white/80 backdrop-blur-xl border border-cyan-500/30 text-slate-900 rounded-none shadow-[0_20px_50px_-12px_rgba(6,182,212,0.25)] text-[9px] font-black uppercase tracking-[0.2em] hover:border-cyan-500/60 transition-all relative"
                 >
-                  {/* Technical CAD Corners */}
                   <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t-2 border-l-2 border-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="absolute -bottom-[1px] -right-[1px] w-2 h-2 border-b-2 border-r-2 border-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  
                   <div className="flex items-center justify-center w-8 h-8 bg-cyan-50 border border-cyan-100">
                     <Sparkles className="w-4 h-4 text-cyan-500 group-hover:rotate-12 transition-transform" />
                   </div>
-
                   <div className="flex flex-col items-start gap-0.5">
                     <span className="relative z-10">
-                      Plus&apos;a Yüksel: <span className="text-cyan-600">Filigransız Temiz Çıktı Al</span>
+                      Plus&apos;a YÃ¼ksel: <span className="text-cyan-600">FiligransÄ±z Temiz Ã‡Ä±ktÄ± Al</span>
                     </span>
                   </div>
-
                   <div className="h-8 w-px bg-slate-200 mx-2" />
-
                   <span className="px-4 py-2 bg-slate-900 text-white rounded-none text-[10px] font-black tracking-widest group-hover:bg-cyan-600 transition-colors relative flex items-center gap-2">
-                    Hemen Başla
+                    Hemen BaÅŸla
                     <div className="w-1 h-1 bg-cyan-400 animate-pulse rounded-full" />
                   </span>
                 </Link>
-                
-                {/* Close Button */}
-                <button 
+                <button
                   onClick={() => setShowUpgradeBanner(false)}
                   className="absolute -right-2 -top-2 w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-300 transition-all shadow-md z-10"
                 >
@@ -398,6 +427,7 @@ export default function EditorApp() {
             setMobileMenu={setMobileMenu}
             stageRef={stageRef}
             setContainerNode={handleContainerNode}
+            projectId={projectId}
           />
           {!isPreview && (
             <EditorRightSidebar
@@ -408,9 +438,9 @@ export default function EditorApp() {
         </div>
 
         {isTemplateModalOpen && (
-          <TemplateSelectorModal 
-            isOpen={isTemplateModalOpen} 
-            onClose={() => setIsTemplateModalOpen(false)} 
+          <TemplateSelectorModal
+            isOpen={isTemplateModalOpen}
+            onClose={() => setIsTemplateModalOpen(false)}
           />
         )}
 
@@ -422,6 +452,7 @@ export default function EditorApp() {
             containerRef={containerRef}
             isPro={isPro}
             projectName={projects.find(p => p.id === projectId)?.title || 'Yeni Proje'}
+            onExportComplete={(format, fileName) => projectId ? recordProjectExport(projectId, format, fileName) : undefined}
           />
         )}
       </div>

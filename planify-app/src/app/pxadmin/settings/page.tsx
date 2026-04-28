@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { AdminCard } from '@/components/admin/AdminCard';
 import { 
   DollarSign, 
-  Settings as SettingsIcon, 
   Save, 
   RefreshCcw, 
   TrendingUp,
@@ -34,7 +33,7 @@ export default function AdminSettings() {
   useEffect(() => {
     async function fetchSettings() {
       const supabase = createClient();
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('admin_settings')
         .select('value')
         .eq('key', 'pricing_config')

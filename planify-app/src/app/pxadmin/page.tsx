@@ -8,8 +8,7 @@ import {
   TrendingUp, 
   ArrowUpRight, 
   ArrowDownRight,
-  Plus,
-  MoreHorizontal
+  Plus
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
@@ -17,13 +16,22 @@ import { cn } from '@/lib/utils';
 import { AdminDashboardSkeleton } from '@/components/admin/AdminSkeleton';
 
 export default function AdminDashboard() {
+  type FinanceTransaction = {
+    id: string;
+    type: 'revenue' | 'expense';
+    category: string;
+    amount: number | string;
+    description: string | null;
+    entry_date: string;
+  };
+
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalProjects: 0,
     totalRevenue: 0,
     activeSubscriptions: 0,
   });
-  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<FinanceTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [serverStats, setServerStats] = useState({
     cpu: 12,

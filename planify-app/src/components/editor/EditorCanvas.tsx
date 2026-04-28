@@ -8,9 +8,10 @@ import { Stage, Layer, Rect, Line, Text, Group, Circle, Image as KonvaImage, Sha
 import { useEditorStore, useShallow } from '@/store/useEditorStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { SYMBOLS, SNAP_DISTANCE, GRID_SIZE, THEME_CONFIGS, type EditorElement, type EditorTheme } from '@/types/editor';
-import { Layers } from 'lucide-react';
+import { ImageUp, Layers, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { mergeTemplateState } from '@/lib/editor/templateLayouts';
+import { getTemplateRegionAssetUrl, uploadTemplateRegionAsset } from '@/lib/editor/templateAssets';
 import { ISO_SYMBOLS } from '@/lib/editor/isoSymbols';
 import { sanitizeDebugEditorStatePayload } from '@/lib/editor/sanitizeEditorState';
 import {
@@ -113,6 +114,7 @@ interface EditorCanvasProps {
   setMobileMenu: (m: 'tools' | 'properties' | null) => void;
   stageRef: React.RefObject<Konva.Stage | null>;
   setContainerNode: (node: HTMLDivElement | null) => void;
+  projectId?: string | null;
 }
 
 const WatermarkGroup = ({ width, height, tier, email }: { width: number; height: number; tier: string; email?: string }) => {
@@ -193,7 +195,7 @@ const BrandingBanner = ({ width, height, tier }: { width: number; height: number
   );
 };
 
-export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, setContainerNode }: EditorCanvasProps) {
+export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, setContainerNode, projectId }: EditorCanvasProps) {
   const { profile, user } = useAuthStore();
   const subscriptionTier = profile?.subscription_tier || 'free';
 
@@ -248,6 +250,8 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   const [scaleModal, setScaleModal] = useState<{ pixels: number } | null>(null);
   const [scaleValue, setScaleValue] = useState('1');
   const lastDebugPayloadRef = useRef<string | null>(null);
+  const signedAssetPathRef = useRef(new Set<string>());
+  const [uploadingRegionId, setUploadingRegionId] = useState<string | null>(null);
 
   // Dimension input overlay: activated after mouseup on wall/window/door/route
   const [dimInput, setDimInput] = useState<{
@@ -1191,6 +1195,69 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
 
   const mergedTemplateState = mergeTemplateState(templateState);
 
+  useEffect(() => {
+    const missingSignedUrls = Object.entries(templateState).filter(([, value]) => value.imagePath && !signedAssetPathRef.current.has(value.imagePath));
+    if (missingSignedUrls.length === 0) return;
+
+    let cancelled = false;
+    missingSignedUrls.forEach(([regionId, value]) => {
+      if (!value.imagePath) return;
+      signedAssetPathRef.current.add(value.imagePath);
+      void getTemplateRegionAssetUrl(value.imagePath)
+        .then((signedUrl) => {
+          if (!cancelled) updateTemplateRegion(regionId, { imageUrl: signedUrl });
+        })
+        .catch((error) => {
+          console.error('Template region signed URL failed:', error);
+        });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [templateState, updateTemplateRegion]);
+
+  const handleRegionImageUpload = async (regionId: string, file: File | null) => {
+    if (!file || !user?.id) return;
+    if (!projectId) {
+      updateTemplateRegion(regionId, {
+        imageUrl: URL.createObjectURL(file),
+        imageAlt: file.name,
+        mediaMode: 'visual-first',
+      });
+      return;
+    }
+
+    setUploadingRegionId(regionId);
+    try {
+      const { path, signedUrl } = await uploadTemplateRegionAsset({
+        file,
+        userId: user.id,
+        projectId,
+        regionId,
+      });
+      updateTemplateRegion(regionId, {
+        imagePath: path,
+        imageUrl: signedUrl,
+        imageAlt: file.name,
+        mediaMode: 'visual-first',
+      });
+    } catch (error) {
+      console.error('Template region asset upload failed:', error);
+    } finally {
+      setUploadingRegionId(null);
+    }
+  };
+
+  const clearRegionImage = (regionId: string) => {
+    updateTemplateRegion(regionId, {
+      imagePath: '',
+      imageUrl: '',
+      imageAlt: '',
+      mediaMode: 'visual-first',
+    });
+  };
+
   const setCanvasHostRef = (node: HTMLDivElement | null) => {
     stageHostRef.current = node;
     setContainerNode(node);
@@ -1487,6 +1554,18 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
             >
               {/* Fine grid overlay on paper */}
               <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(15,23,42,.03)_1px,transparent_1px),linear-gradient(rgba(15,23,42,.03)_1px,transparent_1px)] bg-[length:20px_20px] pointer-events-none" />
+              <style>{`
+                [data-template-paper][data-export-mode="true"] section {
+                  box-shadow: none !important;
+                  outline: none !important;
+                  --tw-ring-shadow: 0 0 #0000 !important;
+                }
+                [data-template-paper][data-export-mode="true"] button,
+                [data-template-paper][data-export-mode="true"] input,
+                [data-template-paper][data-export-mode="true"] textarea {
+                  display: none !important;
+                }
+              `}</style>
 
               {/* "Geri Gel" button when a region is focused */}
               {focusedRegionId && (
@@ -1517,18 +1596,19 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                     key={region.id}
                     onClick={(event) => { event.stopPropagation(); if (!focused) setFocusedRegionId(region.id); }}
                     className={cn(
-                      "absolute overflow-hidden border transition-all duration-300",
+                      "absolute overflow-hidden border box-border transition-all duration-300",
                       isHeader ? "border-none" : "rounded-[12px]",
                       !isHeader && toneClass,
-                      focused && "z-30 scale-[1.015] shadow-[0_20px_50px_rgba(8,145,178,0.3)] ring-4 ring-cyan-500/30 border-cyan-500",
+                      focused && "z-30 shadow-[0_16px_36px_rgba(8,145,178,0.22)] ring-4 ring-cyan-500/30 border-cyan-500",
                       dimmed && "pointer-events-none opacity-25 grayscale",
-                      !focused && "cursor-pointer hover:shadow-lg hover:border-cyan-400"
+                      !focused && "cursor-pointer hover:shadow-lg hover:border-cyan-400",
+                      "data-[export-mode=true]:shadow-none data-[export-mode=true]:ring-0"
                     )}
                     style={{
                       left: isHeader ? `${region.x}%` : `calc(${region.x}% + 6px)`,
                       top: isHeader ? `${region.y}%` : `calc(${region.y}% + 6px)`,
-                      width: focused ? `max(${region.w}%, 280px)` : isHeader ? `${region.w}%` : `calc(${region.w}% - 12px)`,
-                      height: focused ? `max(${region.h}%, 280px)` : isHeader ? `${region.h}%` : `calc(${region.h}% - 12px)`,
+                      width: isHeader ? `${region.w}%` : `calc(${region.w}% - 12px)`,
+                      height: isHeader ? `${region.h}%` : `calc(${region.h}% - 12px)`,
                       zIndex: focused ? 40 : undefined,
                       background: isHeader ? activeTemplateLayout.layout_json.accent : undefined,
                     }}
@@ -1603,15 +1683,42 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                           )}
 
                           {region.type === 'assembly' && (
-                            <div className="space-y-1.5 pb-2">
-                              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Vaziyet Planı (URL)</label>
-                              <input
-                                type="text"
-                                value={content.imageUrl || ''}
-                                onChange={(event) => updateTemplateRegion(region.id, { imageUrl: event.target.value })}
-                                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-[10px] font-medium text-slate-600 outline-none focus:border-cyan-500 focus:bg-white transition-all shadow-sm"
-                                placeholder="https://..."
-                              />
+                            <div className="space-y-2 pb-2">
+                              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Vaziyet / Toplanma Görseli</label>
+                              {content.imageUrl && (
+                                <div className="relative h-28 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={content.imageUrl} alt={content.imageAlt || region.label} className="h-full w-full object-contain p-2" />
+                                </div>
+                              )}
+                              <div className="grid grid-cols-2 gap-2">
+                                <label className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 text-[10px] font-black uppercase tracking-widest text-blue-700 hover:bg-blue-100">
+                                  <ImageUp className="h-4 w-4" />
+                                  {uploadingRegionId === region.id ? 'Yükleniyor' : 'Görsel Seç'}
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    disabled={uploadingRegionId === region.id}
+                                    onChange={(event) => {
+                                      void handleRegionImageUpload(region.id, event.target.files?.[0] || null);
+                                      event.currentTarget.value = '';
+                                    }}
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => clearRegionImage(region.id)}
+                                  disabled={!content.imageUrl}
+                                  className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Kaldır
+                                </button>
+                              </div>
+                              <p className="text-[10px] font-semibold leading-relaxed text-slate-400">
+                                Görsel eklendiğinde çıktı alanında açıklama metni gizlenir ve vaziyet resmi kırpılmadan basılır.
+                              </p>
                             </div>
                           )}
                         </div>
@@ -1722,10 +1829,20 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                             </div>
                           ) : (
                             <>
-                              {content.imageUrl && (
+                              {region.type === 'assembly' && content.imageUrl && (
+                                <div className="flex-1 min-h-0 relative flex items-center justify-center rounded-lg border border-blue-100 bg-gradient-to-br from-slate-50 to-blue-50/60 p-[2cqmin]">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={content.imageUrl} alt={content.imageAlt || region.label} className="max-h-full max-w-full object-contain rounded-sm shadow-sm" />
+                                  <div className="absolute left-[2cqmin] top-[2cqmin] rounded-full bg-blue-600 px-[2cqmin] py-[1cqmin] text-[max(6px,min(2.6cqw,8cqh))] font-black uppercase tracking-widest text-white shadow-md">
+                                    Vaziyet
+                                  </div>
+                                </div>
+                              )}
+
+                              {region.type !== 'assembly' && content.imageUrl && (
                                 <div className="shrink-0 h-[30%] relative mb-[2cqmin] flex items-center justify-center">
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={content.imageUrl} alt={region.label} className="max-w-full max-h-full object-contain rounded-sm shadow-sm border border-slate-200/50" />
+                                  <img src={content.imageUrl} alt={content.imageAlt || region.label} className="max-w-full max-h-full object-contain rounded-sm shadow-sm border border-slate-200/50" />
                                 </div>
                               )}
 
@@ -1779,6 +1896,23 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                                     )
                                   })}
                                 </div>
+                              ) : region.type === 'emergency' ? (
+                                <div className="flex-1 min-h-0 flex items-center gap-[4cqmin] rounded-xl border border-red-100 bg-gradient-to-br from-red-50 to-white p-[4cqmin] shadow-inner">
+                                  <div className="flex h-[22cqmin] w-[22cqmin] shrink-0 items-center justify-center rounded-xl bg-red-600 text-white shadow-lg shadow-red-500/20">
+                                    <span className="font-black leading-none" style={{ fontSize: 'max(14px, min(8cqmin, 18cqh))' }}>112</span>
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-black uppercase tracking-tight text-red-700 leading-none" style={{ fontSize: 'max(10px, min(4.8cqw, 16cqh))' }}>
+                                      {content.title || '112 Acil Durum Telefonu'}
+                                    </p>
+                                    <p className="mt-[1.5cqmin] font-bold leading-snug text-slate-700" style={{ fontSize: 'max(8px, min(3.4cqw, 9cqh))' }}>
+                                      {content.body || 'Acil durumlarda 112 aranmalıdır.'}
+                                    </p>
+                                    <p className="mt-[1cqmin] font-black uppercase tracking-widest text-red-400" style={{ fontSize: 'max(6px, min(2.2cqw, 6cqh))' }}>
+                                      {content.meta || 'EMERGENCY CALL'}
+                                    </p>
+                                  </div>
+                                </div>
                               ) : region.type === 'instruction' ? (
                                 <div className="flex-1 min-h-0 flex flex-col pt-[1cqh]">
                                   {/* Fixed 112 Section */}
@@ -1805,6 +1939,15 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                                   )}
 
                                 </div>
+                                ) : region.type === 'assembly' && content.imageUrl ? null : region.type === 'assembly' ? (
+                                  <div className="flex-1 min-h-0 flex flex-col justify-center gap-[2cqh] rounded-lg border border-dashed border-blue-200 bg-blue-50/40 p-[3cqmin]">
+                                    <div className="mx-auto flex h-[18cqmin] w-[18cqmin] items-center justify-center rounded-full bg-blue-600 text-white shadow-md">
+                                      <svg className="h-[55%] w-[55%]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11Z" /><circle cx="12" cy="10" r="2.5" /></svg>
+                                    </div>
+                                    <p className="text-center font-bold text-slate-700 leading-[1.25]" style={{ fontSize: 'max(9px, min(3.7cqw, 10cqh))' }}>
+                                      {content.body || 'Toplanma noktası bina dışında, güvenli uzaklıkta işaretlenmiş alanda bulunmaktadır.'}
+                                    </p>
+                                  </div>
                                 ) : content.body && (
                                   <div className="flex-1 min-h-0 flex flex-col justify-center">
                                     <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.3]"

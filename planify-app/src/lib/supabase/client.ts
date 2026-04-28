@@ -40,7 +40,7 @@ export function createClient(isAdmin = false) {
   // zararsız Supabase Lock uyarılarını konsolda gizle
   if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     const originalWarn = console.warn;
-    console.warn = (...args: any[]) => {
+    console.warn = (...args: Parameters<typeof console.warn>) => {
       if (typeof args[0] === 'string' && args[0].includes('lock:sb-') && args[0].includes('was not released within')) {
         return;
       }
