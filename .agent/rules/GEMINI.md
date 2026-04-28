@@ -79,8 +79,8 @@ When auto-applying an agent, inform the user:
 |------|-------|--------------|
 | 1 | Did I identify the correct agent for this domain? | → STOP. Analyze request domain first. |
 | 2 | Did I READ the agent's `.md` file (or recall its rules)? | → STOP. Open `.agent/agents/{agent}.md` |
-| 3 | Did I announce `🤖 Applying knowledge of @[agent]...`? | → STOP. Add announcement before response. |
-| 4 | Did I load required skills from agent's frontmatter? | → STOP. Check `skills:` field and read them. |
+| 3 | Did I load **planify-core** and **planify-editor**? | → STOP. Critical for project context. |
+| 4 | Did I announce `🤖 Applying knowledge of @[agent]...`? | → STOP. Add announcement before response. |
 
 **Failure Conditions:**
 
@@ -152,8 +152,8 @@ When user's prompt is NOT in English:
 | Project Type                           | Primary Agent         | Skills                        |
 | -------------------------------------- | --------------------- | ----------------------------- |
 | **MOBILE** (iOS, Android, RN, Flutter) | `mobile-developer`    | mobile-design                 |
-| **WEB** (Next.js, React web)           | `frontend-specialist` | frontend-design               |
-| **BACKEND** (API, server, DB)          | `backend-specialist`  | api-patterns, database-design |
+| **WEB** (Next.js, React web)           | `frontend-specialist` | frontend-design, **planify-editor**, **planify-core** |
+| **BACKEND** (API, server, DB)          | `backend-specialist`  | api-patterns, database-design, **planify-core**      |
 
 > 🔴 **Mobile + frontend-specialist = WRONG.** Mobile = mobile-developer ONLY.
 

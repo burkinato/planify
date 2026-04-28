@@ -144,7 +144,7 @@ export function sanitizeTemplateState(value: unknown): TemplateState {
 export function sanitizeProjectMetadata(value: unknown): ProjectMetadata {
   const raw = isRecord(value) ? value : {};
   return {
-    name: asString(raw.name, 'İSİMSİZ PROJE'),
+    name: asString(raw.name, 'PROJE DOSYASI'),
     author: asString(raw.author, ''),
     date: asString(raw.date, new Date().toLocaleDateString('tr-TR')),
     revision: asString(raw.revision, '00'),

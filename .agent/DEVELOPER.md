@@ -1,14 +1,25 @@
-# Planify Codex Developer Notes
+# Planify Developer Guide
 
-This file is intentionally small. The previous Antigravity notes were too large
-for efficient Codex context loading.
+## Development & Deployment
+- **Local App Root**: `/var/www/planify/planify-app`
+- **PM2 Process**: `planify`
+- **Deploy Flow**:
+  1. `npm run lint`
+  2. `npm run build`
+  3. `pm2 restart planify`
 
-Use these files instead:
+## Testing Credentials
+- **Email**: `isilgin2026@outlook.com`
+- **Password**: `Sifre123$$`
+> [!IMPORTANT]
+> Do not expose these credentials in public logs or summaries.
 
-- `../AGENTS.md`
-- `../.codex/PROJECT.md`
-- `../.codex/TESTING.md`
-- `../.codex/DEPLOYMENT.md`
+## Database Management
+- Migrations: `planify-app/supabase/migrations/`
+- Helper scripts: `planify-app/scripts/` using `pg`
+- Prefer adding migration files for any schema changes.
 
-Sensitive test credentials and test flows live in `../.codex/TESTING.md`.
-Do not print credentials in summaries, screenshots, commits, or public logs.
+## Working Rules
+- **Serious UI**: Keep the design professional, official, and dense. Avoid playful or overly decorative layouts.
+- **Preserve Changes**: The server worktree may be dirty; never reset or checkout without explicit user request.
+- **Compliance First**: Ensure symbols and routes meet ISO standards.

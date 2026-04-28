@@ -43,6 +43,8 @@ graph TD
 | **API Endpoint**    | "endpoint", "route", "API", "POST", "GET"  | `backend-specialist`                        | ✅ YES       |
 | **Database**        | "schema", "migration", "query", "table"    | `database-architect` + `backend-specialist` | ✅ YES       |
 | **Bug Fix**         | "error", "bug", "not working", "broken"    | `debugger`                                  | ✅ YES       |
+| **Planify Editor**  | "canvas", "konva", "symbol", "route"       | `frontend-specialist` + `planify-editor`    | ✅ YES       |
+| **ISO/Compliance**  | "iso", "compliance", "denetim", "ohs"      | `product-owner` + `planify-core`            | ✅ YES       |
 | **Test**            | "test", "coverage", "unit", "e2e"          | `test-engineer`                             | ✅ YES       |
 | **Deployment**      | "deploy", "production", "CI/CD", "docker"  | `devops-engineer`                           | ✅ YES       |
 | **Security Review** | "security", "vulnerability", "exploit"     | `security-auditor` + `penetration-tester`   | ✅ YES       |
@@ -113,6 +115,7 @@ function analyzeRequest(userMessage) {
 | **Performance** | slow, lag, optimize, cache, performance    | `performance-optimizer` |
 | **SEO**         | seo, meta, analytics, sitemap, robots      | `seo-specialist`        |
 | **Game**        | unity, godot, phaser, game, multiplayer    | `game-developer`        |
+| **Planify**     | konva, canvas, symbol, iso, ohs, antet     | `planify-core`          |
 
 ### Multi-Domain Tasks (Auto-invoke Orchestrator)
 

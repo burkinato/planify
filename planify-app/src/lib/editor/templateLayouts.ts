@@ -33,7 +33,7 @@ const r = (
 
 export function buildRegions(style: string): TemplateRegion[] {
   if (style === 'premiumAudit') return [
-    r('header',          'header',      'ACİL DURUM TAHLİYE PLANI',   2,   2, 96,  9, 'green'),
+    r('header',          'header',      'ACİL DURUM VE YANGIN TAHLİYE PLANI',   2,   2, 96,  9, 'green'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',                       2,  13, 68, 66, 'paper'),
     r('emergency',       'emergency',   '112 Acil Durum Telefonu',              72,  13, 26, 10, 'red'),
     r('instructions',    'instruction', 'Acil Durum Talimatı',                  72,  25, 26, 22, 'green'),
@@ -42,7 +42,7 @@ export function buildRegions(style: string): TemplateRegion[] {
     r('approval',        'approval',    'Revizyon ve Onay',                      2,  82, 96, 14, 'neutral'),
   ];
   if (style === 'sitePremium') return [
-    r('header',          'header',      'ACİL DURUM TAHLİYE PLANI',   2,   2, 96,  9, 'green'),
+    r('header',          'header',      'ACİL DURUM VE YANGIN TAHLİYE PLANI',   2,   2, 96,  9, 'green'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',                       2,  13, 64, 62, 'paper'),
     r('assembly',        'assembly',    'Vaziyet / Toplanma Alanı',             68,  13, 30, 30, 'blue'),
     r('emergency',       'emergency',   '112 Acil Durum Telefonu',              68,  45, 30, 10, 'red'),
@@ -51,7 +51,7 @@ export function buildRegions(style: string): TemplateRegion[] {
     r('approval',        'approval',    'Revizyon ve Onay',                     49,  78, 49, 18, 'neutral'),
   ];
   if (style === 'corporate3d') return [
-    r('header',          'header',      'ACİL DURUM TAHLİYE PLANI',   2,   2, 96, 10, 'green'),
+    r('header',          'header',      'ACİL DURUM VE YANGIN TAHLİYE PLANI',   2,   2, 96, 10, 'green'),
     r('emergency',       'emergency',   '112 Acil Durum Telefonu',               2,  14, 18, 10, 'red'),
     r('instructions',    'instruction', 'Acil Durum Talimatı',                   2,  26, 18, 29, 'green'),
     r('legend',          'legend',      'Semboller Dizini',                      2,  57, 18, 20, 'info'),
@@ -61,7 +61,7 @@ export function buildRegions(style: string): TemplateRegion[] {
     r('approval',        'approval',    'Revizyon ve Onay',                      2,  80, 96, 16, 'neutral'),
   ];
   if (style === 'panoramic') return [
-    r('header',          'header',      'ACİL DURUM TAHLİYE PLANI',   2,   2, 96, 10, 'green'),
+    r('header',          'header',      'ACİL DURUM VE YANGIN TAHLİYE PLANI',   2,   2, 96, 10, 'green'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',                      2,  14, 76, 68, 'paper'),
     r('legend',          'legend',      'Semboller Dizini',                     80, 14, 18, 32, 'info'),
     r('instructions',    'instruction', 'Acil Durum Talimatı',                   80, 48, 18, 22, 'green'),
@@ -69,7 +69,7 @@ export function buildRegions(style: string): TemplateRegion[] {
     r('approval',        'approval',    'Revizyon ve Onay',                     2,  82, 96, 16, 'neutral'),
   ];
   if (style === 'leftRail') return [
-    r('header',          'header',      'ACİL DURUM TAHLİYE PLANI',   3,   3, 94,  9, 'green'),
+    r('header',          'header',      'ACİL DURUM VE YANGIN TAHLİYE PLANI',   3,   3, 94,  9, 'green'),
     r('instructions',    'instruction', 'Acil Durum Talimatı',                   3,  15, 19, 35, 'green'),
     r('fireInstruction', 'instruction', 'Yangın Talimatı',                       3,  52, 19, 28, 'red'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',                      25, 15, 70, 65, 'paper'),
@@ -78,7 +78,7 @@ export function buildRegions(style: string): TemplateRegion[] {
     r('approval',        'approval',    'Onay / Rev.',                          75, 80, 22, 17, 'neutral'),
   ];
   if (style === 'rightRail') return [
-    r('header',          'header',      'ACİL DURUM TAHLİYE PLANI',   3,   3, 94,  9, 'green'),
+    r('header',          'header',      'ACİL DURUM VE YANGIN TAHLİYE PLANI',   3,   3, 94,  9, 'green'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',                       3,  15, 70, 65, 'paper'),
     r('legend',          'legend',      'Semboller Dizini',                     76,  15, 21, 35, 'info'),
     r('instructions',    'instruction', 'Acil Durum Talimatı',                  76,  52, 21, 28, 'green'),
@@ -86,7 +86,7 @@ export function buildRegions(style: string): TemplateRegion[] {
     r('approval',        'approval',    'Revizyon ve Onay',                     40,  80, 57, 17, 'neutral'),
   ];
   if (style === 'bottomBand') return [
-    r('header',          'header',      'ACİL DURUM TAHLİYE PLANI',   3,   3, 94, 10, 'green'),
+    r('header',          'header',      'ACİL DURUM VE YANGIN TAHLİYE PLANI',   3,   3, 94, 10, 'green'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',                       3,  16, 94, 58, 'paper'),
     r('instructions',    'instruction', 'Acil Durum Talimatı',                   3,  77, 30, 18, 'green'),
     r('fireInstruction', 'instruction', 'Yangın Talimatı',                      35,  77, 30, 20, 'red'),
@@ -94,7 +94,7 @@ export function buildRegions(style: string): TemplateRegion[] {
     r('approval',        'approval',    'Onay / QR',                            84,  77, 13, 20, 'neutral'),
   ];
   if (style === 'dualRails') return [
-    r('header',          'header',      'ACİL DURUM TAHLİYE PLANI',   3,   3, 94, 10, 'green'),
+    r('header',          'header',      'ACİL DURUM VE YANGIN TAHLİYE PLANI',   3,   3, 94, 10, 'green'),
     r('instructions',    'instruction', 'Acil Durum Talimatı',                   3,  16, 17, 38, 'green'),
     r('fireInstruction', 'instruction', 'Yangın Talimatı',                      80,  16, 17, 38, 'red'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',                      22,  16, 56, 62, 'paper'),
@@ -103,7 +103,7 @@ export function buildRegions(style: string): TemplateRegion[] {
     r('approval',        'approval',    'Sorumlu / Onay',                       59,  79, 38, 18, 'neutral'),
   ];
   return [
-    r('header',          'header',      'ACİL DURUM TAHLİYE PLANI',   3,   3, 94, 10, 'green'),
+    r('header',          'header',      'ACİL DURUM VE YANGIN TAHLİYE PLANI',   3,   3, 94, 10, 'green'),
     r('instructions',    'instruction', 'Acil Durum Talimatı',                   3,  16, 18, 31, 'green'),
     r('fireInstruction', 'instruction', 'Yangın Talimatı',                       3,  50, 18, 28, 'red'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',                      24, 16, 58, 62, 'paper'),
@@ -168,9 +168,9 @@ export const FALLBACK_TEMPLATE_LAYOUTS: TemplateLayout[] = FAMILIES.flatMap(
 export function getDefaultTemplateState(): TemplateState {
   return {
     header: {
-      title: 'ACİL DURUM TAHLİYE PLANI',
-      body:  'Emergency Evacuation Plan',
-      meta:  'Kat: Zemin Kat  |  Ölçek: 1:100  |  Rev: 00',
+      title: 'ACİL DURUM VE YANGIN TAHLİYE PLANI',
+      body:  'Emergency and Fire Evacuation Plan',
+      meta:  '',
     },
     instructions: {
       title: 'ACİL DURUM TALİMATI',

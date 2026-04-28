@@ -196,6 +196,8 @@ const BrandingBanner = ({ width, height, tier }: { width: number; height: number
 };
 
 export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, setContainerNode, projectId }: EditorCanvasProps) {
+  const DEFAULT_PLAN_HEADER = 'ACİL DURUM TAHLİYE PLANI';
+  const ISO_HEADER_GREEN = '#00A651';
   const { profile, user } = useAuthStore();
   const subscriptionTier = profile?.subscription_tier || 'free';
 
@@ -252,6 +254,8 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   const lastDebugPayloadRef = useRef<string | null>(null);
   const signedAssetPathRef = useRef(new Set<string>());
   const [uploadingRegionId, setUploadingRegionId] = useState<string | null>(null);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+  const [isLogoLoading, setIsLogoLoading] = useState(false);
 
   // Dimension input overlay: activated after mouseup on wall/window/door/route
   const [dimInput, setDimInput] = useState<{
@@ -1258,6 +1262,27 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     });
   };
 
+  const handleProjectLogoUpload = async (file: File | null) => {
+    if (!file) return;
+    setIsLogoLoading(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+
+      if (dataUrl) {
+        setProjectMetadata({ logoUrl: dataUrl });
+      }
+    } catch (error) {
+      console.error('Project logo upload failed:', error);
+    } finally {
+      setIsLogoLoading(false);
+    }
+  };
+
   const setCanvasHostRef = (node: HTMLDivElement | null) => {
     stageHostRef.current = node;
     setContainerNode(node);
@@ -1583,7 +1608,17 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                 const content = mergedTemplateState[region.id] || {};
                 const focused = focusedRegionId === region.id;
                 const dimmed = !!focusedRegionId && !focused;
-                const isHeader = region.type === 'header';
+                const regionIdNormalized = (region.id || '').toLowerCase();
+                const regionLabelNormalized = (region.label || '').toLocaleLowerCase('tr-TR');
+                const isHeader = (
+                  region.type === 'header'
+                  || regionIdNormalized.includes('header')
+                  || regionIdNormalized.includes('baslik')
+                  || regionIdNormalized.includes('title')
+                  || regionLabelNormalized.includes('başlık')
+                  || regionLabelNormalized.includes('duyuru')
+                  || regionLabelNormalized.includes('tahliye planı')
+                );
                 const tone = region.tone || 'neutral';
                 const toneClass =
                   tone === 'red' ? 'border-red-100 bg-white shadow-md shadow-red-900/5' :
@@ -1596,10 +1631,13 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                     key={region.id}
                     onClick={(event) => { event.stopPropagation(); if (!focused) setFocusedRegionId(region.id); }}
                     className={cn(
-                      "absolute overflow-hidden border box-border transition-all duration-300",
+                      "absolute border box-border transition-all duration-300",
+                      focused && isHeader ? "overflow-visible" : "overflow-hidden",
                       isHeader ? "border-none" : "rounded-[12px]",
                       !isHeader && toneClass,
-                      focused && "z-30 shadow-[0_16px_36px_rgba(8,145,178,0.22)] ring-4 ring-cyan-500/30 border-cyan-500",
+                      focused && (isHeader
+                        ? "z-30 shadow-[0_16px_36px_rgba(5,150,105,0.22)] ring-4 ring-emerald-500/35 border-emerald-500"
+                        : "z-30 shadow-[0_16px_36px_rgba(8,145,178,0.22)] ring-4 ring-cyan-500/30 border-cyan-500"),
                       dimmed && "pointer-events-none opacity-25 grayscale",
                       !focused && "cursor-pointer hover:shadow-lg hover:border-cyan-400",
                       "data-[export-mode=true]:shadow-none data-[export-mode=true]:ring-0"
@@ -1609,15 +1647,23 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                       top: isHeader ? `${region.y}%` : `calc(${region.y}% + 6px)`,
                       width: isHeader ? `${region.w}%` : `calc(${region.w}% - 12px)`,
                       height: isHeader ? `${region.h}%` : `calc(${region.h}% - 12px)`,
-                      zIndex: focused ? 40 : undefined,
-                      background: isHeader ? activeTemplateLayout.layout_json.accent : undefined,
+                      zIndex: focused ? (isHeader ? 80 : 40) : undefined,
+                      background: isHeader ? ISO_HEADER_GREEN : undefined,
                     }}
                   >
                     {focused ? (
-                      <div className="flex flex-col h-full bg-white animate-fade-in relative z-10 overflow-hidden">
+                      <div
+                        className={cn(
+                          "flex flex-col bg-white animate-fade-in relative z-10",
+                          isHeader
+                            ? "absolute left-0 top-full mt-3 w-[min(520px,92vw)] max-h-[70vh] rounded-2xl border border-emerald-200 shadow-2xl overflow-hidden"
+                            : "h-full overflow-hidden"
+                        )}
+                      >
                         {/* Title Bar with Tone-Specific Gradient */}
                         <div className={cn(
                           "flex items-center justify-between p-3 border-b shrink-0",
+                          isHeader ? "bg-emerald-50 border-emerald-100" :
                           tone === 'red' ? "bg-red-50 border-red-100" :
                           tone === 'blue' ? "bg-blue-50 border-blue-100" :
                           tone === 'green' ? "bg-emerald-50 border-emerald-100" :
@@ -1625,18 +1671,20 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                         )}>
                           <div className={cn(
                             "text-[10px] font-black uppercase tracking-widest flex items-center gap-2",
+                            isHeader ? "text-emerald-700" :
                             tone === 'red' ? "text-red-600" :
                             tone === 'blue' ? "text-blue-600" :
                             tone === 'green' ? "text-emerald-600" :
                             "text-slate-500"
                           )}>
                             <div className={cn("w-1.5 h-3 rounded-full", 
+                              isHeader ? "bg-emerald-600" :
                               tone === 'red' ? "bg-red-500" : 
                               tone === 'blue' ? "bg-blue-500" : 
                               tone === 'green' ? "bg-emerald-500" : 
                               "bg-slate-400"
                             )} />
-                            {region.label}
+                            {isHeader ? 'ŞABLON BAŞLIĞI' : region.label}
                           </div>
                           <button 
                             onClick={(e) => { e.stopPropagation(); setFocusedRegionId(null); }} 
@@ -1648,6 +1696,58 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
 
                         {/* Scrollable Form Content */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" onWheel={(e) => e.stopPropagation()}>
+                          {isHeader ? (
+                            <>
+                              <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3">
+                                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800">{DEFAULT_PLAN_HEADER}</p>
+                                <p className="mt-1 text-[10px] font-semibold text-emerald-700/80">ISO 7010 / ISO 23601 uyumlu başlık rengi güvenlik yeşili olarak sabitlenmiştir.</p>
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Alt Bilgi</label>
+                                <input
+                                  value={content.meta || ''}
+                                  onChange={(event) => updateTemplateRegion(region.id, { meta: event.target.value.toUpperCase() })}
+                                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-sm font-black uppercase tracking-wide text-slate-900 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-sm placeholder:text-slate-300"
+                                  placeholder="ORN: 1. NORMAL KAT"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">BaÅŸlÄ±k Logosu</label>
+                                {projectMetadata.logoUrl && (
+                                  <div className="relative h-20 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={projectMetadata.logoUrl} alt="BaÅŸlÄ±k logosu" className="h-full w-full object-contain" />
+                                  </div>
+                                )}
+                                <div className="grid grid-cols-2 gap-2">
+                                  <label className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 text-[10px] font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-100">
+                                    <ImageUp className="h-4 w-4" />
+                                    {isLogoLoading ? 'YÃ¼kleniyor' : 'Logo SeÃ§'}
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      disabled={isLogoLoading}
+                                      onChange={(event) => {
+                                        void handleProjectLogoUpload(event.target.files?.[0] || null);
+                                        event.currentTarget.value = '';
+                                      }}
+                                    />
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => setProjectMetadata({ logoUrl: '' })}
+                                    disabled={!projectMetadata.logoUrl}
+                                    className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    KaldÄ±r
+                                  </button>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
                           <div className="space-y-1.5">
                             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Başlık</label>
                             <input
@@ -1670,7 +1770,10 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                             />
                           </div>
 
-                          {(!isHeader || content.meta !== undefined) && (
+                            </>
+                          )}
+
+                          {(!isHeader && (content.meta !== undefined || region.type !== 'header')) && (
                             <div className="space-y-1.5">
                               <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Alt Bilgi / Meta</label>
                               <input
@@ -1727,9 +1830,14 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                       // ── IMPROVED HEADER BLOCK ───────────────────────────────────────
                       <div className="w-full h-full flex items-center group/header relative" style={{ containerType: 'size' } as React.CSSProperties}>
                         {/* Logo Area */}
-                        <div 
-                          onClick={(e) => { e.stopPropagation(); setFocusedRegionId(region.id); }}
-                          className="h-full aspect-square flex items-center justify-center bg-white/10 border-r border-white/10 cursor-pointer hover:bg-white/20 transition-all overflow-hidden"
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            logoFileInputRef.current?.click();
+                          }}
+                          className="h-full aspect-square flex items-center justify-center bg-white/10 border-r border-white/10 overflow-hidden cursor-pointer hover:bg-white/20 transition-all"
+                          title={isLogoLoading ? 'Logo yükleniyor' : 'Logo yükle / değiştir'}
                         >
                           {projectMetadata.logoUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -1737,34 +1845,55 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                           ) : (
                             <svg className="w-1/2 h-1/2 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
                           )}
-                        </div>
+                        </button>
 
                         {/* Title & Meta Group */}
                         <div className="flex-1 flex flex-col items-center justify-center text-center px-[3cqw] overflow-hidden">
-                          <input 
-                            value={projectMetadata.name}
-                            onChange={(e) => setProjectMetadata({ name: e.target.value.toUpperCase() })}
-                            placeholder="PROJE ADI"
-                            className="w-full bg-transparent border-none outline-none text-center font-black uppercase tracking-[0.05em] text-white placeholder:text-white/30 leading-[1.1]"
-                            style={{ fontSize: 'min(32cqh, 4.5cqw)' }}
-                          />
-                          
-                          <div className="flex items-center gap-[4cqw] mt-[1cqh]">
-                             <span className="font-black text-white/50 uppercase tracking-widest" style={{ fontSize: 'min(12cqh, 1.8cqw)' }}>
-                               {activeTemplateLayout.name}
-                             </span>
-                             <div className="w-1 h-1 rounded-full bg-white/30" />
-                             <span className="font-black text-white/50 uppercase tracking-widest" style={{ fontSize: 'min(12cqh, 1.8cqw)' }}>
-                               REV: {projectMetadata.revision}
-                             </span>
+                          <div
+                            className="w-full text-center font-black uppercase tracking-[0.02em] text-white leading-[1.04] truncate"
+                            style={{ fontSize: 'min(40cqh, 5.8cqw)', textShadow: '0 1px 0 rgba(0,0,0,0.24)' }}
+                            title={DEFAULT_PLAN_HEADER}
+                          >
+                            {DEFAULT_PLAN_HEADER}
                           </div>
+                          {!!content.meta?.trim() && (
+                            <div
+                              className="w-full text-center font-black uppercase tracking-[0.07em] text-white/92 truncate mt-[0.7cqh]"
+                              style={{ fontSize: 'min(15cqh, 2.2cqw)' }}
+                              title={content.meta}
+                            >
+                              {content.meta}
+                            </div>
+                          )}
                         </div>
 
-                        {/* ISO Icon */}
-                        <div className="h-full flex items-center justify-center px-[3cqw] opacity-40">
-                           <svg className="h-[60%] aspect-square" viewBox="0 0 24 24" fill="white">
-                             <path d="M13.5 5a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0zm-1.5 4.5L10 14h4l-1-3 2.5 2 1.5-3-3-1-2 1.5zM3 3h7v2H5v14h14v-6h2v8H3V3z" />
-                           </svg>
+                        {/* Header Logo Upload Action */}
+                        <div className="hidden">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              logoFileInputRef.current?.click();
+                            }}
+                            className="group/logo flex h-[72%] aspect-square items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white/70 transition-all hover:bg-white/20 hover:text-white"
+                            title={isLogoLoading ? 'Logo yükleniyor' : 'Logo yükle / değiştir'}
+                          >
+                            {isLogoLoading ? (
+                              <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                            ) : (
+                              <ImageUp className="h-[44%] w-[44%]" />
+                            )}
+                          </button>
+                          <input
+                            ref={logoFileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(event) => {
+                              void handleProjectLogoUpload(event.target.files?.[0] || null);
+                              event.currentTarget.value = '';
+                            }}
+                          />
                         </div>
                       </div>
 
