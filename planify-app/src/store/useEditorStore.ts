@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 export { useShallow } from 'zustand/react/shallow';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
 import type {
   EditorElement,
   EditorTool,
@@ -130,19 +131,7 @@ const getInitialState = () => {
     };
   }
 
-  // Migrate old 'planify-*' keys to 'planify-*' (backward compat)
-  const LEGACY_KEYS = [
-    'elements', 'layers', 'custom-symbols', 'scale', 'theme',
-    'template', 'template-layout-id', 'preset', 'template-state',
-  ];
-  for (const key of LEGACY_KEYS) {
-    const oldKey = `planify-${key}`;
-    const newKey = `planify-${key}`;
-    const oldValue = localStorage.getItem(oldKey);
-    if (oldValue && !localStorage.getItem(newKey)) {
-      localStorage.setItem(newKey, oldValue);
-    }
-  }
+  // Migration code removed - was non-functional (oldKey and newKey were identical)
 
   const layers = sanitizeLayers(JSON.parse(localStorage.getItem('planify-layers') || JSON.stringify([DEFAULT_LAYER])));
 
@@ -496,9 +485,13 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
             if (data.pagePreset) localStorage.setItem('planify-preset', data.pagePreset);
             saveLayers(data.layers);
           }
+          toast.success('Proje başarıyla yüklendi');
+        } else {
+          toast.error('Geçersiz proje dosyası formatı');
         }
       } catch (e) {
         console.error('Failed to load project', e);
+        toast.error('Proje yüklenirken hata oluştu');
       }
     },
 

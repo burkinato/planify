@@ -1,8 +1,9 @@
 'use client';
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
+import Image from 'next/image';
 
-import { ArrowLeft, BadgeCheck, ClipboardList, Flame, MapPinned, ShieldCheck, Image as ImageIcon, Plus, ChevronRight, Settings2, Sparkles } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, ClipboardList, Flame, MapPinned, ShieldCheck, ChevronRight, Settings2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/store/useEditorStore';
 import { mergeTemplateState } from '@/lib/editor/templateLayouts';
@@ -14,7 +15,6 @@ interface TemplatePaperRendererProps {
   templateState: TemplateState;
   focusedRegionId: string | null;
   onFocusRegion: (id: string | null) => void;
-  onUpdateRegion: (id: string, updates: { title?: string; body?: string; meta?: string }) => void;
   drawingHostRef: React.RefObject<HTMLDivElement | null>;
   exportRef?: React.RefObject<HTMLDivElement | null>;
   children: React.ReactNode;
@@ -201,7 +201,7 @@ function ReadOnlyRegion({
         {projectMetadata.logoUrl ? (
           <div className="flex-shrink-0 flex items-center justify-center h-3/4 aspect-square rounded-2xl bg-slate-50/50 border border-slate-200/50 shadow-inner group/logo relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none" />
-            <img src={projectMetadata.logoUrl} alt="Logo" className="max-h-[85%] max-w-[85%] object-contain drop-shadow-md" style={{ imageRendering: 'auto' }} />
+            <Image src={projectMetadata.logoUrl} alt="Logo" fill className="object-contain drop-shadow-md p-1" style={{ imageRendering: 'auto' }} />
           </div>
         ) : (
           <div className="flex-shrink-0 w-[80px]" />
@@ -374,7 +374,6 @@ export function TemplatePaperRenderer({
   templateState,
   focusedRegionId,
   onFocusRegion,
-  onUpdateRegion,
   drawingHostRef,
   exportRef,
   children,
@@ -387,7 +386,6 @@ export function TemplatePaperRenderer({
 
   useLayoutEffect(() => {
     if (!focusedRegionId || typeof document === 'undefined') {
-      setHintRect(null);
       return;
     }
     
@@ -401,7 +399,10 @@ export function TemplatePaperRenderer({
     };
     
     update();
-    return () => cancelAnimationFrame(frameId);
+    return () => {
+      cancelAnimationFrame(frameId);
+      setHintRect(null);
+    };
   }, [focusedRegionId]);
 
   return (

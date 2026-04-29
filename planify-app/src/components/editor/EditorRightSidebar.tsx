@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Layers, Trash2, MousePointer2, Plus, Settings2, Bold, FileDown, FileUp,
-  Type, ChevronDown, SlidersHorizontal, Maximize2, ChevronRight, Sparkles, Info
+  SlidersHorizontal
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore, useShallow } from '@/store/useEditorStore';
@@ -670,14 +670,31 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
   );
 }
 
-function DesignStudio({ advancedType, setAdvancedType, focusedRegion, focusedRegionState, updateTemplateRegion }: any) {
-  const [localColor, setLocalColor] = useState('#020617');
-  const debounceTimer = useRef<any>(null);
+interface DesignStudioProps {
+  advancedType: 'title' | 'body' | 'meta' | null;
+  setAdvancedType: (type: 'title' | 'body' | 'meta' | null) => void;
+  focusedRegion: { id: string } | undefined;
+  focusedRegionState: { titleColor?: string; bodyColor?: string; metaColor?: string } | undefined;
+  updateTemplateRegion: (regionId: string, updates: Record<string, unknown>) => void;
+}
+
+function DesignStudio({ advancedType, setAdvancedType, focusedRegion, focusedRegionState, updateTemplateRegion }: DesignStudioProps) {
+  const getInitialColor = () => {
+    if (!advancedType) return '#020617';
+    const colorKey = `${advancedType}Color` as const;
+    return focusedRegionState?.[colorKey] || '#020617';
+  };
+
+  const [localColor, setLocalColor] = useState(getInitialColor);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reset localColor when dependencies change by computing new value
+  const currentColor = advancedType ? (focusedRegionState?.[`${advancedType}Color`] || '#020617') : '#020617';
 
   useEffect(() => {
-    if (advancedType) {
-      setLocalColor(focusedRegionState?.[`${advancedType}Color`] || '#020617');
-    }
+    const timer = setTimeout(() => setLocalColor(currentColor), 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [advancedType, focusedRegionState, focusedRegion?.id]);
 
   if (!advancedType || typeof document === 'undefined') return null;
@@ -728,7 +745,7 @@ function DesignStudio({ advancedType, setAdvancedType, focusedRegion, focusedReg
           <div className="flex flex-col gap-1.5">
             <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400 text-center">KALINLIK</span>
             <div className="flex gap-1.5 bg-white/5 p-1 rounded-xl border border-white/5">
-              {(['normal', 'bold', 'black'] as const).map((w, idx) => (
+              {(['normal', 'bold', 'black'] as const).map((w) => (
                 <button
                   key={w}
                   onClick={() => updateTemplateRegion(focusedRegion.id, { [`${advancedType}Weight`]: w })}
