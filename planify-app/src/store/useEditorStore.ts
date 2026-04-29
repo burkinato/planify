@@ -58,8 +58,11 @@ interface EditorState {
   canRedo: boolean;
   past: HistorySnapshot[];
   future: HistorySnapshot[];
+  advancedType: 'title' | 'body' | 'meta' | null;
+  projectId: string | null;
 
   // Actions
+  setProjectId: (id: string | null) => void;
   setTool: (tool: EditorTool) => void;
   setSelectedIds: (ids: string[]) => void;
   setZoom: (zoom: number) => void;
@@ -95,6 +98,7 @@ interface EditorState {
   clearAll: () => void;
   undo: () => void;
   redo: () => void;
+  setAdvancedType: (type: 'title' | 'body' | 'meta' | null) => void;
 }
 
 const DEFAULT_LAYER: LayerDef = {
@@ -119,9 +123,10 @@ const getInitialState = () => {
       activeTemplateLayout: null as TemplateLayout | null,
       pagePreset: 'Landscape' as PagePreset,
       templateState: {} as TemplateState,
-      projectMetadata: { name: 'PROJE DOSYASI', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00' },
+      projectMetadata: { name: 'PROJE DOSYASI', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00', floor: '', scale: '100' },
       innerZoom: 1,
       innerPan: { x: 0, y: 0 },
+      projectId: null as string | null,
     };
   }
 
@@ -152,9 +157,10 @@ const getInitialState = () => {
     activeTemplateLayout: null as TemplateLayout | null,
     pagePreset: (localStorage.getItem('planify-preset') as PagePreset) || 'Landscape',
     templateState: sanitizeTemplateState(JSON.parse(localStorage.getItem('planify-template-state') || '{}')),
-    projectMetadata: JSON.parse(localStorage.getItem('planify-project-metadata') || JSON.stringify({ name: 'PROJE DOSYASI', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00' })),
+    projectMetadata: JSON.parse(localStorage.getItem('planify-project-metadata') || JSON.stringify({ name: 'PROJE DOSYASI', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00', floor: '', scale: '100' })),
     innerZoom: parseFloat(localStorage.getItem('planify-inner-zoom') || '1') || 1,
     innerPan: JSON.parse(localStorage.getItem('planify-inner-pan') || '{"x":0,"y":0}'),
+    projectId: null as string | null,
   };
 };
 
@@ -188,7 +194,10 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     canRedo: false,
     past: [],
     future: [],
+    advancedType: null,
+    projectId: null,
 
+    setProjectId: (projectId) => set({ projectId }),
     setTool: (tool) => set({ tool, selectedSymbol: tool === 'symbol' ? 'exit' : null }),
     setSelectedIds: (selectedIds) => set({ selectedIds }),
     setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(5, zoom)) }),
@@ -541,5 +550,6 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       saveElements(next.elements);
       saveLayers(next.layers);
     },
+    setAdvancedType: (advancedType) => set({ advancedType }),
   };
 }));

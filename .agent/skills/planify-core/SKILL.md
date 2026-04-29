@@ -52,6 +52,10 @@ When designing or auditing plans, apply these ISO principles:
 - **Visual Tone**: Dense, data-driven, and official. Use Slate/Blue tones.
 - **No Fluff**: Avoid generic SaaS illustrations. Use real technical cards and tables.
 - **Accessibility**: Ensure high contrast for emergency symbols.
+- **UI Stability & Synchronization (CRITICAL)**:
+  - Every sidebar field **MUST** map directly to a visible canvas element.
+  - **Header Region**: `title` maps to the main large text. `body` and `meta` map to the subtitle area (joined by `|`). Fallback to `projectMetadata` only if these are empty.
+  - **Font Sizing**: Headers must use `clamp` with high minimums (e.g., 20px) to ensure readability at all zoom levels.
 
 ## Intelligence Routing Integration
 - Always use `planify-core` when:

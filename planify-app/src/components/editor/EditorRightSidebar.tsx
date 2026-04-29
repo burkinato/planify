@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
-  Layers, Trash2, MousePointer2, Plus, Settings2, Bold, FileDown, FileUp
+  Layers, Trash2, MousePointer2, Plus, Settings2, Bold, FileDown, FileUp,
+  Type, ChevronDown, SlidersHorizontal, Maximize2, ChevronRight, Sparkles, Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore, useShallow } from '@/store/useEditorStore';
@@ -20,7 +22,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
   const {
     elements, selectedIds, removeElements, updateElement, scaleConfig, loadProject, layers,
     activeTemplateLayout, focusedRegionId, templateState, updateTemplateRegion, setFocusedRegionId,
-    projectMetadata, setProjectMetadata
+    projectMetadata, setProjectMetadata, advancedType, setAdvancedType
   } = useEditorStore(useShallow((s) => ({
     elements: s.elements,
     selectedIds: s.selectedIds,
@@ -36,6 +38,8 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
     setFocusedRegionId: s.setFocusedRegionId,
     projectMetadata: s.projectMetadata,
     setProjectMetadata: s.setProjectMetadata,
+    advancedType: s.advancedType,
+    setAdvancedType: s.setAdvancedType,
   })));
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -81,7 +85,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
 
   return (
     <aside className={cn(
-      "fixed md:static inset-y-0 right-0 w-64 bg-white border-slate-200 border-l border-slate-200 flex flex-col shadow-2xl z-30 md:z-10 transition-transform duration-300",
+      "fixed md:static inset-y-0 right-0 w-72 bg-white/80 backdrop-blur-xl border-l border-slate-200/60 flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.05)] z-30 md:z-10 transition-all duration-500",
       mobileMenu === 'properties' ? "translate-x-0" : "translate-x-full md:translate-x-0"
     )}>
       {/* Tabs */}
@@ -120,14 +124,14 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
               <div className="space-y-5 animate-fade-in">
                 {/* Region Info Header */}
                 <div className={cn(
-                  "rounded-2xl border p-4 shadow-sm transition-all",
+                  "rounded-xl border p-3 shadow-sm transition-all",
                   focusedRegion.tone === 'red' ? "border-red-100 bg-red-50" : 
                   focusedRegion.tone === 'blue' ? "border-blue-100 bg-blue-50" : 
                   focusedRegion.tone === 'green' ? "border-emerald-100 bg-emerald-50" : 
                   "border-slate-100 bg-slate-50"
                 )}>
                   <div className={cn(
-                    "text-[10px] font-black uppercase tracking-[0.2em]",
+                    "text-[9px] font-black uppercase tracking-[0.2em]",
                     focusedRegion.tone === 'red' ? "text-red-800" : 
                     focusedRegion.tone === 'blue' ? "text-blue-800" : 
                     focusedRegion.tone === 'green' ? "text-emerald-800" : 
@@ -135,70 +139,111 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                   )}>
                     {focusedRegion.label}
                   </div>
-                  <div className="mt-1 text-[9px] font-bold opacity-60 uppercase tracking-widest">{focusedRegion.type} BÖLGESİ</div>
+                  <div className="mt-0.5 text-[8px] font-bold opacity-60 uppercase tracking-widest">{focusedRegion.type} BÖLGESİ</div>
                 </div>
 
                 {/* Edit Fields */}
                 <div className="space-y-4">
                   {/* Title */}
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Başlık</label>
+                  <div className="space-y-1.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100 group relative">
+                    <div className="flex justify-between items-center mb-0.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Başlık</label>
+                      <button 
+                        onClick={() => setAdvancedType(advancedType === 'title' ? null : 'title')}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2 py-0.5 rounded-lg border shadow-sm text-[8px] font-black transition-all",
+                          advancedType === 'title' 
+                            ? "bg-cyan-500 border-cyan-500 text-white shadow-cyan-200" 
+                            : "bg-white border-slate-200 text-cyan-600 hover:border-cyan-200 hover:bg-cyan-50"
+                        )}
+                      >
+                        <SlidersHorizontal className="w-2.5 h-2.5" />
+                        {advancedType === 'title' ? 'KAPAT' : 'DÜZENLE'}
+                      </button>
+                    </div>
                     <input
                       value={focusedRegionState?.title || ''}
                       onChange={(event) => updateTemplateRegion(focusedRegion.id, { title: event.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs font-black text-slate-800 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm"
+                      className="w-full rounded-lg border border-slate-200 bg-white p-2 text-[11px] font-black text-slate-800 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm"
                       placeholder={focusedRegion.label}
                     />
                   </div>
 
                   {/* Body / Content */}
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">
-                      {focusedRegion.type === 'header' ? 'Alt Başlık (İngilizce/Detay)' : 'İçerik Detayları'}
-                    </label>
-                    <textarea
-                      value={focusedRegionState?.body || ''}
-                      onChange={(event) => updateTemplateRegion(focusedRegion.id, { body: event.target.value })}
-                      className="min-h-[120px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-xs font-semibold leading-relaxed text-slate-700 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm"
-                      placeholder={focusedRegion.type === 'header' ? "Örn: Emergency Evacuation Plan" : "Satır satır talimatları veya içeriği girin..."}
-                    />
-                  </div>
+                  {focusedRegion.type !== 'legend' && (
+                    <div className="space-y-1.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+                      <div className="flex justify-between items-center mb-0.5">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">
+                          {focusedRegion.type === 'header' ? 'Alt Başlık (EN/Detay)' : 'İçerik Detayları'}
+                        </label>
+                        <button 
+                          onClick={() => setAdvancedType(advancedType === 'body' ? null : 'body')}
+                          className={cn(
+                            "flex items-center gap-1.5 px-2 py-0.5 rounded-lg border shadow-sm text-[8px] font-black transition-all",
+                            advancedType === 'body' 
+                              ? "bg-cyan-500 border-cyan-500 text-white shadow-cyan-200" 
+                              : "bg-white border-slate-200 text-cyan-600 hover:border-cyan-200 hover:bg-cyan-50"
+                          )}
+                        >
+                          <SlidersHorizontal className="w-2.5 h-2.5" />
+                          {advancedType === 'body' ? 'KAPAT' : 'DÜZENLE'}
+                        </button>
+                      </div>
+                      <textarea
+                        value={focusedRegionState?.body || ''}
+                        onChange={(event) => updateTemplateRegion(focusedRegion.id, { body: event.target.value })}
+                        className="min-h-[100px] w-full resize-none rounded-xl border border-slate-200 bg-white/50 p-3 text-[12px] font-medium leading-relaxed text-slate-700 outline-none focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm placeholder:text-slate-400"
+                        placeholder={focusedRegion.type === 'header' ? "Örn: Emergency Evacuation Plan" : "İçeriği girin..."}
+                      />
+                    </div>
+                  )}
 
-                  {/* Meta / Subtext (Smart visibility) */}
-                  {(focusedRegionState?.meta || focusedRegion.type === 'approval' || focusedRegion.type === 'header') && (
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">
-                        {focusedRegion.type === 'header' ? 'Alt Başlık / Kat Bilgisi' : 'Alt Bilgi / Meta'}
-                      </label>
+                  {/* Meta / Subtext */}
+                  {focusedRegion.type !== 'legend' && (focusedRegionState?.meta || focusedRegion.type === 'approval' || focusedRegion.type === 'header') && (
+                    <div className="space-y-1.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+                      <div className="flex justify-between items-center mb-0.5">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">
+                          {focusedRegion.type === 'header' ? 'Alt Başlık / Kat Bilgisi' : 'Alt Bilgi / Meta'}
+                        </label>
+                        <button 
+                          onClick={() => setAdvancedType(advancedType === 'meta' ? null : 'meta')}
+                          className={cn(
+                            "flex items-center gap-1.5 px-2 py-0.5 rounded-lg border shadow-sm text-[8px] font-black transition-all",
+                            advancedType === 'meta' 
+                              ? "bg-cyan-500 border-cyan-500 text-white shadow-cyan-200" 
+                              : "bg-white border-slate-200 text-cyan-600 hover:border-cyan-200 hover:bg-cyan-50"
+                          )}
+                        >
+                          <SlidersHorizontal className="w-2.5 h-2.5" />
+                          {advancedType === 'meta' ? 'KAPAT' : 'DÜZENLE'}
+                        </button>
+                      </div>
                       <input
                         value={focusedRegionState?.meta || ''}
                         onChange={(event) => updateTemplateRegion(focusedRegion.id, { meta: event.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs font-bold text-slate-600 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm"
+                        className="w-full rounded-lg border border-slate-200 bg-white p-2 text-[11px] font-bold text-slate-600 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm"
                         placeholder="Örn: 2. Kat / Rev-01"
                       />
                     </div>
                   )}
 
-                  {/* Image URL for specific types */}
-                  {(focusedRegion.type === 'assembly' || focusedRegionState?.imageUrl) && (
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Görsel URL</label>
-                      <input
-                        value={focusedRegionState?.imageUrl || ''}
-                        onChange={(event) => updateTemplateRegion(focusedRegion.id, { imageUrl: event.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-[10px] font-medium text-slate-500 outline-none focus:border-cyan-500 shadow-sm"
-                        placeholder="https://..."
-                      />
-                    </div>
-                  )}
                 </div>
 
                 <button
                   onClick={() => setFocusedRegionId(null)}
-                  className="w-full rounded-xl bg-slate-900 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-slate-800 shadow-lg"
+                  className="w-full rounded-xl bg-slate-950 px-4 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-slate-800 hover:shadow-lg active:scale-95 shadow-md"
                 >
-                  Tamamla ve Dön
+                  Değişiklikleri Kaydet
                 </button>
+
+                {/* Design Studio - Floating Cockpit */}
+                <DesignStudio
+                  advancedType={advancedType}
+                  setAdvancedType={setAdvancedType}
+                  focusedRegion={focusedRegion}
+                  focusedRegionState={focusedRegionState}
+                  updateTemplateRegion={updateTemplateRegion}
+                />
               </div>
             ) : selectedElement ? (
               <div className="space-y-4 animate-fade-in">
@@ -207,7 +252,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Nesne Tipi</label>
                   <div className="bg-white border-slate-200 border border-slate-200/50 px-3 py-2.5 rounded-lg text-xs font-bold text-slate-800 shadow-sm flex justify-between items-center">
                     <span>{selectedElement.type === 'symbol' ? SYMBOLS.find(s=>s.id === selectedElement.symbolType)?.name : selectedElement.type.toUpperCase()}</span>
-                    {selectedElement.type === 'symbol' && <div className="w-2 h-2 rounded-full bg-accent-indigo animate-pulse-glow" />}
+                    {selectedElement.type === 'symbol' && <div className="w-2 h-2 rounded-full bg-accent-emerald animate-pulse-glow" />}
                   </div>
                 </div>
 
@@ -217,7 +262,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Etiket</label>
                     <input
                       type="text"
-                      className="w-full text-xs font-bold p-2.5 rounded-lg border border-slate-200/50 bg-white border-slate-200 text-slate-800 focus:border-accent-indigo outline-none transition-all"
+                      className="w-full text-xs font-bold p-2.5 rounded-lg border border-slate-200/50 bg-white border-slate-200 text-slate-800 focus:border-accent-emerald outline-none transition-all"
                       value={selectedElement.label}
                       onChange={(e) => updateElement(selectedElement.id, { label: e.target.value })}
                       placeholder="Nesne adı girin..."
@@ -230,8 +275,8 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Fiziksel Ölçüler</label>
                   
                   {selectedElement.type === 'rect' && (
-                    <div className="p-3 bg-accent-indigo/10 border border-accent-indigo/20 rounded-xl space-y-1 mb-2">
-                      <div className="flex justify-between items-center text-[10px] font-black text-accent-indigo uppercase tracking-widest">
+                    <div className="p-3 bg-accent-emerald/10 border border-accent-emerald/20 rounded-xl space-y-1 mb-2">
+                      <div className="flex justify-between items-center text-[10px] font-black text-accent-emerald uppercase tracking-widest">
                         <span>Tahmini Alan</span>
                         <span className="text-sm">
                           {((selectedElement.width! / scaleConfig.pixelsPerMeter) * (selectedElement.height! / scaleConfig.pixelsPerMeter)).toFixed(1)} {scaleConfig.unit}²
@@ -249,7 +294,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                           <input 
                             type="number" 
                             step="0.1" 
-                            className="w-20 text-right bg-white text-slate-800 p-2 rounded-lg border border-slate-200 focus:border-accent-indigo focus:ring-1 focus:ring-accent-indigo outline-none transition-all"
+                            className="w-20 text-right bg-white text-slate-800 p-2 rounded-lg border border-slate-200 focus:border-accent-emerald focus:ring-1 focus:ring-accent-emerald outline-none transition-all"
                             value={Number((Math.sqrt((selectedElement.points[0] - selectedElement.points[2])**2 + (selectedElement.points[1] - selectedElement.points[3])**2) / scaleConfig.pixelsPerMeter).toFixed(2))}
                             onChange={(e) => {
                               const newMeters = parseFloat(e.target.value);
@@ -277,7 +322,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                           <input 
                             type="number" 
                             step="0.1" 
-                            className="w-20 text-right bg-white text-slate-800 p-2 rounded-lg border border-slate-200 focus:border-accent-indigo focus:ring-1 focus:ring-accent-indigo outline-none transition-all"
+                            className="w-20 text-right bg-white text-slate-800 p-2 rounded-lg border border-slate-200 focus:border-accent-emerald focus:ring-1 focus:ring-accent-emerald outline-none transition-all"
                             value={Number(((selectedElement.width || (selectedElement.type === 'symbol' ? 36 : 100)) / scaleConfig.pixelsPerMeter).toFixed(2))}
                             onChange={(e) => {
                               const newMeters = parseFloat(e.target.value);
@@ -295,7 +340,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                             <input 
                               type="number" 
                               step="0.1" 
-                              className="w-20 text-right bg-white text-slate-800 p-2 rounded-lg border border-slate-200 focus:border-accent-indigo focus:ring-1 focus:ring-accent-indigo outline-none transition-all"
+                              className="w-20 text-right bg-white text-slate-800 p-2 rounded-lg border border-slate-200 focus:border-accent-emerald focus:ring-1 focus:ring-accent-emerald outline-none transition-all"
                               value={Number(((selectedElement.height || 80) / scaleConfig.pixelsPerMeter).toFixed(2))}
                               onChange={(e) => {
                                 const newMeters = parseFloat(e.target.value);
@@ -328,7 +373,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                           className={cn(
                             "py-2 text-[10px] font-bold rounded-xl border transition-all",
                             selectedElement.stairsType === t.id || (!selectedElement.stairsType && t.id === 'straight')
-                              ? "bg-accent-indigo text-white border-accent-indigo"
+                              ? "bg-accent-emerald text-white border-accent-emerald"
                               : "border-slate-200/50 text-slate-600 hover:bg-slate-100/50"
                           )}
                         >
@@ -358,7 +403,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                                 className={cn(
                                   "py-2 text-[10px] font-bold rounded-xl border transition-all",
                                   (selectedElement.wallStyle || 'hatch') === style.id
-                                    ? "bg-accent-indigo text-white border-accent-indigo"
+                                    ? "bg-accent-emerald text-white border-accent-emerald"
                                     : "border-slate-200/50 text-slate-600 hover:bg-slate-100/50"
                                 )}
                               >
@@ -392,14 +437,14 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                     <div className="space-y-2">
                       <div className="flex justify-between items-center pl-1">
                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Kalınlık</label>
-                        <span className="text-[10px] font-bold text-accent-indigo">{selectedElement.thickness || 8}px</span>
+                        <span className="text-[10px] font-bold text-accent-emerald">{selectedElement.thickness || 8}px</span>
                       </div>
                       <input
                         type="range"
                         min="1"
                         max="60"
                         step="1"
-                        className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                        className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                         value={selectedElement.thickness || 8}
                         onChange={(e) => updateElement(selectedElement.id, { thickness: Number(e.target.value) })}
                       />
@@ -412,14 +457,14 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                   <div className="space-y-2">
                     <div className="flex justify-between items-center pl-1">
                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Rotasyon</label>
-                      <span className="text-[10px] font-bold text-accent-indigo">{selectedElement.rotation || 0}°</span>
+                      <span className="text-[10px] font-bold text-accent-emerald">{selectedElement.rotation || 0}°</span>
                     </div>
                     <input
                       type="range"
                       min="0"
                       max="360"
                       step="45"
-                      className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                      className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                       value={selectedElement.rotation || 0}
                       onChange={(e) => updateElement(selectedElement.id, { rotation: Number(e.target.value) })}
                     />
@@ -432,14 +477,14 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                     <div className="space-y-2">
                       <div className="flex justify-between items-center pl-1">
                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Yazı Boyutu</label>
-                        <span className="text-[10px] font-bold text-accent-indigo">{selectedElement.fontSize || 14}px</span>
+                        <span className="text-[10px] font-bold text-accent-emerald">{selectedElement.fontSize || 14}px</span>
                       </div>
                       <input
                         type="range"
                         min="8"
                         max="72"
                         step="2"
-                        className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                        className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                         value={selectedElement.fontSize || 14}
                         onChange={(e) => updateElement(selectedElement.id, { fontSize: Number(e.target.value) })}
                       />
@@ -449,7 +494,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                         onClick={() => updateElement(selectedElement.id, { fontWeight: selectedElement.fontWeight === 'bold' ? 'normal' : 'bold' })}
                         className={cn(
                           "flex-1 py-2 rounded-lg border transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest",
-                          selectedElement.fontWeight === 'bold' ? "bg-accent-indigo text-white border-accent-indigo" : "bg-white border-slate-200 text-slate-600 border-slate-200/50 hover:bg-slate-100"
+                          selectedElement.fontWeight === 'bold' ? "bg-accent-emerald text-white border-accent-emerald" : "bg-white border-slate-200 text-slate-600 border-slate-200/50 hover:bg-slate-100"
                         )}
                       >
                         <Bold className="w-3 h-3" /> Kalın
@@ -469,7 +514,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                         className={cn(
                           "w-6 h-6 rounded-full border-2 transition-all",
                           (selectedElement.color || (selectedElement.type === 'symbol' ? SYMBOLS.find(s=>s.id === selectedElement.symbolType)?.color : '#ffffff')) === color
-                            ? "border-accent-indigo scale-110 shadow-md"
+                            ? "border-accent-emerald scale-110 shadow-md"
                             : "border-transparent hover:scale-105"
                         )}
                         style={{ backgroundColor: color }}
@@ -522,7 +567,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                       <input 
                         value={projectMetadata.name}
                         onChange={(e) => setProjectMetadata({ name: e.target.value.toUpperCase() })}
-                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-accent-indigo transition-all"
+                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-accent-emerald transition-all"
                         placeholder="PROJE ADI"
                       />
                     </div>
@@ -532,7 +577,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                       <input 
                         value={projectMetadata.author}
                         onChange={(e) => setProjectMetadata({ author: e.target.value.toUpperCase() })}
-                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-accent-indigo transition-all"
+                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-accent-emerald transition-all"
                         placeholder="İSİM SOYİSİM"
                       />
                     </div>
@@ -543,7 +588,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                         <input 
                           value={projectMetadata.date}
                           onChange={(e) => setProjectMetadata({ date: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-accent-indigo transition-all"
+                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-accent-emerald transition-all"
                         />
                       </div>
                       <div className="space-y-1">
@@ -551,7 +596,7 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                         <input 
                           value={projectMetadata.revision}
                           onChange={(e) => setProjectMetadata({ revision: e.target.value.toUpperCase() })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-accent-indigo transition-all"
+                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-accent-emerald transition-all"
                           placeholder="00"
                         />
                       </div>
@@ -601,16 +646,16 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={saveProject}
-                      className="flex flex-col items-center gap-3 p-4 bg-white border-slate-200/50 border border-slate-200 rounded-2xl hover:border-accent-indigo/50 hover:bg-accent-indigo/5 transition-all group"
+                      className="flex flex-col items-center gap-3 p-4 bg-white border-slate-200/50 border border-slate-200 rounded-2xl hover:border-accent-emerald/50 hover:bg-accent-emerald/5 transition-all group"
                     >
-                      <FileDown className="w-6 h-6 text-slate-500 group-hover:text-accent-indigo transition-colors" />
+                      <FileDown className="w-6 h-6 text-slate-500 group-hover:text-accent-emerald transition-colors" />
                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Kaydet</span>
                     </button>
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex flex-col items-center gap-3 p-4 bg-white border-slate-200/50 border border-slate-200 rounded-2xl hover:border-accent-indigo/50 hover:bg-accent-indigo/5 transition-all group"
+                      className="flex flex-col items-center gap-3 p-4 bg-white border-slate-200/50 border border-slate-200 rounded-2xl hover:border-accent-emerald/50 hover:bg-accent-emerald/5 transition-all group"
                     >
-                      <FileUp className="w-6 h-6 text-slate-500 group-hover:text-accent-indigo transition-colors" />
+                      <FileUp className="w-6 h-6 text-slate-500 group-hover:text-accent-emerald transition-colors" />
                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Yükle</span>
                       <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={onFileLoad} />
                     </button>
@@ -624,3 +669,171 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
     </aside>
   );
 }
+
+function DesignStudio({ advancedType, setAdvancedType, focusedRegion, focusedRegionState, updateTemplateRegion }: any) {
+  const [localColor, setLocalColor] = useState('#020617');
+  const debounceTimer = useRef<any>(null);
+
+  useEffect(() => {
+    if (advancedType) {
+      setLocalColor(focusedRegionState?.[`${advancedType}Color`] || '#020617');
+    }
+  }, [advancedType, focusedRegionState, focusedRegion?.id]);
+
+  if (!advancedType || typeof document === 'undefined') return null;
+
+  const currentTypeLabel = advancedType === 'title' ? 'BAŞLIK' : advancedType === 'body' ? 'İÇERİK' : 'META';
+
+  const handleColorChange = (newColor: string) => {
+    setLocalColor(newColor);
+    
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      updateTemplateRegion(focusedRegion.id, { [`${advancedType}Color`]: newColor });
+    }, 16); // ~1 frame debounce for smoothness
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] pointer-events-none">
+      <div className="absolute inset-0 pointer-events-auto bg-slate-950/5" onClick={() => setAdvancedType(null)} />
+      
+      <div 
+        className={cn(
+          "absolute bottom-0 left-0 right-0 h-[64px] bg-slate-900 border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center gap-2 pointer-events-auto animate-in slide-in-from-bottom-full duration-300"
+        )}
+      >
+        <div className="flex items-center gap-4 px-6 border-r border-white/10 h-full">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-white tracking-[0.2em] leading-none">{currentTypeLabel}</span>
+            <span className="text-[8px] font-black text-cyan-500 tracking-widest mt-1.5">TASARIM STÜDYOSU</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-8 px-8 border-r border-white/10 h-full">
+          <div className="flex flex-col gap-1.5 w-[140px]">
+            <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-tighter text-slate-400">
+              <span>Yazı Boyutu</span>
+              <span className="text-cyan-400 tabular-nums">
+                {focusedRegionState?.[`${advancedType}Size` as keyof typeof focusedRegionState] || (advancedType === 'title' ? 32 : advancedType === 'body' ? 14 : 12)}px
+              </span>
+            </div>
+            <input 
+              type="range" min="8" max="180" step="1"
+              value={focusedRegionState?.[`${advancedType}Size` as keyof typeof focusedRegionState] || (advancedType === 'title' ? 32 : advancedType === 'body' ? 14 : 12)}
+              onChange={(e) => updateTemplateRegion(focusedRegion.id, { [`${advancedType}Size`]: Number(e.target.value) })}
+              className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-cyan-500"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400 text-center">KALINLIK</span>
+            <div className="flex gap-1.5 bg-white/5 p-1 rounded-xl border border-white/5">
+              {(['normal', 'bold', 'black'] as const).map((w, idx) => (
+                <button
+                  key={w}
+                  onClick={() => updateTemplateRegion(focusedRegion.id, { [`${advancedType}Weight`]: w })}
+                  className={cn(
+                    "w-9 h-8 rounded-lg text-[10px] font-black uppercase transition-all flex items-center justify-center",
+                    (focusedRegionState?.[`${advancedType}Weight` as keyof typeof focusedRegionState] || (advancedType === 'title' ? 'black' : 'normal')) === w 
+                      ? "bg-white text-slate-950 shadow-[0_0_20px_rgba(255,255,255,0.3)]" 
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  {w === 'normal' ? 'N' : w === 'bold' ? 'B' : 'K'}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-8 px-8 border-r border-white/10 h-full">
+          <div className="flex flex-col gap-1.5 w-[100px]">
+            <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-tighter text-slate-400">
+              <span>Harf Aralığı</span>
+              <span className="text-emerald-400">{focusedRegionState?.[`${advancedType}LetterSpacing` as keyof typeof focusedRegionState] || 0}</span>
+            </div>
+            <input 
+              type="range" min="-4" max="20" step="0.5"
+              value={focusedRegionState?.[`${advancedType}LetterSpacing` as keyof typeof focusedRegionState] || 0}
+              onChange={(e) => updateTemplateRegion(focusedRegion.id, { [`${advancedType}LetterSpacing`]: Number(e.target.value) })}
+              className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-emerald-500"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5 w-[100px]">
+            <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-tighter text-slate-400">
+              <span>Satır Yüksekliği</span>
+              <span className="text-amber-400 tabular-nums">
+                {focusedRegionState?.[`${advancedType}LineHeight` as keyof typeof focusedRegionState] || (advancedType === 'title' ? 1.2 : 1.5)}
+              </span>
+            </div>
+            <input 
+              type="range" min="0.5" max="3" step="0.1"
+              value={focusedRegionState?.[`${advancedType}LineHeight` as keyof typeof focusedRegionState] || (advancedType === 'title' ? 1.2 : 1.5)}
+              onChange={(e) => updateTemplateRegion(focusedRegion.id, { [`${advancedType}LineHeight`]: Number(e.target.value) })}
+              className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-amber-500"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6 px-6 h-full">
+          <div className="flex flex-col gap-1.5 w-[100px]">
+            <div className="flex justify-between items-center text-[8px] font-black uppercase text-cyan-400/70">
+              <span>ELEMAN ARASI GAP</span>
+              <span className="text-white tabular-nums">{focusedRegionState?.gap !== undefined ? focusedRegionState.gap : 12}</span>
+            </div>
+            <input 
+              type="range" min="0" max="150" step="1"
+              value={focusedRegionState?.gap !== undefined ? focusedRegionState.gap : 12}
+              onChange={(e) => updateTemplateRegion(focusedRegion.id, { gap: Number(e.target.value) })}
+              className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-cyan-500"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5 w-[140px] px-4 border-l border-white/10">
+            <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400 text-center">RENK</span>
+            <div className="flex gap-2 items-center justify-center">
+               {(['#020617', '#065f46', '#9f1239', '#1e40af', '#854d0e'] as const).map((color) => (
+                 <button
+                   key={color}
+                   onClick={() => handleColorChange(color)}
+                   className={cn(
+                     "w-5 h-5 rounded-full border border-white/20 transition-all hover:scale-125",
+                     localColor === color ? "ring-2 ring-cyan-500 ring-offset-2 ring-offset-slate-900 scale-110" : ""
+                   )}
+                   style={{ backgroundColor: color }}
+                 />
+               ))}
+               <div className="w-[1px] h-4 bg-white/10 mx-1" />
+               <label className="relative cursor-pointer group/color">
+                 <input 
+                   type="color"
+                   value={localColor}
+                   onChange={(e) => handleColorChange(e.target.value)}
+                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                 />
+                 <div 
+                   className={cn(
+                     "w-6 h-6 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center transition-all group-hover/color:border-cyan-500 group-hover/color:scale-110",
+                     (localColor && !['#020617', '#065f46', '#9f1239', '#1e40af', '#854d0e'].includes(localColor)) ? "border-solid border-cyan-500 ring-2 ring-cyan-500 ring-offset-2 ring-offset-slate-900" : ""
+                   )}
+                   style={{ backgroundColor: (localColor && !['#020617', '#065f46', '#9f1239', '#1e40af', '#854d0e'].includes(localColor)) ? localColor : 'transparent' }}
+                 >
+                   <Plus className="w-3 h-3 text-white/50 group-hover/color:text-white" />
+                 </div>
+               </label>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => setAdvancedType(null)}
+            className="ml-4 h-11 px-8 bg-cyan-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-cyan-950/20 hover:bg-cyan-500 transition-all active:scale-95 border border-cyan-400/30"
+          >
+            TAMAMLANDI
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+

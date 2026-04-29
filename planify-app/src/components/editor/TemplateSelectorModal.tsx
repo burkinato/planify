@@ -20,90 +20,112 @@ interface TemplateSelectorModalProps {
 
 // ── Türkçe etiketler ve İkonlar ──────────────────────────────────────────────
 const CATEGORY_META: Record<string, { label: string; Icon: React.ElementType; color: string }> = {
-  TUMU:      { label: 'Tüm Şablonlar', Icon: LayoutTemplate, color: 'text-blue-500' },
-  STANDART:  { label: 'Standart ISO',  Icon: ShieldCheck,    color: 'text-emerald-500' },
-  TEKNİK:    { label: 'Teknik CAD',   Icon: Wrench,         color: 'text-slate-600' },
-  KURUMSAL:  { label: 'Kurumsal',     Icon: Building2,      color: 'text-indigo-500' },
-  MİNİMAL:   { label: 'Minimalist',   Icon: Palette,        color: 'text-rose-500' },
-  ENDÜSTRİ:  { label: 'Endüstriyel',  Icon: Wrench,         color: 'text-amber-600' },
-  SAHA:      { label: 'Saha / Şantiye', Icon: MapPin,         color: 'text-emerald-600' },
-  KAMU:      { label: 'Kamu / Devlet', Icon: Building2,      color: 'text-blue-700' },
-  GENEL:     { label: 'Genel Amaçlı', Icon: LayoutTemplate, color: 'text-slate-500' },
-  PREMIUM:   { label: 'Premium 3D', Icon: Sparkles, color: 'text-indigo-600' },
+  TUMU: { label: 'Tüm Şablonlar', Icon: LayoutTemplate, color: 'text-blue-500' },
+  STANDART: { label: 'Standart ISO', Icon: ShieldCheck, color: 'text-emerald-500' },
+  TEKNİK: { label: 'Teknik CAD', Icon: Wrench, color: 'text-slate-600' },
+  KURUMSAL: { label: 'Kurumsal', Icon: Building2, color: 'text-slate-700' },
+  MİNİMAL: { label: 'Minimalist', Icon: Palette, color: 'text-emerald-500' },
+  ENDÜSTRİ: { label: 'Endüstriyel', Icon: Wrench, color: 'text-amber-600' },
+  SAHA: { label: 'Saha / Şantiye', Icon: MapPin, color: 'text-emerald-600' },
+  KAMU: { label: 'Kamu / Devlet', Icon: Building2, color: 'text-slate-800' },
+  GENEL: { label: 'Genel Amaçlı', Icon: LayoutTemplate, color: 'text-slate-500' },
+  PREMIUM: { label: 'Premium ISO', Icon: Sparkles, color: 'text-emerald-600' },
 };
 
 const PRESETS: { id: PagePreset; label: string; sub: string; Icon: React.ElementType }[] = [
-  { id: 'Landscape', label: 'Yatay',  sub: 'Geniş format', Icon: Monitor },
-  { id: 'Portrait',  label: 'Dikey',  sub: 'Uzun format',  Icon: Smartphone },
+  { id: 'Landscape', label: 'Yatay', sub: 'Geniş format', Icon: Monitor },
+  { id: 'Portrait', label: 'Dikey', sub: 'Uzun format', Icon: Smartphone },
 ];
 
-// ── Küçük önizleme thumbnail ─────────────────────────────────────────────────
 function TemplateThumbnail({ layout }: { layout: TemplateLayout }) {
   const regions = layout.layout_json.regions || [];
-  const accent  = layout.layout_json.accent || '#00965e';
 
   const toneStyle = (region: TemplateRegion): React.CSSProperties => {
-    if (region.type === 'header')  return { background: `linear-gradient(135deg, ${accent}, ${accent}dd)`, borderColor: accent, color: 'white' };
-    if (region.type === 'drawing') return { background: '#fcfdfd', borderColor: '#0ea5e9', borderWidth: 2, borderStyle: 'dashed' };
-    if (region.type === 'emergency') return { background: 'linear-gradient(135deg,#dc2626,#ef4444)', borderColor: '#dc2626', color: 'white', boxShadow: '0 10px 22px rgba(220,38,38,.18)' };
-
-    const map: Record<string, React.CSSProperties> = {
-      red:     { background: '#fef2f2', borderColor: '#ef4444', borderLeftWidth: 4 },
-      blue:    { background: '#eff6ff', borderColor: '#3b82f6', borderLeftWidth: 4 },
-      green:   { background: '#f0fdf4', borderColor: '#22c55e', borderLeftWidth: 4 },
-      info:    { background: '#f8fafc', borderColor: '#64748b', borderLeftWidth: 4 },
-      neutral: { background: '#ffffff', borderColor: '#e2e8f0', borderLeftWidth: 4 },
+    // Premium color mapping matching TemplatePaperRenderer toneStyles
+    const map: Record<string, { bg: string; border: string }> = {
+      green: { bg: '#059669', border: '#047857' }, // emerald-600
+      red: { bg: '#e11d48', border: '#be123c' }, // rose-600
+      blue: { bg: '#2563eb', border: '#1d4ed8' }, // blue-600
+      info: { bg: '#f8fafc', border: '#cbd5e1' }, // slate-50/300
+      neutral: { bg: '#ffffff', border: '#e2e8f0' },
+      paper: { bg: '#ffffff', border: '#cbd5e1' },
     };
-    return map[region.tone ?? 'neutral'] ?? map.neutral;
-  };
 
-  const labelColor = (region: TemplateRegion): string => {
-    if (region.type === 'header') return 'rgba(255,255,255,0.9)';
-    if (region.tone === 'red')    return '#ef4444';
-    if (region.tone === 'green')  return '#22c55e';
-    if (region.tone === 'blue')   return '#3b82f6';
-    return '#64748b';
+    const style = map[region.tone ?? 'neutral'] ?? map.neutral;
+
+    if (region.type === 'header' || region.type === 'emergency' || region.type === 'instruction' || region.type === 'assembly' || region.type === 'drawing') {
+      if (region.type === 'drawing') return { background: '#ffffff', border: '1px dashed #0ea5e9', borderRadius: '2px' };
+      return {
+        background: style.bg,
+        borderColor: style.border,
+        color: 'white',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+      };
+    }
+
+    return {
+      background: style.bg,
+      borderColor: style.border,
+      borderLeftWidth: region.tone === 'neutral' ? 1 : 4
+    };
   };
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white aspect-video md:aspect-square group-hover:scale-105 transition-all duration-500 shadow-inner">
-      <div className="absolute inset-0 bg-[#f8fafc] opacity-50" style={{ backgroundImage: 'radial-gradient(#cbd5e1 0.5px, transparent 0.5px)', backgroundSize: '12px 12px' }} />
+      {/* Blueprint grid background */}
+      <div className="absolute inset-0 bg-[#f8fafc] opacity-40" style={{ backgroundImage: 'linear-gradient(#e2e8f0 0.5px, transparent 0.5px), linear-gradient(90deg, #e2e8f0 0.5px, transparent 0.5px)', backgroundSize: '10px 10px' }} />
+
       {regions.map((region) => (
         <div
           key={region.id}
           className={cn(
-            "absolute border shadow-[0_1px_2px_rgba(0,0,0,0.02)] overflow-hidden transition-all",
-            region.type === 'header' ? "rounded-none" : "rounded-md"
+            "absolute border overflow-hidden transition-all",
+            region.type === 'header' ? "rounded-none" : "rounded-[4px]"
           )}
           style={{
-            left:   region.type === 'header' ? `${region.x}%` : `calc(${region.x}% + 2px)`,
-            top:    region.type === 'header' ? `${region.y}%` : `calc(${region.y}% + 2px)`,
-            width:  region.type === 'header' ? `${region.w}%` : `calc(${region.w}% - 4px)`,
-            height: region.type === 'header' ? `${region.h}%` : `calc(${region.h}% - 4px)`,
+            left: `${region.x}%`,
+            top: `${region.y}%`,
+            width: `${region.w}%`,
+            height: `${region.h}%`,
             ...toneStyle(region),
           }}
         >
           {region.type === 'drawing' ? (
-            <div className="w-full h-full relative bg-white flex items-center justify-center p-2 opacity-80">
-              <svg viewBox="0 0 100 100" className="w-full h-full text-slate-300" preserveAspectRatio="xMidYMid meet">
-                 <rect x="10" y="10" width="80" height="80" fill="none" stroke="currentColor" strokeWidth="1" />
-                 <path d="M10,40 L40,40 M40,10 L40,40" fill="none" stroke="currentColor" strokeWidth="1" />
-                 <path d="M70,90 L70,60 M70,60 L90,60" fill="none" stroke="currentColor" strokeWidth="1" />
-                 <path d="M20,80 L50,80 L50,30" fill="none" stroke="#0ea5e9" strokeWidth="2" strokeDasharray="3 2" />
-                 <circle cx="50" cy="30" r="3" fill="#0ea5e9" />
-              </svg>
+            <div className="w-full h-full bg-white/60 flex items-center justify-center p-2">
+              <div className="w-full h-full border border-dashed border-slate-200 rounded flex items-center justify-center">
+                <div className="w-1/2 h-[1px] bg-slate-100 rotate-45 absolute" />
+                <div className="w-1/2 h-[1px] bg-slate-100 -rotate-45 absolute" />
+              </div>
             </div>
           ) : region.type === 'header' ? (
-            <div className="w-full h-full flex flex-col justify-center px-[10%] gap-[10%]">
-              <div className="h-[20%] w-[70%] rounded-full bg-white/40" />
-              <div className="h-[10%] w-[40%] rounded-full bg-white/20" />
+            <div className="w-full h-full flex items-center px-[8%] gap-[10%] relative">
+              {/* Mini Logo Box */}
+              <div className="h-[50%] aspect-square bg-white/20 rounded-sm border border-white/30" />
+              {/* Mini Title Lines */}
+              <div className="flex-1 flex flex-col gap-[15%]">
+                <div className="h-[15%] w-full bg-white/50 rounded-full" />
+                <div className="h-[8%] w-[60%] bg-white/30 rounded-full mx-auto" />
+              </div>
+              {/* Mini Meta info */}
+              <div className="h-[40%] w-[15%] border-l border-white/20 pl-2 hidden sm:flex flex-col justify-center gap-1">
+                <div className="h-[4px] w-full bg-white/20 rounded-full" />
+                <div className="h-[4px] w-[60%] bg-white/20 rounded-full" />
+              </div>
             </div>
           ) : (
-            <div className="p-[10%] space-y-[12%] h-full flex flex-col">
-              <div className="h-[15%] w-[80%] rounded-full shrink-0" style={{ background: labelColor(region) }} />
-              <div className="flex-1 space-y-[8%] opacity-30">
-                {[85, 70, 75, 50].map((w, i) => (
-                  <div key={i} className="h-[6%] rounded-full" style={{ width: `${w}%`, background: labelColor(region) }} />
+            <div className="p-[8%] space-y-[10%] h-full flex flex-col">
+              {/* Region Label Line */}
+              <div className={cn(
+                "h-[12%] w-[60%] rounded-full shrink-0",
+                ['green', 'red', 'blue'].includes(region.tone || '') ? "bg-white/40" : "bg-slate-200"
+              )} />
+              {/* Dummy content lines */}
+              <div className="flex-1 space-y-[8%] opacity-20">
+                {[80, 65, 75].map((w, i) => (
+                  <div key={i} className={cn(
+                    "h-[6%] rounded-full",
+                    ['green', 'red', 'blue'].includes(region.tone || '') ? "bg-white" : "bg-slate-300"
+                  )} style={{ width: `${w}%` }} />
                 ))}
               </div>
             </div>
@@ -203,7 +225,7 @@ export function TemplateSelectorModal({
         {/* ── Başlık çubuğu ── */}
         <div className="flex-shrink-0 flex items-center justify-between border-b border-slate-100 px-8 py-5 bg-white">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 shadow-xl shadow-indigo-500/20">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-xl shadow-emerald-500/20">
               <LayoutTemplate className="h-6 w-6 text-white" />
             </div>
             <div>
@@ -211,7 +233,7 @@ export function TemplateSelectorModal({
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">ISO 23601 & ISO 7010</span>
                 <div className="h-1 w-1 rounded-full bg-slate-200" />
-                <span className="text-[11px] text-indigo-500 font-bold uppercase tracking-widest">Premium Tasarımlar</span>
+                <span className="text-[11px] text-emerald-600 font-bold uppercase tracking-widest">Profesyonel Tasarımlar</span>
               </div>
             </div>
           </div>
@@ -252,11 +274,11 @@ export function TemplateSelectorModal({
                     className={cn(
                       'group flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all',
                       localPagePreset === id
-                        ? 'border-indigo-600 bg-white text-indigo-700 shadow-lg shadow-indigo-500/10'
+                        ? 'border-emerald-600 bg-white text-emerald-700 shadow-lg shadow-emerald-500/10'
                         : 'border-transparent bg-white/50 text-slate-500 hover:bg-white hover:border-slate-200'
                     )}
                   >
-                    <Icon className={cn('h-5 w-5 shrink-0 transition-colors', localPagePreset === id ? 'text-indigo-600' : 'text-slate-400')} />
+                    <Icon className={cn('h-5 w-5 shrink-0 transition-colors', localPagePreset === id ? 'text-emerald-600' : 'text-slate-400')} />
                     <div>
                       <div className="text-[11px] font-black uppercase tracking-tight">{label}</div>
                       <div className="text-[9px] font-bold opacity-60 uppercase">{sub}</div>
@@ -283,7 +305,7 @@ export function TemplateSelectorModal({
                       className={cn(
                         'flex items-center justify-between rounded-xl px-3.5 py-3 text-xs font-bold transition-all group',
                         activeCategory === cat
-                          ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20 translate-x-1'
+                          ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20 translate-x-1'
                           : 'text-slate-600 hover:bg-white hover:shadow-sm'
                       )}
                     >
@@ -317,15 +339,15 @@ export function TemplateSelectorModal({
               >
                 <div className="mb-4 aspect-[4/3] rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50 flex items-center justify-center overflow-hidden transition-colors group-hover:bg-indigo-50/50">
                   <div className="flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm text-slate-300 group-hover:text-indigo-400 group-hover:border-indigo-100 transition-all">
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm text-slate-300 group-hover:text-emerald-400 group-hover:border-emerald-100 transition-all">
                       <Database className="w-6 h-6" />
                     </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-500 transition-colors">Temiz Sayfa</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-emerald-500 transition-colors">Temiz Sayfa</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-black text-slate-900">Şablonsuz (Blank)</h4>
-                  {!localSelectedLayout && <Check className="h-4 w-4 text-indigo-600" />}
+                  {!localSelectedLayout && <Check className="h-4 w-4 text-emerald-600" />}
                 </div>
                 <p className="text-[11px] text-slate-500 mt-2 line-clamp-2 leading-relaxed">Sıfırdan tasarıma başlamak için tamamen boş bir çalışma alanı.</p>
               </button>
@@ -340,8 +362,8 @@ export function TemplateSelectorModal({
                     className={cn(
                       'group flex flex-col rounded-[24px] border-2 p-4 text-left transition-all duration-300',
                       isSelected
-                        ? 'border-indigo-600 bg-white ring-8 ring-indigo-500/5 shadow-2xl shadow-indigo-500/10'
-                        : 'border-white bg-white hover:border-indigo-200 shadow-sm hover:shadow-xl hover:-translate-y-1'
+                        ? 'border-emerald-600 bg-white ring-8 ring-emerald-500/5 shadow-2xl shadow-emerald-500/10'
+                        : 'border-white bg-white hover:border-emerald-200 shadow-sm hover:shadow-xl hover:-translate-y-1'
                     )}
                   >
                     <div className="mb-4 aspect-[4/3] relative rounded-2xl overflow-hidden shadow-inner bg-slate-100">
@@ -351,8 +373,8 @@ export function TemplateSelectorModal({
                       {/* Pro Badge removed */}
 
                       {isSelected && (
-                        <div className="absolute inset-0 bg-indigo-600/5 flex items-center justify-center backdrop-blur-[1px]">
-                          <div className="bg-indigo-600 text-white p-2 rounded-full shadow-xl translate-y-0 opacity-100 transition-all scale-110">
+                        <div className="absolute inset-0 bg-emerald-600/5 flex items-center justify-center backdrop-blur-[1px]">
+                          <div className="bg-emerald-600 text-white p-2 rounded-full shadow-xl translate-y-0 opacity-100 transition-all scale-110">
                             <Check className="h-5 w-5" />
                           </div>
                         </div>
@@ -360,7 +382,7 @@ export function TemplateSelectorModal({
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <h4 className="text-sm font-black text-slate-900 truncate">{cleanName(layout.name)}</h4>
-                      {isSelected && <Check className="h-4 w-4 text-indigo-600 shrink-0" />}
+                      {isSelected && <Check className="h-4 w-4 text-emerald-600 shrink-0" />}
                     </div>
                     <p className="text-[11px] text-slate-500 mt-2 line-clamp-2 leading-relaxed">{layout.description}</p>
                   </button>
@@ -448,16 +470,36 @@ export function TemplateSelectorModal({
               >
                 <div className="relative z-10 flex items-center justify-center gap-3">
                   {isSelectionPro ? <Lock className="w-4 h-4" /> : <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />}
-                  {isSelectionPro ? 'KİLİTLİ ŞABLON' : 'PROJEYİ BAŞLAT'}
+                  {isSelectionPro ? 'KİLİTLİ ŞABLON' : 'ŞABLONU UYGULA'}
                 </div>
                 {!isSelectionPro && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-violet-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-700 opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
               </button>
-
-              {/* Plans button removed */}
             </div>
           </aside>
+        </div>
+
+        {/* Mobile Action Bar */}
+        <div className="lg:hidden p-6 border-t border-slate-100 bg-white">
+            <button
+              onClick={handleApply}
+              disabled={isSelectionPro}
+              className={cn(
+                "w-full group relative overflow-hidden rounded-[20px] py-5 text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl",
+                isSelectionPro
+                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  : "bg-slate-900 text-white hover:bg-slate-800"
+              )}
+            >
+              <div className="relative z-10 flex items-center justify-center gap-3">
+                {isSelectionPro ? <Lock className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                {isSelectionPro ? 'KİLİTLİ ŞABLON' : 'ŞABLONU UYGULA'}
+              </div>
+              {!isSelectionPro && (
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-700 opacity-0 active:opacity-100 transition-opacity" />
+              )}
+            </button>
         </div>
       </div>
     </div>

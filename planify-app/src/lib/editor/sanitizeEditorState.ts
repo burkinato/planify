@@ -128,6 +128,32 @@ function sanitizeTemplateRegionState(value: unknown): TemplateRegionState {
     nextState.mediaMode = value.mediaMode;
   }
 
+  // Typography - Title
+  if (typeof value.titleSize === 'number') nextState.titleSize = value.titleSize;
+  nextState.titleWeight = asEnumValue(value.titleWeight, VALID_FONT_WEIGHTS);
+  if (typeof value.titleLetterSpacing === 'number') nextState.titleLetterSpacing = value.titleLetterSpacing;
+  if (typeof value.titleLineHeight === 'number') nextState.titleLineHeight = value.titleLineHeight;
+
+  // Typography - Body
+  if (typeof value.bodySize === 'number') nextState.bodySize = value.bodySize;
+  nextState.bodyWeight = asEnumValue(value.bodyWeight, VALID_FONT_WEIGHTS);
+  if (typeof value.bodyLetterSpacing === 'number') nextState.bodyLetterSpacing = value.bodyLetterSpacing;
+  if (typeof value.bodyLineHeight === 'number') nextState.bodyLineHeight = value.bodyLineHeight;
+
+  // Typography - Meta
+  if (typeof value.metaSize === 'number') nextState.metaSize = value.metaSize;
+  nextState.metaWeight = asEnumValue(value.metaWeight, VALID_FONT_WEIGHTS);
+  if (typeof value.metaLetterSpacing === 'number') nextState.metaLetterSpacing = value.metaLetterSpacing;
+  if (typeof value.metaLineHeight === 'number') nextState.metaLineHeight = value.metaLineHeight;
+
+  // Layout
+  if (typeof value.gap === 'number') nextState.gap = value.gap;
+
+  // Colors
+  if (typeof value.titleColor === 'string') nextState.titleColor = value.titleColor;
+  if (typeof value.bodyColor === 'string') nextState.bodyColor = value.bodyColor;
+  if (typeof value.metaColor === 'string') nextState.metaColor = value.metaColor;
+
   return nextState;
 }
 
@@ -149,6 +175,8 @@ export function sanitizeProjectMetadata(value: unknown): ProjectMetadata {
     date: asString(raw.date, new Date().toLocaleDateString('tr-TR')),
     revision: asString(raw.revision, '00'),
     logoUrl: asNullableString(raw.logoUrl) ?? undefined,
+    floor: asString(raw.floor, ''),
+    scale: asString(raw.scale, '100'),
   };
 }
 

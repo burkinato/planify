@@ -75,6 +75,23 @@ export interface TemplateRegionState {
   imageUrl?: string;
   imageAlt?: string;
   mediaMode?: 'visual-first' | 'text-first';
+  // Style properties
+  titleSize?: number;
+  titleWeight?: 'normal' | 'bold' | 'black';
+  titleLetterSpacing?: number;
+  titleLineHeight?: number;
+  bodySize?: number;
+  bodyWeight?: 'normal' | 'bold' | 'black';
+  bodyLetterSpacing?: number;
+  bodyLineHeight?: number;
+  metaSize?: number;
+  metaWeight?: 'normal' | 'bold' | 'black';
+  metaLetterSpacing?: number;
+  metaLineHeight?: number;
+  gap?: number;
+  titleColor?: string;
+  bodyColor?: string;
+  metaColor?: string;
 }
 
 export type TemplateState = Record<string, TemplateRegionState>;
@@ -128,6 +145,8 @@ export interface ProjectMetadata {
   date: string;
   revision: string;
   logoUrl?: string;
+  floor?: string;
+  scale?: string;
 }
 
 export type EditorTool =
@@ -236,8 +255,8 @@ export const SNAP_DISTANCE = 15;
 export const GRID_SIZE = 50;
 
 export const THEME_CONFIGS = {
-  classic: { bg: '#ffffff', grid: '#e2e8f0', text: '#1e293b', accent: '#3b82f6' },
-  blueprint: { bg: '#1a365d', grid: '#2a4365', text: '#ffffff', accent: '#00ffff' },
-  dark: { bg: '#0f172a', grid: '#1e293b', text: '#94a3b8', accent: '#818cf8' },
-  minimal: { bg: '#f8fafc', grid: 'transparent', text: '#334155', accent: '#0f172a' }
+  classic: { bg: '#ffffff', grid: '#e2e8f0', text: '#1e293b', accent: '#10b981' },
+  blueprint: { bg: '#0f172a', grid: '#1e293b', text: '#ffffff', accent: '#0891b2' },
+  dark: { bg: '#06060a', grid: '#10101c', text: '#94a3b8', accent: '#10b981' },
+  minimal: { bg: '#f8fafc', grid: 'transparent', text: '#334155', accent: '#1e293b' }
 };

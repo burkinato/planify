@@ -149,7 +149,7 @@ export function StairPickerModal({ isOpen, position, onSelect, onClose }: StairP
       <div className="w-72 bg-white border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
           <div>
-            <div className="text-[9px] font-black text-accent-indigo uppercase tracking-widest mb-0.5">YAPI</div>
+            <div className="text-[9px] font-black text-accent-emerald uppercase tracking-widest mb-0.5">YAPI</div>
             <h3 className="text-sm font-black text-slate-800">Hazır Merdivenler</h3>
           </div>
           <button onClick={onClose} className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
@@ -165,11 +165,11 @@ export function StairPickerModal({ isOpen, position, onSelect, onClose }: StairP
               onClick={() => { onSelect(opt.id); onClose(); }}
               className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100/60 transition-all group text-left"
             >
-              <div className="w-10 h-10 shrink-0 bg-white border-slate-200 rounded-lg border border-slate-200 p-1 group-hover:border-accent-indigo/40 transition-colors">
+              <div className="w-10 h-10 shrink-0 bg-white border-slate-200 rounded-lg border border-slate-200 p-1 group-hover:border-accent-emerald/40 transition-colors">
                 {opt.preview}
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-800 group-hover:text-accent-indigo transition-colors">{opt.name}</div>
+                <div className="text-xs font-bold text-slate-800 group-hover:text-accent-emerald transition-colors">{opt.name}</div>
                 <div className="text-[10px] text-slate-500 leading-snug mt-0.5">{opt.desc}</div>
               </div>
             </button>
@@ -181,3 +181,4 @@ export function StairPickerModal({ isOpen, position, onSelect, onClose }: StairP
     document.body
   );
 }
+

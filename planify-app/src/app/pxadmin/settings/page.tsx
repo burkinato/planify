@@ -162,7 +162,7 @@ export default function AdminSettings() {
             description="Kullanıcıların göreceği fiyatlandırma kartı"
           >
             <div className="bg-slate-100 dark:bg-[#0c0c14] border border-slate-200 dark:border-white/5 p-8 text-center relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-600 to-accent-indigo" />
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-600 to-accent-emerald" />
               
               <p className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.3em] mb-4">PRO PLAN</p>
               
@@ -211,3 +211,4 @@ export default function AdminSettings() {
     </div>
   );
 }
+

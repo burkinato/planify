@@ -26,7 +26,7 @@ export function AdminCard({
       className
     )}>
       {/* Subtle Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-accent-indigo/5 opacity-50 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-accent-emerald/5 opacity-50 pointer-events-none" />
       
       {/* Top Border Accent */}
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary-500/0 via-primary-500/30 to-primary-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -59,3 +59,4 @@ export function AdminCard({
     </div>
   );
 }
+

@@ -69,15 +69,8 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
   const handleSavePlan = async () => {
     setIsSaving(true);
     try {
-      const searchParams = new URLSearchParams(window.location.search);
-      const projectId = searchParams.get('id');
-      if (!projectId) {
-        toast.error('Proje ID bulunamadı. Lütfen sayfayı yenileyin.');
-        setIsSaving(false);
-        return;
-      }
-      
       const {
+        projectId,
         elements,
         layers,
         scaleConfig,
@@ -86,6 +79,13 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
         pagePreset,
         templateState,
       } = useEditorStore.getState();
+
+      if (!projectId) {
+        toast.error('Proje ID bulunamadı. Lütfen projeyi kontrol panelinden açın.');
+        setIsSaving(false);
+        return;
+      }
+      
       const canvas_data = { elements, layers, projectTemplate, templateLayoutId, pagePreset, templateState };
       
       await updateProject(projectId, { 
@@ -153,7 +153,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
       <div className="p-4 border-b border-slate-200 flex justify-between items-center">
         <div>
           <h1 className="text-base font-black tracking-tight text-slate-800">
-            Planify {isPro && <span className="text-accent-indigo font-medium text-xs ml-1">Pro</span>}
+            Planify {isPro && <span className="text-accent-emerald font-medium text-xs ml-1">Pro</span>}
           </h1>
           <p className="text-[9px] text-slate-500 uppercase tracking-[0.2em] mt-0.5 font-bold">Tahliye Planı Editörü</p>
         </div>
@@ -257,7 +257,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
                         className={cn(
                           "flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all group",
                           selectedSymbol === sym.id && tool === 'symbol'
-                            ? "border-accent-indigo/50 bg-accent-indigo/10 text-white glow-accent"
+                            ? "border-accent-emerald/50 bg-accent-emerald/10 text-white glow-accent"
                             : "border-slate-200/30 bg-white border-slate-200/50 hover:border-slate-300 text-slate-500 hover:text-slate-800"
                         )}
                         title={sym.name}
@@ -292,7 +292,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
                         className={cn(
                           "flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all group",
                           selectedSymbol === cs.id && tool === 'symbol'
-                            ? "border-accent-indigo/50 bg-accent-indigo/10 text-white glow-accent"
+                            ? "border-accent-emerald/50 bg-accent-emerald/10 text-white glow-accent"
                             : "border-slate-200/30 bg-white border-slate-200/50 hover:border-slate-300 text-slate-500 hover:text-slate-800"
                         )}
                       >
@@ -321,7 +321,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
         <button 
           onClick={handleSavePlan}
           disabled={isSaving}
-          className="w-full bg-gradient-to-r from-accent-indigo to-accent-violet text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg glow-accent hover:opacity-90 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
+          className="w-full bg-gradient-to-r from-accent-emerald to-accent-emerald-dark text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg glow-accent hover:opacity-90 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
         >
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {isSaving ? 'Kaydediliyor...' : 'Planı Kaydet / Yayınla'}
@@ -349,3 +349,4 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
     </aside>
   );
 }
+

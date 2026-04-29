@@ -193,7 +193,7 @@ export function EditorHeader({
                 className={cn(
                   "px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all",
                   scaleConfig.unit === u
-                    ? "bg-gradient-to-r from-accent-indigo to-accent-violet text-white shadow-md"
+                    ? "bg-gradient-to-r from-accent-emerald to-accent-emerald-dark text-white shadow-md"
                     : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
                 )}
               >
@@ -234,7 +234,7 @@ export function EditorHeader({
               className={cn(
                 "px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap",
                 editorTheme === t.id
-                  ? "bg-gradient-to-r from-accent-indigo to-accent-violet text-white shadow-md"
+                  ? "bg-gradient-to-r from-accent-emerald to-accent-emerald-dark text-white shadow-md"
                   : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
               )}
             >
@@ -248,7 +248,7 @@ export function EditorHeader({
             onClick={onOpenTemplateModal}
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border-slate-200/80 border border-slate-200/50 hover:bg-slate-100 text-slate-600 hover:text-slate-800 transition-all text-[10px] font-bold uppercase tracking-wider"
           >
-            <Layers className="w-3.5 h-3.5 text-accent-indigo" />
+            <Layers className="w-3.5 h-3.5 text-accent-emerald" />
             Şablonlar
           </button>
         )}
@@ -281,7 +281,7 @@ export function EditorHeader({
             <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white border-slate-200 rounded-2xl shadow-2xl z-[70] overflow-hidden border border-white/10 animate-fade-in">
               <div className="p-4 border-b border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Keyboard className="w-4 h-4 text-accent-indigo" />
+                  <Keyboard className="w-4 h-4 text-accent-emerald" />
                   <h3 className="font-bold text-xs uppercase tracking-widest text-slate-800">Klavye Kısayolları</h3>
                 </div>
                 <button onClick={() => setShowShortcuts(false)} className="p-1 hover:bg-slate-100 rounded-md text-slate-500">
@@ -299,7 +299,7 @@ export function EditorHeader({
               <div className="p-4 border-t border-slate-200 text-center">
                 <button
                   onClick={() => setShowShortcuts(false)}
-                  className="px-6 py-2 bg-gradient-to-r from-accent-indigo to-accent-violet text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all shadow-lg"
+                  className="px-6 py-2 bg-gradient-to-r from-accent-emerald to-accent-emerald-dark text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all shadow-lg"
                 >
                   Anladım
                 </button>
@@ -313,7 +313,7 @@ export function EditorHeader({
           className={cn(
             "flex items-center gap-2 px-3 py-2 rounded-lg transition-all font-semibold text-xs border",
             isPreview
-              ? "bg-accent-indigo text-white border-accent-indigo"
+              ? "bg-accent-emerald text-white border-accent-emerald"
               : "hover:bg-slate-100 text-slate-600 border-slate-200/50"
           )}
         >
@@ -336,7 +336,7 @@ export function EditorHeader({
             className={cn(
               "flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg transition-all font-bold text-xs shadow-lg shrink-0",
               isPro 
-                ? "bg-gradient-to-r from-accent-indigo to-accent-violet text-white hover:opacity-90 glow-accent"
+                ? "bg-gradient-to-r from-accent-emerald to-accent-emerald-dark text-white hover:opacity-90 glow-accent"
                 : "bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200"
             )}
           >
@@ -387,3 +387,4 @@ export function EditorHeader({
     </header>
   );
 }
+

@@ -35,10 +35,11 @@
   --color-surface-light-500: #94a3b8;
   --color-surface-light-400: #64748b;
 
-  /* Accent — Indigo-Violet gradient endpoints */
-  --color-accent-indigo: #6366f1;
-  --color-accent-violet: #8b5cf6;
-  --color-accent-cyan: #06b6d4;
+  /* Accent — Professional Emerald & Slate (Purple Ban Refactor) */
+  --color-accent-emerald: #10b981;
+  --color-accent-emerald-dark: #059669;
+  --color-accent-slate: #475569;
+  --color-accent-cyan: #0891b2;
 
   /* Safety Colors */
   --color-safety-green: #10b981;
@@ -129,7 +130,7 @@ html.light {
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: linear-gradient(135deg, var(--color-accent-indigo), var(--color-accent-violet));
+  background: linear-gradient(135deg, var(--color-accent-emerald), var(--color-accent-slate));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -144,8 +145,8 @@ html.light {
 }
 
 .glow-accent {
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15),
-              0 0 60px rgba(139, 92, 246, 0.05);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15),
+              0 0 60px rgba(71, 85, 105, 0.05);
 }
 
 .glow-green {
@@ -216,11 +217,20 @@ html.light {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
+@keyframes bounce-horizontal {
+  0%, 100% { transform: translate(0, -50%); }
+  50% { transform: translate(-8px, -50%); }
+}
+
+.animate-bounce-horizontal {
+  animation: bounce-horizontal 1s infinite;
+}
+
 /* Tool Button Active State */
 .tool-active {
-  background: linear-gradient(135deg, var(--color-accent-indigo), var(--color-accent-violet));
+  background: linear-gradient(135deg, var(--color-accent-emerald), var(--color-accent-emerald-dark));
   color: white;
-  box-shadow: 0 0 16px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.3);
 }
 
 /* Premium Card */
@@ -247,7 +257,7 @@ html.light {
 
 /* Text Selection */
 ::selection {
-  background: rgba(99, 102, 241, 0.3);
+  background: rgba(16, 185, 129, 0.3);
   color: white;
 }
 

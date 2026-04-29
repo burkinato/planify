@@ -62,8 +62,12 @@ export default function EditorApp() {
   const {
     loadProject, templateLayoutId, projectTemplate, setTemplateLayout,
     elements, layers, activeTemplateLayout, scaleConfig, pagePreset, templateState,
-    innerZoom, innerPan
+    innerZoom, innerPan, setProjectId
   } = useEditorStore();
+
+  useEffect(() => {
+    setProjectId(projectId);
+  }, [projectId, setProjectId]);
   const { profile, user, isLoading } = useAuthStore();
   const isPro = profile?.subscription_tier === 'pro';
   const router = useRouter();

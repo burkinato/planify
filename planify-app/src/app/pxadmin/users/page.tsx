@@ -121,7 +121,7 @@ export default function UserManagement() {
                   <tr key={user.id} className="group hover:bg-white/[0.02] transition-colors">
                     <td className="py-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary-600/20 to-accent-indigo/20 flex items-center justify-center border border-white/10 font-black text-primary-400 text-xs uppercase">
+                        <div className="w-10 h-10 bg-gradient-to-br from-primary-600/20 to-accent-emerald/20 flex items-center justify-center border border-white/10 font-black text-primary-400 text-xs uppercase">
                           {user.full_name?.charAt(0) || user.email?.charAt(0) || 'U'}
                         </div>
                         <div>
@@ -182,3 +182,4 @@ export default function UserManagement() {
     </div>
   );
 }
+

@@ -71,7 +71,7 @@ export default function AdminLoginPage() {
       {/* Background Orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-600/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent-indigo/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent-emerald/10 blur-[120px] rounded-full" />
       </div>
 
       <div className="w-full max-w-md relative">
@@ -148,3 +148,4 @@ export default function AdminLoginPage() {
     </div>
   );
 }
+
