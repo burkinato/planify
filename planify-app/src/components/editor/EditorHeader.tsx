@@ -115,11 +115,11 @@ export function EditorHeader({
           <div className="h-5 w-px bg-slate-200 mx-1 hidden sm:block" />
 
           {isRenaming ? (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1 shadow-sm animate-fade-in">
               <input
                 autoFocus
                 aria-label="Proje adini duzenle"
-                className="bg-slate-50 border border-blue-500 rounded px-2 py-0.5 text-xs font-bold text-slate-800 outline-none w-32 md:w-48"
+                className="bg-white border border-blue-300 rounded px-2 py-1 text-xs font-bold text-slate-800 outline-none w-36 md:w-52 shadow-inner"
                 value={tempTitle}
                 onChange={e => setTempTitle(e.target.value)}
                 onBlur={handleRename}
@@ -137,15 +137,26 @@ export function EditorHeader({
                   }
                 }}
               />
-              <button onClick={handleRename} className="text-green-600 hover:bg-green-50 p-1 rounded transition-colors">
-                <Check className="w-3.5 h-3.5" />
+              <button 
+                onClick={handleRename} 
+                className="text-green-600 hover:bg-green-100 p-1 rounded transition-colors"
+                title="Kaydet"
+              >
+                <Check className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={() => { setIsRenaming(false); setTempTitle(project?.title || ''); }}
+                className="text-slate-400 hover:bg-slate-100 p-1 rounded transition-colors"
+                title="İptal"
+              >
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           ) : (
             <button
               type="button"
               aria-label="Proje adini yeniden adlandir"
-              className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-slate-50"
+              className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-all hover:bg-slate-100 hover:shadow-sm"
               onClick={() => {
                 setTempTitle(project?.title || '');
                 isHandlingRename.current = false;
@@ -155,7 +166,7 @@ export function EditorHeader({
               <span className="text-xs font-bold text-slate-700 max-w-[120px] md:max-w-[200px] truncate">
                 {project?.title || 'Yeni Proje'}
               </span>
-              <Pencil className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Pencil className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-all" />
             </button>
           )}
         </div>

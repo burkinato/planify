@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useRef } from 'react';
 import {
   Layers, Trash2, MousePointer2, Plus, Settings2, Bold, FileDown, FileUp,
-  SlidersHorizontal
+  SlidersHorizontal, X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore, useShallow } from '@/store/useEditorStore';
@@ -236,8 +235,8 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
                   Değişiklikleri Kaydet
                 </button>
 
-                {/* Design Studio - Floating Cockpit */}
-                <DesignStudio
+                {/* Typography Panel */}
+                <TypographyPanel
                   advancedType={advancedType}
                   setAdvancedType={setAdvancedType}
                   focusedRegion={focusedRegion}
@@ -670,187 +669,167 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
   );
 }
 
-interface DesignStudioProps {
+function TypographyPanel({ 
+  advancedType, 
+  setAdvancedType, 
+  focusedRegion, 
+  focusedRegionState, 
+  updateTemplateRegion 
+}: {
   advancedType: 'title' | 'body' | 'meta' | null;
   setAdvancedType: (type: 'title' | 'body' | 'meta' | null) => void;
   focusedRegion: { id: string } | undefined;
-  focusedRegionState: { titleColor?: string; bodyColor?: string; metaColor?: string } | undefined;
+  focusedRegionState: Record<string, unknown> | undefined;
   updateTemplateRegion: (regionId: string, updates: Record<string, unknown>) => void;
-}
+}) {
+  if (!advancedType || !focusedRegion) return null;
 
-function DesignStudio({ advancedType, setAdvancedType, focusedRegion, focusedRegionState, updateTemplateRegion }: DesignStudioProps) {
-  const getInitialColor = () => {
-    if (!advancedType) return '#020617';
-    const colorKey = `${advancedType}Color` as const;
-    return focusedRegionState?.[colorKey] || '#020617';
+  const typeLabel = advancedType === 'title' ? 'BAŞLIK' : advancedType === 'body' ? 'İÇERİK' : 'META';
+  const accentColor = advancedType === 'title' ? 'blue' : advancedType === 'body' ? 'emerald' : 'amber';
+  
+  const size = focusedRegionState?.[`${advancedType}Size`] as number || 
+    (advancedType === 'title' ? 32 : advancedType === 'body' ? 14 : 12);
+  const weight = (focusedRegionState?.[`${advancedType}Weight`] as string) || 
+    (advancedType === 'title' ? 'black' : 'normal');
+  const letterSpacing = (focusedRegionState?.[`${advancedType}LetterSpacing`] as number) || 0;
+  const lineHeight = (focusedRegionState?.[`${advancedType}LineHeight`] as number) || 
+    (advancedType === 'title' ? 1.2 : 1.5);
+  const color = (focusedRegionState?.[`${advancedType}Color`] as string) || '#020617';
+  const gap = (focusedRegionState?.gap as number) || 12;
+
+  const updateField = (field: string, value: unknown) => {
+    updateTemplateRegion(focusedRegion.id, { [field]: value });
   };
 
-  const [localColor, setLocalColor] = useState(getInitialColor);
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Reset localColor when dependencies change by computing new value
-  const currentColor = advancedType ? (focusedRegionState?.[`${advancedType}Color`] || '#020617') : '#020617';
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLocalColor(currentColor), 0);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [advancedType, focusedRegionState, focusedRegion?.id]);
-
-  if (!advancedType || typeof document === 'undefined') return null;
-
-  const currentTypeLabel = advancedType === 'title' ? 'BAŞLIK' : advancedType === 'body' ? 'İÇERİK' : 'META';
-
-  const handleColorChange = (newColor: string) => {
-    setLocalColor(newColor);
-    
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      updateTemplateRegion(focusedRegion.id, { [`${advancedType}Color`]: newColor });
-    }, 16); // ~1 frame debounce for smoothness
-  };
-
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] pointer-events-none">
-      <div className="absolute inset-0 pointer-events-auto bg-slate-950/5" onClick={() => setAdvancedType(null)} />
-      
-      <div 
-        className={cn(
-          "absolute bottom-0 left-0 right-0 h-[64px] bg-slate-900 border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center gap-2 pointer-events-auto animate-in slide-in-from-bottom-full duration-300"
-        )}
-      >
-        <div className="flex items-center gap-4 px-6 border-r border-white/10 h-full">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-white tracking-[0.2em] leading-none">{currentTypeLabel}</span>
-            <span className="text-[8px] font-black text-cyan-500 tracking-widest mt-1.5">TASARIM STÜDYOSU</span>
-          </div>
+  return (
+    <div className="space-y-4 animate-fade-in">
+      <div className={`flex items-center justify-between p-3 rounded-xl bg-${accentColor}-50 border border-${accentColor}-200`}>
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full bg-${accentColor}-500 animate-pulse`} />
+          <span className={`text-[10px] font-black text-${accentColor}-700 tracking-[0.2em]`}>
+            {typeLabel} DÜZENLEME
+          </span>
         </div>
+        <button 
+          onClick={() => setAdvancedType(null)}
+          className={`p-1 rounded-lg hover:bg-${accentColor}-100 text-${accentColor}-500 transition-colors`}
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
 
-        <div className="flex items-center gap-8 px-8 border-r border-white/10 h-full">
-          <div className="flex flex-col gap-1.5 w-[140px]">
-            <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-tighter text-slate-400">
-              <span>Yazı Boyutu</span>
-              <span className="text-cyan-400 tabular-nums">
-                {focusedRegionState?.[`${advancedType}Size` as keyof typeof focusedRegionState] || (advancedType === 'title' ? 32 : advancedType === 'body' ? 14 : 12)}px
-              </span>
-            </div>
-            <input 
-              type="range" min="8" max="180" step="1"
-              value={focusedRegionState?.[`${advancedType}Size` as keyof typeof focusedRegionState] || (advancedType === 'title' ? 32 : advancedType === 'body' ? 14 : 12)}
-              onChange={(e) => updateTemplateRegion(focusedRegion.id, { [`${advancedType}Size`]: Number(e.target.value) })}
-              className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-cyan-500"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400 text-center">KALINLIK</span>
-            <div className="flex gap-1.5 bg-white/5 p-1 rounded-xl border border-white/5">
-              {(['normal', 'bold', 'black'] as const).map((w) => (
-                <button
-                  key={w}
-                  onClick={() => updateTemplateRegion(focusedRegion.id, { [`${advancedType}Weight`]: w })}
-                  className={cn(
-                    "w-9 h-8 rounded-lg text-[10px] font-black uppercase transition-all flex items-center justify-center",
-                    (focusedRegionState?.[`${advancedType}Weight` as keyof typeof focusedRegionState] || (advancedType === 'title' ? 'black' : 'normal')) === w 
-                      ? "bg-white text-slate-950 shadow-[0_0_20px_rgba(255,255,255,0.3)]" 
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
-                  )}
-                >
-                  {w === 'normal' ? 'N' : w === 'bold' ? 'B' : 'K'}
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* Font Size */}
+      <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 space-y-2">
+        <div className="flex justify-between items-center">
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Yazı Boyutu</span>
+          <span className={`text-[11px] font-black text-${accentColor}-600 tabular-nums`}>{size}px</span>
         </div>
+        <input 
+          type="range" min="8" max="180" step="1"
+          value={size}
+          onChange={(e) => updateField(`${advancedType}Size`, Number(e.target.value))}
+          className={`w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-${accentColor}-500`}
+        />
+      </div>
 
-        <div className="flex items-center gap-8 px-8 border-r border-white/10 h-full">
-          <div className="flex flex-col gap-1.5 w-[100px]">
-            <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-tighter text-slate-400">
-              <span>Harf Aralığı</span>
-              <span className="text-emerald-400">{focusedRegionState?.[`${advancedType}LetterSpacing` as keyof typeof focusedRegionState] || 0}</span>
-            </div>
-            <input 
-              type="range" min="-4" max="20" step="0.5"
-              value={focusedRegionState?.[`${advancedType}LetterSpacing` as keyof typeof focusedRegionState] || 0}
-              onChange={(e) => updateTemplateRegion(focusedRegion.id, { [`${advancedType}LetterSpacing`]: Number(e.target.value) })}
-              className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-emerald-500"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5 w-[100px]">
-            <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-tighter text-slate-400">
-              <span>Satır Yüksekliği</span>
-              <span className="text-amber-400 tabular-nums">
-                {focusedRegionState?.[`${advancedType}LineHeight` as keyof typeof focusedRegionState] || (advancedType === 'title' ? 1.2 : 1.5)}
-              </span>
-            </div>
-            <input 
-              type="range" min="0.5" max="3" step="0.1"
-              value={focusedRegionState?.[`${advancedType}LineHeight` as keyof typeof focusedRegionState] || (advancedType === 'title' ? 1.2 : 1.5)}
-              onChange={(e) => updateTemplateRegion(focusedRegion.id, { [`${advancedType}LineHeight`]: Number(e.target.value) })}
-              className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-amber-500"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-6 px-6 h-full">
-          <div className="flex flex-col gap-1.5 w-[100px]">
-            <div className="flex justify-between items-center text-[8px] font-black uppercase text-cyan-400/70">
-              <span>ELEMAN ARASI GAP</span>
-              <span className="text-white tabular-nums">{focusedRegionState?.gap !== undefined ? focusedRegionState.gap : 12}</span>
-            </div>
-            <input 
-              type="range" min="0" max="150" step="1"
-              value={focusedRegionState?.gap !== undefined ? focusedRegionState.gap : 12}
-              onChange={(e) => updateTemplateRegion(focusedRegion.id, { gap: Number(e.target.value) })}
-              className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-cyan-500"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5 w-[140px] px-4 border-l border-white/10">
-            <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400 text-center">RENK</span>
-            <div className="flex gap-2 items-center justify-center">
-               {(['#020617', '#065f46', '#9f1239', '#1e40af', '#854d0e'] as const).map((color) => (
-                 <button
-                   key={color}
-                   onClick={() => handleColorChange(color)}
-                   className={cn(
-                     "w-5 h-5 rounded-full border border-white/20 transition-all hover:scale-125",
-                     localColor === color ? "ring-2 ring-cyan-500 ring-offset-2 ring-offset-slate-900 scale-110" : ""
-                   )}
-                   style={{ backgroundColor: color }}
-                 />
-               ))}
-               <div className="w-[1px] h-4 bg-white/10 mx-1" />
-               <label className="relative cursor-pointer group/color">
-                 <input 
-                   type="color"
-                   value={localColor}
-                   onChange={(e) => handleColorChange(e.target.value)}
-                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                 />
-                 <div 
-                   className={cn(
-                     "w-6 h-6 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center transition-all group-hover/color:border-cyan-500 group-hover/color:scale-110",
-                     (localColor && !['#020617', '#065f46', '#9f1239', '#1e40af', '#854d0e'].includes(localColor)) ? "border-solid border-cyan-500 ring-2 ring-cyan-500 ring-offset-2 ring-offset-slate-900" : ""
-                   )}
-                   style={{ backgroundColor: (localColor && !['#020617', '#065f46', '#9f1239', '#1e40af', '#854d0e'].includes(localColor)) ? localColor : 'transparent' }}
-                 >
-                   <Plus className="w-3 h-3 text-white/50 group-hover/color:text-white" />
-                 </div>
-               </label>
-            </div>
-          </div>
-
-          <button 
-            onClick={() => setAdvancedType(null)}
-            className="ml-4 h-11 px-8 bg-cyan-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-cyan-950/20 hover:bg-cyan-500 transition-all active:scale-95 border border-cyan-400/30"
-          >
-            TAMAMLANDI
-          </button>
+      {/* Font Weight */}
+      <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 space-y-2">
+        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Kalınlık</span>
+        <div className="flex gap-2">
+          {(['normal', 'bold', 'black'] as const).map((w) => (
+            <button
+              key={w}
+              onClick={() => updateField(`${advancedType}Weight`, w)}
+              className={cn(
+                "flex-1 py-2 rounded-lg text-[10px] font-black uppercase transition-all",
+                weight === w 
+                  ? `bg-${accentColor}-500 text-white shadow-lg` 
+                  : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"
+              )}
+            >
+              {w === 'normal' ? 'Normal' : w === 'bold' ? 'Kalın' : 'Çok Kalın'}
+            </button>
+          ))}
         </div>
       </div>
-    </div>,
-    document.body
+
+      {/* Letter Spacing */}
+      <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 space-y-2">
+        <div className="flex justify-between items-center">
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Harf Aralığı</span>
+          <span className="text-[11px] font-black text-slate-600 tabular-nums">{letterSpacing}px</span>
+        </div>
+        <input 
+          type="range" min="-4" max="20" step="0.5"
+          value={letterSpacing}
+          onChange={(e) => updateField(`${advancedType}LetterSpacing`, Number(e.target.value))}
+          className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-slate-500"
+        />
+      </div>
+
+      {/* Line Height */}
+      <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 space-y-2">
+        <div className="flex justify-between items-center">
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Satır Yüksekliği</span>
+          <span className="text-[11px] font-black text-slate-600 tabular-nums">{lineHeight}</span>
+        </div>
+        <input 
+          type="range" min="0.5" max="3" step="0.1"
+          value={lineHeight}
+          onChange={(e) => updateField(`${advancedType}LineHeight`, Number(e.target.value))}
+          className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-slate-500"
+        />
+      </div>
+
+      {/* Gap (for body/meta) */}
+      {(advancedType === 'body' || advancedType === 'meta') && (
+        <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Eleman Arası Boşluk</span>
+            <span className="text-[11px] font-black text-slate-600 tabular-nums">{gap}px</span>
+          </div>
+          <input 
+            type="range" min="0" max="150" step="1"
+            value={gap}
+            onChange={(e) => updateField('gap', Number(e.target.value))}
+            className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-slate-500"
+          />
+        </div>
+      )}
+
+      {/* Color */}
+      <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 space-y-2">
+        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Renk</span>
+        <div className="flex gap-2 items-center flex-wrap">
+          {['#020617', '#065f46', '#9f1239', '#1e40af', '#854d0e', '#dc2626', '#7c3aed', '#059669'].map((c) => (
+            <button
+              key={c}
+              onClick={() => updateField(`${advancedType}Color`, c)}
+              className={cn(
+                "w-8 h-8 rounded-xl border-2 transition-all hover:scale-110",
+                color === c ? "border-slate-900 scale-110 shadow-lg" : "border-slate-200"
+              )}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+          <div className="relative">
+            <input 
+              type="color"
+              value={color}
+              onChange={(e) => updateField(`${advancedType}Color`, e.target.value)}
+              className="w-8 h-8 rounded-xl cursor-pointer border-2 border-dashed border-slate-300 hover:border-slate-400"
+            />
+          </div>
+        </div>
+      </div>
+
+      <button 
+        onClick={() => setAdvancedType(null)}
+        className={`w-full py-3 rounded-xl bg-${accentColor}-500 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-lg hover:opacity-90 transition-all`}
+      >
+        TAMAMLANDI
+      </button>
+    </div>
   );
 }
 

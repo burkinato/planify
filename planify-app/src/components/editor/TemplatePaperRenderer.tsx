@@ -62,12 +62,14 @@ function ReadOnlyRegion({
   bodyColor?: string;
   metaColor?: string;
 }) {
-  const { elements, projectMetadata, advancedType } = useEditorStore();
+  const { elements, projectMetadata, advancedType, focusedRegionId } = useEditorStore();
 
   const getFocusStyle = (type: string) => {
     if (advancedType !== type) return "";
-    return "ring-2 ring-cyan-500 ring-offset-2 ring-offset-white bg-cyan-50/30 rounded-sm px-1 transition-all animate-pulse shadow-[0_0_15px_rgba(6,182,212,0.2)]";
+    return "ring-2 ring-cyan-500 ring-offset-2 ring-offset-white bg-cyan-50/50 rounded-md px-1.5 py-0.5 transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)]";
   };
+
+  const isRegionFocused = focusedRegionId === region.id;
 
   if (region.type === 'legend') {
     const usedSymbolTypes = Array.from(new Set(
@@ -209,7 +211,11 @@ function ReadOnlyRegion({
 
         <div className="flex-1 flex flex-col items-center justify-center px-12 relative h-full">
           <div 
-            className={cn("text-emerald-950 uppercase tracking-[-0.01em] drop-shadow-sm pt-1", getFocusStyle('title'))}
+            className={cn(
+              "text-emerald-950 uppercase tracking-[-0.01em] drop-shadow-sm pt-1 transition-all duration-200",
+              isRegionFocused && "ring-2 ring-blue-500 ring-offset-4 ring-offset-white rounded-md px-2 py-1 bg-blue-50/50 shadow-[0_0_30px_rgba(59,130,246,0.15)]",
+              getFocusStyle('title')
+            )}
             style={{ 
               fontSize: titleSize || 32, 
               fontWeight: titleWeight || 'black',
@@ -220,12 +226,21 @@ function ReadOnlyRegion({
             }}
           >
             {title || region.label}
+            {isRegionFocused && (
+              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold bg-blue-500 text-white animate-pulse">
+                DÜZENLENİYOR
+              </span>
+            )}
           </div>
           
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <span 
-                className={cn("text-emerald-800 uppercase whitespace-nowrap opacity-95", getFocusStyle('body'))}
+                className={cn(
+                  "text-emerald-800 uppercase whitespace-nowrap opacity-95 transition-all duration-200",
+                  focusedRegionId === region.id && advancedType === 'body' && "ring-2 ring-blue-400 ring-offset-2 ring-offset-white rounded px-1 bg-blue-50/30",
+                  getFocusStyle('body')
+                )}
                 style={{ 
                   fontSize: bodySize || 14,
                   fontWeight: bodyWeight || 'black',
@@ -240,7 +255,11 @@ function ReadOnlyRegion({
                 <span className="text-emerald-300/50 mx-1">|</span>
               )}
               <span 
-                className={cn("text-emerald-800 uppercase whitespace-nowrap opacity-95", getFocusStyle('meta'))}
+                className={cn(
+                  "text-emerald-800 uppercase whitespace-nowrap opacity-95 transition-all duration-200",
+                  focusedRegionId === region.id && advancedType === 'meta' && "ring-2 ring-blue-400 ring-offset-2 ring-offset-white rounded px-1 bg-blue-50/30",
+                  getFocusStyle('meta')
+                )}
                 style={{ 
                   fontSize: metaSize || bodySize || 14,
                   fontWeight: metaWeight || bodyWeight || 'black',
