@@ -13,7 +13,6 @@ import { ISO_SYMBOLS } from '@/lib/editor/isoSymbols';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { useProAccess } from '@/hooks/useProAccess';
-import { StairPickerModal, type StairType } from './StairPickerModal';
 
 const CATEGORY_NAMES: Record<SymbolCategory, string> = {
   'E_ACIL': 'Acil Çıkış & Tahliye',
@@ -61,8 +60,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
   const [activeTab, setActiveTab] = useState<'tools' | 'library'>('tools');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [stairPickerPos, setStairPickerPos] = useState<{x:number;y:number}|null>(null);
-  const { tool, setTool, selectedSymbol, setSelectedSymbol, clearAll, customSymbols, addCustomSymbol, addElement, focusedRegionId } = useEditorStore();
+  const { tool, setTool, selectedSymbol, setSelectedSymbol, clearAll, customSymbols, addCustomSymbol, addElement, focusedRegionId, recentTools } = useEditorStore();
   const { updateProject } = useProjectStore();
   const { isPro } = useProAccess();
 
@@ -192,6 +190,50 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {activeTab === 'tools' ? (
           <>
+            {recentTools.length > 0 && (
+              <section>
+                <label className="text-[9px] uppercase font-black text-slate-400 tracking-[0.15em] block mb-2 px-1">
+                  Son Kullanılanlar
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {recentTools.map(toolName => {
+                    const toolConfig = {
+                      'select': { icon: MousePointer2, label: 'Seçim' },
+                      'wall': { icon: PenTool, label: 'Duvar' },
+                      'door': { icon: DoorIcon, label: 'Kapı' },
+                      'window': { icon: Scaling, label: 'Pencere' },
+                      'stairs': { icon: MoveUp, label: 'Merdiven' },
+                      'elevator': { icon: Box, label: 'Asansör' },
+                      'column': { icon: Box, label: 'Kolon' },
+                      'text': { icon: Type, label: 'Metin' },
+                      'evacuation-route': { icon: ArrowRight, label: 'Tahliye' },
+                      'rescue-route': { icon: ArrowRight, label: 'Kurtarma' },
+                      'eraser': { icon: Trash2, label: 'Silgi' },
+                      'symbol': { icon: PenTool, label: 'Sembol' },
+                      'rect': { icon: Box, label: 'Dikdörtgen' },
+                      'scale': { icon: Scaling, label: 'Ölçek' },
+                    }[toolName];
+                    if (!toolConfig) return null;
+                    const Icon = toolConfig.icon;
+                    return (
+                      <button
+                        key={toolName}
+                        onClick={() => setTool(toolName)}
+                        className={cn(
+                          "flex items-center gap-1 px-2 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all border",
+                          tool === toolName
+                            ? "bg-slate-900 text-white border-transparent"
+                            : "bg-white border-slate-200/60 text-slate-600 hover:border-slate-400 hover:bg-slate-50"
+                        )}
+                      >
+                        <Icon className="w-3 h-3" />
+                        <span>{toolConfig.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
             <section>
               <label className="text-[9px] uppercase font-black text-slate-400 tracking-[0.15em] block mb-3 px-1">
                 Mimari Çizim
@@ -203,13 +245,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
                 <ToolButton active={tool === 'window'} onClick={() => setTool('window')} icon={Scaling} label="Pencere" />
                 <ToolButton
                   active={tool === 'stairs'}
-                  onClick={(e) => {
-                    if (e) {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      setStairPickerPos({ x: rect.right + 12, y: rect.top - 10 });
-                    }
-                    setTool('stairs');
-                  }}
+                  onClick={() => setTool('stairs')}
                   icon={MoveUp} label="Merdiven"
                 />
                 <ToolButton active={tool === 'elevator'} onClick={() => setTool('elevator')} icon={Box} label="Asansör" />
@@ -327,25 +363,6 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
           {isSaving ? 'Kaydediliyor...' : 'Planı Kaydet / Yayınla'}
         </button>
       </div>
-      {stairPickerPos && (
-        <StairPickerModal
-          isOpen={true}
-          position={stairPickerPos}
-          onClose={() => setStairPickerPos(null)}
-          onSelect={(type: StairType) => {
-            addElement({
-              type: 'stairs',
-              x: 200,
-              y: 200,
-              width: type === 'spiral' ? 120 : 100,
-              height: type === 'spiral' ? 120 : 130,
-              stairsType: type,
-            });
-            setTool('select');
-            setStairPickerPos(null);
-          }}
-        />
-      )}
     </aside>
   );
 }

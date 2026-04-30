@@ -7,7 +7,7 @@ import {
 import { useEditorStore } from '@/store/useEditorStore';
 import { useProjectStore } from '@/store/useProjectStore';
 import { cn } from '@/lib/utils';
-import { FALLBACK_TEMPLATE_LAYOUTS } from '@/lib/editor/templateLayouts';
+import { FALLBACK_TEMPLATE_LAYOUTS, normalizePagePreset, normalizeTemplateLayout } from '@/lib/editor/templateLayouts';
 import type { PagePreset, TemplateLayout, TemplateRegion } from '@/types/editor';
 
 interface TemplateSelectorModalProps {
@@ -167,9 +167,9 @@ export function TemplateSelectorModal({
   const layouts = useMemo(() => {
     const raw = (templateLayouts && templateLayouts.length > 0) ? templateLayouts : FALLBACK_TEMPLATE_LAYOUTS;
     return raw.map(l => ({
-      ...l,
+      ...normalizeTemplateLayout(l),
       // Normalize preset for comparison
-      normalizedPreset: (l.page_preset || 'Landscape').toLowerCase()
+      normalizedPreset: normalizePagePreset(l.page_preset).toLowerCase()
     }));
   }, [templateLayouts]);
 

@@ -35,18 +35,18 @@ export default function LandingFeatures() {
         {/* Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {FEATURES.map(({ Icon, title, desc }, i) => (
-            <div key={i} className="group relative p-[1px] rounded-3xl bg-gradient-to-b from-slate-200/60 to-slate-100/20 hover:from-blue-400 hover:to-indigo-500 transition-all duration-500 overflow-hidden shadow-sm hover:shadow-xl hover:shadow-blue-900/10 hover:-translate-y-1">
+            <div key={i} className="group relative p-[1px] rounded-3xl bg-gradient-to-b from-slate-200/60 to-slate-100/20 hover:from-primary-400 hover:to-indigo-500 transition-all duration-500 overflow-hidden shadow-sm hover:shadow-xl hover:shadow-blue-900/10 hover:-translate-y-1">
               <div className="relative h-full p-8 rounded-[23px] bg-white/80 backdrop-blur-xl">
                 {/* Icon Container */}
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 shadow-sm">
-                  <Icon className="w-8 h-8 text-slate-700 group-hover:text-blue-600 transition-colors duration-500" />
+                  <Icon className="w-8 h-8 text-slate-700 group-hover:text-primary-600 transition-colors duration-500" />
                 </div>
                 
-                <h3 className="text-xl font-bold text-slate-900 mb-4 tracking-tight group-hover:text-blue-950 transition-colors">{title}</h3>
+                <h3 className="text-xl font-bold text-slate-900 mb-4 tracking-tight group-hover:text-primary-900 transition-colors">{title}</h3>
                 <p className="text-slate-500 font-medium leading-relaxed group-hover:text-slate-600 transition-colors">{desc}</p>
                 
                 {/* Decorative corner glow on hover */}
-                <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-blue-100/50 rounded-full blur-[40px] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-primary-100/50 rounded-full blur-[40px] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </div>
             </div>
           ))}
@@ -55,8 +55,8 @@ export default function LandingFeatures() {
         {/* Bottom CTA Card */}
         <div className="mt-20 relative rounded-3xl bg-slate-900 border border-slate-800 p-10 md:p-14 overflow-hidden shadow-2xl shadow-slate-900/20 group">
           {/* Card Gradients */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 mix-blend-overlay" />
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[100px] transform translate-x-1/3 -translate-y-1/3 group-hover:scale-110 transition-transform duration-1000" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-indigo-600/20 mix-blend-overlay" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-500/20 rounded-full blur-[100px] transform translate-x-1/3 -translate-y-1/3 group-hover:scale-110 transition-transform duration-1000" />
           
           <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10">
             <div className="text-center lg:text-left space-y-3">

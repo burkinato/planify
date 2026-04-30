@@ -5,6 +5,35 @@ const PAGE_PRESETS: Record<PagePreset, { width: number; height: number; orientat
   'Portrait':  { width: 1000, height: 1414, orientation: 'portrait'  },
 };
 
+export function normalizePagePreset(value: unknown, fallback: PagePreset = 'Landscape'): PagePreset {
+  if (typeof value !== 'string') return fallback;
+  const normalized = value.toLowerCase();
+  if (normalized.includes('portrait')) return 'Portrait';
+  if (normalized.includes('landscape')) return 'Landscape';
+  if (normalized === 'dikey') return 'Portrait';
+  if (normalized === 'yatay') return 'Landscape';
+  return fallback;
+}
+
+export function normalizeTemplateLayout(layout: TemplateLayout): TemplateLayout {
+  const pagePreset = normalizePagePreset(layout.page_preset, layout.orientation === 'portrait' ? 'Portrait' : 'Landscape');
+  const page = layout.layout_json.page;
+
+  return {
+    ...layout,
+    page_preset: pagePreset,
+    orientation: page?.orientation || (pagePreset === 'Portrait' ? 'portrait' : 'landscape'),
+    layout_json: {
+      ...layout.layout_json,
+      page: {
+        ...page,
+        preset: normalizePagePreset(page?.preset, pagePreset),
+        orientation: page?.orientation || (pagePreset === 'Portrait' ? 'portrait' : 'landscape'),
+      },
+    },
+  };
+}
+
 const FAMILIES = [
   ['classic-composite', 'TR Klasik Kompozit', 'GENEL', 'Üst başlık, sol bilgilendirme, sağ ekip rayı ve alt talimat blokları.', 'classic', '#059669', false],
   ['left-instruction',  'TR Sol Talimat',      'GENEL', 'Sol tarafta geniş acil durum ve yangın talimat kolonları.', 'leftRail', '#059669', false],
@@ -123,13 +152,13 @@ function clampRegion(region: TemplateRegion): TemplateRegion {
 }
 
 export function validateTemplateLayout(layout: TemplateLayout): TemplateLayout {
-  return {
+  return normalizeTemplateLayout({
     ...layout,
     layout_json: {
       ...layout.layout_json,
       regions: (layout.layout_json.regions || []).map(clampRegion),
     },
-  };
+  });
 }
 
 export const FALLBACK_TEMPLATE_LAYOUTS: TemplateLayout[] = FAMILIES.flatMap(

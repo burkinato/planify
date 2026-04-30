@@ -3,26 +3,136 @@
 import { useState, useRef } from 'react';
 import {
   Layers, Trash2, MousePointer2, Plus, Settings2, Bold, FileDown, FileUp,
-  SlidersHorizontal
+  ImageUp, X, Type, Maximize2, Palette, Info, Layout, RotateCcw, 
+  ChevronRight, Sparkles, Activity, ShieldCheck, Gauge, ExternalLink,
+  History, Bookmark, Globe, User, Calendar, Hash
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore, useShallow } from '@/store/useEditorStore';
-import { TypographyPanel } from './TypographyPanel';
-import { SYMBOLS } from '@/types/editor';
+import { useAuthStore } from '@/store/useAuthStore';
+import { SYMBOLS, type TemplateRegion, type TemplateRegionState } from '@/types/editor';
 import { LayerManager } from './LayerManager';
 import { mergeTemplateState } from '@/lib/editor/templateLayouts';
+import { uploadTemplateRegionAsset } from '@/lib/editor/templateAssets';
+import {
+  SegmentedControl,
+  NumericInput,
+  ColorSelector,
+  InspectorSection,
+  PropertyLabel,
+  SliderControl
+} from './InspectorControls';
+import { ToolInspector } from './ToolInspectors';
 
 interface EditorRightSidebarProps {
   mobileMenu: 'tools' | 'properties' | null;
   setMobileMenu: (m: 'tools' | 'properties' | null) => void;
 }
 
+type TypographyTarget = 'title' | 'body' | 'meta';
+
+const ISO_STANDARDS = {
+  SAFETY_GREEN: '#008F4C',
+  FIRE_RED: '#E81123',
+  WARNING_YELLOW: '#FFD700',
+  MANDATORY_BLUE: '#00539C',
+  NAVY: '#050b16',
+  WHITE: '#ffffff',
+};
+
+const SIZE_PRESETS = [9, 11, 13, 16, 20, 24, 32, 40, 48];
+
+function TypographyInspector({
+  target,
+  label,
+  regionState,
+  onChange,
+  isoHeader = false,
+}: {
+  target: TypographyTarget;
+  label: string;
+  regionState: TemplateRegionState;
+  onChange: (updates: TemplateRegionState) => void;
+  isoHeader?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const getVal = (field: string) => regionState[`${target}${field}` as keyof TemplateRegionState];
+  
+  const defaultSize = isoHeader && target === 'title' ? 32 : isoHeader && target === 'meta' ? 11 : target === 'title' ? 24 : 13;
+  const size = (getVal('Size') as number) ?? defaultSize;
+  const weight = (getVal('Weight') as string) ?? (target === 'title' ? 'black' : 'bold');
+  const color = isoHeader && target !== 'body' ? '#ffffff' : (getVal('Color') as string) ?? '#050b16';
+
+  const updateField = (field: string, value: any) => {
+    onChange({ [`${target}${field}`]: value } as TemplateRegionState);
+  };
+
+  return (
+    <InspectorSection title={label} collapsible isOpen={isOpen} onToggle={() => setIsOpen(!isOpen)}>
+      <div className="grid grid-cols-1 gap-5 bg-white/40 backdrop-blur-md p-4 rounded-2xl border border-white/60 shadow-sm">
+        <PropertyLabel label="Ağırlık">
+          <SegmentedControl
+            value={weight}
+            onChange={(v) => updateField('Weight', v)}
+            options={[
+              { value: 'normal', label: 'N' },
+              { value: 'bold', label: 'B' },
+              { value: 'black', label: 'BL' },
+            ]}
+          />
+        </PropertyLabel>
+
+        <PropertyLabel label="Boyut">
+          <div className="grid grid-cols-5 gap-1.5">
+            {SIZE_PRESETS.map(s => (
+              <button 
+                key={s} 
+                onClick={() => updateField('Size', s)}
+                className={cn(
+                  "h-8 rounded-lg text-[10px] font-black border transition-all duration-300",
+                  size === s 
+                    ? "bg-slate-900 text-white border-slate-900 shadow-md transform scale-105" 
+                    : "bg-white/80 border-slate-200/60 text-slate-500 hover:border-slate-400 hover:bg-white"
+                )}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </PropertyLabel>
+
+        {!(isoHeader && target !== 'body') && (
+          <PropertyLabel label="Renk">
+            <ColorSelector 
+              value={color} 
+              colors={Object.values(ISO_STANDARDS)} 
+              onChange={(c) => updateField('Color', c)} 
+            />
+          </PropertyLabel>
+        )}
+      </div>
+    </InspectorSection>
+  );
+}
+
 export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSidebarProps) {
   const [activeTab, setActiveTab] = useState<'props' | 'layers'>('props');
+  const [sections, setSections] = useState({
+    content: true,
+    geometry: true,
+    appearance: true,
+    meta: true,
+    files: true
+  });
+
+  const toggleSection = (s: keyof typeof sections) => {
+    setSections(prev => ({ ...prev, [s]: !prev[s] }));
+  };
+
   const {
     elements, selectedIds, removeElements, updateElement, scaleConfig, loadProject, layers,
-    activeTemplateLayout, focusedRegionId, templateState, updateTemplateRegion, setFocusedRegionId,
-    projectMetadata, setProjectMetadata, advancedType, setAdvancedType
+    projectMetadata, setProjectMetadata, activeTemplateLayout, templateState,
+    focusedRegionId, updateTemplateRegion, setFocusedRegionId, projectId, tool
   } = useEditorStore(useShallow((s) => ({
     elements: s.elements,
     selectedIds: s.selectedIds,
@@ -31,43 +141,38 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
     scaleConfig: s.scaleConfig,
     loadProject: s.loadProject,
     layers: s.layers,
-    activeTemplateLayout: s.activeTemplateLayout,
-    focusedRegionId: s.focusedRegionId,
-    templateState: s.templateState,
-    updateTemplateRegion: s.updateTemplateRegion,
-    setFocusedRegionId: s.setFocusedRegionId,
     projectMetadata: s.projectMetadata,
     setProjectMetadata: s.setProjectMetadata,
-    advancedType: s.advancedType,
-    setAdvancedType: s.setAdvancedType,
+    activeTemplateLayout: s.activeTemplateLayout,
+    templateState: s.templateState,
+    focusedRegionId: s.focusedRegionId,
+    updateTemplateRegion: s.updateTemplateRegion,
+    setFocusedRegionId: s.setFocusedRegionId,
+    projectId: s.projectId,
+    tool: s.tool,
   })));
+
+  const userId = useAuthStore((s) => s.user?.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-
   const selectedElement = selectedIds.length === 1 ? elements.find(e => e.id === selectedIds[0]) : null;
-  const focusedRegion = activeTemplateLayout?.layout_json.regions.find((region) => region.id === focusedRegionId);
-  const focusedRegionState = focusedRegion ? mergeTemplateState(templateState)[focusedRegion.id] : null;
+  const focusedRegion = activeTemplateLayout?.layout_json.regions.find((region) => region.id === focusedRegionId && region.type !== 'drawing');
+  const focusedRegionState = focusedRegion ? mergeTemplateState(templateState)[focusedRegion.id] || {} : null;
 
   const saveProject = () => {
     const data = {
-      elements,
-      scaleConfig,
-      layers,
+      elements, scaleConfig, layers,
       templateLayoutId: activeTemplateLayout?.id || null,
       projectTemplate: activeTemplateLayout?.slug || 'blank',
       pagePreset: activeTemplateLayout?.page_preset,
-      templateState,
-      projectMetadata,
-      version: '2.0'
+      templateState, projectMetadata, version: '2.0'
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `planify-proje-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
@@ -85,581 +190,326 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
 
   return (
     <aside className={cn(
-      "fixed md:static inset-y-0 right-0 w-72 bg-white/80 backdrop-blur-xl border-l border-slate-200/60 flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.05)] z-30 md:z-10 transition-all duration-500",
+      "fixed md:static inset-y-0 right-0 w-80 bg-slate-50/80 backdrop-blur-2xl border-l border-white flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.05)] z-30 md:z-10 transition-all duration-500 ease-in-out",
       mobileMenu === 'properties' ? "translate-x-0" : "translate-x-full md:translate-x-0"
     )}>
-      {/* Tabs */}
-      <div className="flex p-2 gap-1 bg-white/50 border-b border-slate-200">
-        <button
-          onClick={() => setActiveTab('props')}
-          className={cn(
-            "flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all flex items-center justify-center gap-2",
-            activeTab === 'props' ? "bg-slate-100 text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
-          )}
-        >
-          <Settings2 className="w-3.5 h-3.5" />
-          Özellikler
-        </button>
-        <button
-          onClick={() => setActiveTab('layers')}
-          className={cn(
-            "flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all flex items-center justify-center gap-2",
-            activeTab === 'layers' ? "bg-slate-100 text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
-          )}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          Katmanlar ({layers.length})
-        </button>
-        <button onClick={() => setMobileMenu(null)} className="md:hidden p-1.5 text-slate-500 ml-1">
-          <Plus className="rotate-45 w-5 h-5" />
-        </button>
+      {/* Premium Tab Switcher */}
+      <div className="p-4 bg-white/40 border-b border-white/60">
+        <div className="flex p-1 bg-slate-200/50 backdrop-blur-md rounded-2xl border border-slate-200/40 relative">
+          <div 
+            className={cn(
+              "absolute inset-y-1 w-[calc(50%-4px)] bg-white rounded-xl shadow-lg shadow-slate-200/50 transition-all duration-500 ease-spring border border-white",
+              activeTab === 'layers' ? "translate-x-full" : "translate-x-0"
+            )}
+          />
+          <button
+            onClick={() => setActiveTab('props')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2.5 z-10 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
+              activeTab === 'props' ? "text-slate-900" : "text-slate-400 hover:text-slate-600"
+            )}
+          >
+            <Activity className={cn("w-3.5 h-3.5", activeTab === 'props' ? "text-emerald-500" : "")} /> Özellikler
+          </button>
+          <button
+            onClick={() => setActiveTab('layers')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2.5 z-10 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
+              activeTab === 'layers' ? "text-slate-900" : "text-slate-400 hover:text-slate-600"
+            )}
+          >
+            <Layers className={cn("w-3.5 h-3.5", activeTab === 'layers' ? "text-emerald-500" : "")} /> Katmanlar
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         {activeTab === 'layers' ? (
           <LayerManager />
         ) : (
-          <div className="flex-1 p-3 overflow-y-auto space-y-4">
-            {focusedRegion && focusedRegion.type !== 'drawing' ? (
-              <div className="space-y-5 animate-fade-in">
-                {/* Region Info Header */}
-                <div className={cn(
-                  "rounded-xl border p-3 shadow-sm transition-all",
-                  focusedRegion.tone === 'red' ? "border-red-100 bg-red-50" : 
-                  focusedRegion.tone === 'blue' ? "border-blue-100 bg-blue-50" : 
-                  focusedRegion.tone === 'green' ? "border-emerald-100 bg-emerald-50" : 
-                  "border-slate-100 bg-slate-50"
-                )}>
-                  <div className={cn(
-                    "text-[9px] font-black uppercase tracking-[0.2em]",
-                    focusedRegion.tone === 'red' ? "text-red-800" : 
-                    focusedRegion.tone === 'blue' ? "text-blue-800" : 
-                    focusedRegion.tone === 'green' ? "text-emerald-800" : 
-                    "text-slate-500"
-                  )}>
-                    {focusedRegion.label}
-                  </div>
-                  <div className="mt-0.5 text-[8px] font-bold opacity-60 uppercase tracking-widest">{focusedRegion.type} BÖLGESİ</div>
-                </div>
-
-                {/* Edit Fields */}
-                <div className="space-y-4">
-                  {/* Title */}
-                  <div className="space-y-1.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100 group relative">
-                    <div className="flex justify-between items-center mb-0.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Başlık</label>
-                      <button 
-                        onClick={() => setAdvancedType(advancedType === 'title' ? null : 'title')}
-                        className={cn(
-                          "flex items-center gap-1.5 px-2 py-0.5 rounded-lg border shadow-sm text-[8px] font-black transition-all",
-                          advancedType === 'title' 
-                            ? "bg-cyan-500 border-cyan-500 text-white shadow-cyan-200" 
-                            : "bg-white border-slate-200 text-cyan-600 hover:border-cyan-200 hover:bg-cyan-50"
-                        )}
-                      >
-                        <SlidersHorizontal className="w-2.5 h-2.5" />
-                        {advancedType === 'title' ? 'KAPAT' : 'DÜZENLE'}
-                      </button>
+          <div className="p-6 space-y-10 animate-in fade-in duration-700">
+            {focusedRegion && focusedRegionState ? (
+              /* --- PREMIUM REGION EDITOR --- */
+              <>
+                <div className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                      <Layout className="w-5 h-5 text-white" />
                     </div>
-                    <input
-                      value={focusedRegionState?.title || ''}
-                      onChange={(event) => updateTemplateRegion(focusedRegion.id, { title: event.target.value })}
-                      className="w-full rounded-lg border border-slate-200 bg-white p-2 text-[11px] font-black text-slate-800 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm"
-                      placeholder={focusedRegion.label}
-                    />
-                  </div>
-
-                  {/* Body / Content */}
-                  {focusedRegion.type !== 'legend' && (
-                    <div className="space-y-1.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100">
-                      <div className="flex justify-between items-center mb-0.5">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">
-                          {focusedRegion.type === 'header' ? 'Alt Başlık (EN/Detay)' : 'İçerik Detayları'}
-                        </label>
-                        <button 
-                          onClick={() => setAdvancedType(advancedType === 'body' ? null : 'body')}
-                          className={cn(
-                            "flex items-center gap-1.5 px-2 py-0.5 rounded-lg border shadow-sm text-[8px] font-black transition-all",
-                            advancedType === 'body' 
-                              ? "bg-cyan-500 border-cyan-500 text-white shadow-cyan-200" 
-                              : "bg-white border-slate-200 text-cyan-600 hover:border-cyan-200 hover:bg-cyan-50"
-                          )}
-                        >
-                          <SlidersHorizontal className="w-2.5 h-2.5" />
-                          {advancedType === 'body' ? 'KAPAT' : 'DÜZENLE'}
-                        </button>
-                      </div>
-                      <textarea
-                        value={focusedRegionState?.body || ''}
-                        onChange={(event) => updateTemplateRegion(focusedRegion.id, { body: event.target.value })}
-                        className="min-h-[100px] w-full resize-none rounded-xl border border-slate-200 bg-white/50 p-3 text-[12px] font-medium leading-relaxed text-slate-700 outline-none focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm placeholder:text-slate-400"
-                        placeholder={focusedRegion.type === 'header' ? "Örn: Emergency Evacuation Plan" : "İçeriği girin..."}
-                      />
-                    </div>
-                  )}
-
-                  {/* Meta / Subtext */}
-                  {focusedRegion.type !== 'legend' && (focusedRegionState?.meta || focusedRegion.type === 'approval' || focusedRegion.type === 'header') && (
-                    <div className="space-y-1.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100">
-                      <div className="flex justify-between items-center mb-0.5">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">
-                          {focusedRegion.type === 'header' ? 'Alt Başlık / Kat Bilgisi' : 'Alt Bilgi / Meta'}
-                        </label>
-                        <button 
-                          onClick={() => setAdvancedType(advancedType === 'meta' ? null : 'meta')}
-                          className={cn(
-                            "flex items-center gap-1.5 px-2 py-0.5 rounded-lg border shadow-sm text-[8px] font-black transition-all",
-                            advancedType === 'meta' 
-                              ? "bg-cyan-500 border-cyan-500 text-white shadow-cyan-200" 
-                              : "bg-white border-slate-200 text-cyan-600 hover:border-cyan-200 hover:bg-cyan-50"
-                          )}
-                        >
-                          <SlidersHorizontal className="w-2.5 h-2.5" />
-                          {advancedType === 'meta' ? 'KAPAT' : 'DÜZENLE'}
-                        </button>
-                      </div>
-                      <input
-                        value={focusedRegionState?.meta || ''}
-                        onChange={(event) => updateTemplateRegion(focusedRegion.id, { meta: event.target.value })}
-                        className="w-full rounded-lg border border-slate-200 bg-white p-2 text-[11px] font-bold text-slate-600 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-sm"
-                        placeholder="Örn: 2. Kat / Rev-01"
-                      />
-                    </div>
-                  )}
-
-                </div>
-
-                <button
-                  onClick={() => setFocusedRegionId(null)}
-                  className="w-full rounded-xl bg-slate-950 px-4 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-slate-800 hover:shadow-lg active:scale-95 shadow-md"
-                >
-                  Değişiklikleri Kaydet
-                </button>
-
-                {/* Typography Panel */}
-                <TypographyPanel
-                  advancedType={advancedType}
-                  setAdvancedType={setAdvancedType}
-                  focusedRegion={focusedRegion}
-                  focusedRegionState={focusedRegionState}
-                  updateTemplateRegion={updateTemplateRegion}
-                />
-              </div>
-            ) : selectedElement ? (
-              <div className="space-y-4 animate-fade-in">
-                {/* Element Type */}
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Nesne Tipi</label>
-                  <div className="bg-white border-slate-200 border border-slate-200/50 px-3 py-2.5 rounded-lg text-xs font-bold text-slate-800 shadow-sm flex justify-between items-center">
-                    <span>{selectedElement.type === 'symbol' ? SYMBOLS.find(s=>s.id === selectedElement.symbolType)?.name : selectedElement.type.toUpperCase()}</span>
-                    {selectedElement.type === 'symbol' && <div className="w-2 h-2 rounded-full bg-accent-emerald animate-pulse-glow" />}
-                  </div>
-                </div>
-
-                {/* Label Input */}
-                {selectedElement.label !== undefined && (
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Etiket</label>
-                    <input
-                      type="text"
-                      className="w-full text-xs font-bold p-2.5 rounded-lg border border-slate-200/50 bg-white border-slate-200 text-slate-800 focus:border-accent-emerald outline-none transition-all"
-                      value={selectedElement.label}
-                      onChange={(e) => updateElement(selectedElement.id, { label: e.target.value })}
-                      placeholder="Nesne adı girin..."
-                    />
-                  </div>
-                )}
-
-                {/* Physical Dimensions */}
-                <div className="space-y-4">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Fiziksel Ölçüler</label>
-                  
-                  {selectedElement.type === 'rect' && (
-                    <div className="p-3 bg-accent-emerald/10 border border-accent-emerald/20 rounded-xl space-y-1 mb-2">
-                      <div className="flex justify-between items-center text-[10px] font-black text-accent-emerald uppercase tracking-widest">
-                        <span>Tahmini Alan</span>
-                        <span className="text-sm">
-                          {((selectedElement.width! / scaleConfig.pixelsPerMeter) * (selectedElement.height! / scaleConfig.pixelsPerMeter)).toFixed(1)} {scaleConfig.unit}²
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Point-based elements (wall, window, door, route) */}
-                  {['wall', 'window', 'door', 'route'].includes(selectedElement.type) && selectedElement.points && selectedElement.points.length >= 4 && (
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between items-center text-xs px-1">
-                        <span className="text-slate-600 font-bold">Uzunluk</span>
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="number" 
-                            step="0.1" 
-                            className="w-20 text-right bg-white text-slate-800 p-2 rounded-lg border border-slate-200 focus:border-accent-emerald focus:ring-1 focus:ring-accent-emerald outline-none transition-all"
-                            value={Number((Math.sqrt((selectedElement.points[0] - selectedElement.points[2])**2 + (selectedElement.points[1] - selectedElement.points[3])**2) / scaleConfig.pixelsPerMeter).toFixed(2))}
-                            onChange={(e) => {
-                              const newMeters = parseFloat(e.target.value);
-                              if (isNaN(newMeters) || newMeters <= 0) return;
-                              const pts = selectedElement.points as number[];
-                              const newPixels = newMeters * scaleConfig.pixelsPerMeter;
-                              const angle = Math.atan2(pts[3] - pts[1], pts[2] - pts[0]);
-                              updateElement(selectedElement.id, {
-                                points: [pts[0], pts[1], pts[0] + Math.cos(angle) * newPixels, pts[1] + Math.sin(angle) * newPixels]
-                              });
-                            }}
-                          />
-                          <span className="text-slate-400 font-black">{scaleConfig.unit}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Box-based elements (rect, stairs, elevator, column, symbol) */}
-                  {['rect', 'stairs', 'elevator', 'column', 'symbol'].includes(selectedElement.type) && (
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center text-xs px-1">
-                        <span className="text-slate-600 font-bold">{selectedElement.columnShape === 'circle' ? 'Çap' : 'Genişlik'}</span>
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="number" 
-                            step="0.1" 
-                            className="w-20 text-right bg-white text-slate-800 p-2 rounded-lg border border-slate-200 focus:border-accent-emerald focus:ring-1 focus:ring-accent-emerald outline-none transition-all"
-                            value={Number(((selectedElement.width || (selectedElement.type === 'symbol' ? 36 : 100)) / scaleConfig.pixelsPerMeter).toFixed(2))}
-                            onChange={(e) => {
-                              const newMeters = parseFloat(e.target.value);
-                              if (isNaN(newMeters) || newMeters <= 0) return;
-                              updateElement(selectedElement.id, { width: newMeters * scaleConfig.pixelsPerMeter });
-                            }}
-                          />
-                          <span className="text-slate-400 font-black">{scaleConfig.unit}</span>
-                        </div>
-                      </div>
-                      {selectedElement.type !== 'symbol' && selectedElement.columnShape !== 'circle' && (
-                        <div className="flex justify-between items-center text-xs px-1">
-                          <span className="text-slate-600 font-bold">Yükseklik</span>
-                          <div className="flex items-center gap-2">
-                            <input 
-                              type="number" 
-                              step="0.1" 
-                              className="w-20 text-right bg-white text-slate-800 p-2 rounded-lg border border-slate-200 focus:border-accent-emerald focus:ring-1 focus:ring-accent-emerald outline-none transition-all"
-                              value={Number(((selectedElement.height || 80) / scaleConfig.pixelsPerMeter).toFixed(2))}
-                              onChange={(e) => {
-                                const newMeters = parseFloat(e.target.value);
-                                if (isNaN(newMeters) || newMeters <= 0) return;
-                                updateElement(selectedElement.id, { height: newMeters * scaleConfig.pixelsPerMeter });
-                              }}
-                            />
-                            <span className="text-slate-400 font-black">{scaleConfig.unit}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Stairs Type Selector */}
-                {selectedElement.type === 'stairs' && (
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Merdiven Tipi</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { id: 'straight', label: 'Düz' },
-                        { id: 'l-shape', label: 'L-Şekil' },
-                        { id: 'u-shape', label: 'U-Şekil' },
-                        { id: 'spiral', label: 'Spiral' },
-                      ].map(t => (
-                        <button
-                          key={t.id}
-                          onClick={() => updateElement(selectedElement.id, { stairsType: t.id as 'straight' | 'l-shape' | 'spiral' | 'core' })}
-                          className={cn(
-                            "py-2 text-[10px] font-bold rounded-xl border transition-all",
-                            selectedElement.stairsType === t.id || (!selectedElement.stairsType && t.id === 'straight')
-                              ? "bg-accent-emerald text-white border-accent-emerald"
-                              : "border-slate-200/50 text-slate-600 hover:bg-slate-100/50"
-                          )}
-                        >
-                          {t.label}
-                        </button>
-                      ))}
+                    <div>
+                      <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-900">{focusedRegion.label}</h2>
+                      <p className="text-[9px] font-bold text-emerald-600/70 uppercase">Alan Düzenleyici</p>
                     </div>
                   </div>
-                )}
-
-                {/* Thickness for Wall, Window, Door, Route */}
-                {['wall', 'window', 'door', 'route'].includes(selectedElement.type) && (
-                  <div className="space-y-4">
-                    {selectedElement.type === 'wall' && (
-                      <>
-                        <div className="space-y-2">
-                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Duvar Tipi</label>
-                          <div className="grid grid-cols-3 gap-2">
-                            {[
-                              { id: 'hatch' as const, label: 'Tarama' },
-                              { id: 'solid' as const, label: 'Dolu' },
-                              { id: 'double' as const, label: 'Çift' },
-                            ].map((style) => (
-                              <button
-                                key={style.id}
-                                onClick={() => updateElement(selectedElement.id, { wallStyle: style.id })}
-                                className={cn(
-                                  "py-2 text-[10px] font-bold rounded-xl border transition-all",
-                                  (selectedElement.wallStyle || 'hatch') === style.id
-                                    ? "bg-accent-emerald text-white border-accent-emerald"
-                                    : "border-slate-200/50 text-slate-600 hover:bg-slate-100/50"
-                                )}
-                              >
-                                {style.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Mimari Preset</label>
-                          <div className="grid grid-cols-4 gap-2">
-                            {[10, 12, 16, 20].map((thickness) => (
-                              <button
-                                key={thickness}
-                                onClick={() => updateElement(selectedElement.id, { thickness })}
-                                className={cn(
-                                  "h-9 rounded-xl border text-[10px] font-black transition-all",
-                                  (selectedElement.thickness || 12) === thickness
-                                    ? "bg-slate-900 text-white border-slate-900"
-                                    : "border-slate-200 text-slate-600 hover:bg-slate-100"
-                                )}
-                              >
-                                {thickness}px
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center pl-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Kalınlık</label>
-                        <span className="text-[10px] font-bold text-accent-emerald">{selectedElement.thickness || 8}px</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="1"
-                        max="60"
-                        step="1"
-                        className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                        value={selectedElement.thickness || 8}
-                        onChange={(e) => updateElement(selectedElement.id, { thickness: Number(e.target.value) })}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Rotation */}
-                {['symbol', 'text', 'rect', 'stairs', 'elevator', 'column'].includes(selectedElement.type) && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center pl-1">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Rotasyon</label>
-                      <span className="text-[10px] font-bold text-accent-emerald">{selectedElement.rotation || 0}°</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="360"
-                      step="45"
-                      className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                      value={selectedElement.rotation || 0}
-                      onChange={(e) => updateElement(selectedElement.id, { rotation: Number(e.target.value) })}
-                    />
-                  </div>
-                )}
-
-                {/* Text Styling */}
-                {selectedElement.type === 'text' && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center pl-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Yazı Boyutu</label>
-                        <span className="text-[10px] font-bold text-accent-emerald">{selectedElement.fontSize || 14}px</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="8"
-                        max="72"
-                        step="2"
-                        className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                        value={selectedElement.fontSize || 14}
-                        onChange={(e) => updateElement(selectedElement.id, { fontSize: Number(e.target.value) })}
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => updateElement(selectedElement.id, { fontWeight: selectedElement.fontWeight === 'bold' ? 'normal' : 'bold' })}
-                        className={cn(
-                          "flex-1 py-2 rounded-lg border transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest",
-                          selectedElement.fontWeight === 'bold' ? "bg-accent-emerald text-white border-accent-emerald" : "bg-white border-slate-200 text-slate-600 border-slate-200/50 hover:bg-slate-100"
-                        )}
-                      >
-                        <Bold className="w-3 h-3" /> Kalın
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Color Palette */}
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Renk</label>
-                  <div className="flex flex-wrap gap-2">
-                    {['#ef4444', '#10b981', '#3b82f6', '#1e293b', '#f59e0b', '#8b5cf6', '#ffffff', '#64748b'].map(color => (
-                      <button
-                        key={color}
-                        onClick={() => updateElement(selectedElement.id, { color })}
-                        className={cn(
-                          "w-6 h-6 rounded-full border-2 transition-all",
-                          (selectedElement.color || (selectedElement.type === 'symbol' ? SYMBOLS.find(s=>s.id === selectedElement.symbolType)?.color : '#ffffff')) === color
-                            ? "border-accent-emerald scale-110 shadow-md"
-                            : "border-transparent hover:scale-105"
-                        )}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                    <input
-                      type="color"
-                      className="w-6 h-6 p-0 border-0 bg-transparent cursor-pointer rounded-full overflow-hidden"
-                      value={selectedElement.color || (selectedElement.type === 'symbol' ? SYMBOLS.find(s=>s.id === selectedElement.symbolType)?.color : '#ffffff')}
-                      onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                {/* Delete Button */}
-                <div className="pt-4 border-t border-slate-200">
-                  <button
-                    onClick={() => removeElements(selectedIds)}
-                    className="w-full flex items-center justify-center gap-2 p-2.5 text-[10px] font-black uppercase tracking-widest text-safety-red bg-safety-red/10 rounded-lg hover:bg-safety-red hover:text-white transition-all border border-safety-red/20 active:scale-[0.98]"
-                  >
-                    <Trash2 className="w-4 h-4" /> Seçili Nesneyi Sil
+                  <button onClick={() => setFocusedRegionId(null)} className="p-2 hover:bg-white rounded-xl transition-all shadow-sm border border-transparent hover:border-slate-200/60">
+                    <X className="w-4 h-4 text-slate-400" />
                   </button>
                 </div>
-              </div>
-            ) : (
-              /* Empty State */
-              <div className="space-y-8 animate-fade-in">
-                <div className="flex flex-col items-center justify-center text-center py-8 space-y-4">
-                  <div className="w-14 h-14 bg-white border-slate-200 text-slate-500 rounded-2xl flex items-center justify-center border border-slate-200 shadow-sm">
-                    <MousePointer2 className="w-7 h-7" />
-                  </div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] leading-loose">
-                    {selectedIds.length > 1 ? `${selectedIds.length} nesne seçildi` : (
-                      <>
-                        Düzenlemek için bir nesne<br/>seçin veya proje<br/>ayarlarını yönetin
-                      </>
+
+                <InspectorSection title="İçerik Mimarisi" collapsible isOpen={sections.content} onToggle={() => toggleSection('content')}>
+                  <div className="space-y-4">
+                    <PropertyLabel label="Başlık">
+                      <input
+                        value={focusedRegionState.title || ''}
+                        onChange={(e) => updateTemplateRegion(focusedRegion.id, { title: e.target.value })}
+                        className="w-full bg-white/60 backdrop-blur-md border border-slate-200/60 rounded-xl px-4 py-3 text-xs font-black uppercase tracking-wide focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all"
+                        placeholder={focusedRegion.label}
+                      />
+                    </PropertyLabel>
+                    
+                    {focusedRegion.type !== 'legend' && (
+                      <PropertyLabel label={focusedRegion.type === 'header' ? 'Alt Başlık' : 'Detay'}>
+                        <textarea
+                          value={focusedRegionState.body || ''}
+                          onChange={(e) => updateTemplateRegion(focusedRegion.id, { body: e.target.value })}
+                          className="w-full bg-white/60 backdrop-blur-md border border-slate-200/60 rounded-xl px-4 py-3 text-xs font-bold min-h-[100px] resize-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all"
+                          placeholder="..."
+                        />
+                      </PropertyLabel>
                     )}
-                  </p>
+
+                    <PropertyLabel label="Meta Veri">
+                      <div className="relative group">
+                        <input
+                          value={focusedRegionState.meta || ''}
+                          onChange={(e) => updateTemplateRegion(focusedRegion.id, { meta: e.target.value.toUpperCase() })}
+                          className="w-full bg-white/60 backdrop-blur-md border border-slate-200/60 rounded-xl px-4 py-3 text-xs font-black focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all pr-10"
+                          placeholder="01"
+                        />
+                        <Hash className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+                      </div>
+                    </PropertyLabel>
+                  </div>
+                </InspectorSection>
+
+                <div className="space-y-6 pt-6 border-t border-slate-200/40">
+                  <TypographyInspector 
+                    target="title" label="Başlık Tipografisi" 
+                    regionState={focusedRegionState} 
+                    isoHeader={focusedRegion.type === 'header'}
+                    onChange={(u) => updateTemplateRegion(focusedRegion.id, u)} 
+                  />
+                  {focusedRegion.type !== 'legend' && (
+                    <TypographyInspector 
+                      target="body" label="Gövde Tipografisi" 
+                      regionState={focusedRegionState} 
+                      onChange={(u) => updateTemplateRegion(focusedRegion.id, u)} 
+                    />
+                  )}
+                  <TypographyInspector 
+                    target="meta" label="Meta Tipografisi" 
+                    regionState={focusedRegionState} 
+                    isoHeader={focusedRegion.type === 'header'}
+                    onChange={(u) => updateTemplateRegion(focusedRegion.id, u)} 
+                  />
+                </div>
+              </>
+            ) : selectedElement ? (
+              /* --- PREMIUM ELEMENT EDITOR --- */
+              <>
+                <div className="flex items-center justify-between p-4 bg-slate-900 rounded-2xl shadow-xl shadow-slate-900/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/10">
+                      <Activity className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-[11px] font-black uppercase tracking-widest text-white">
+                        {selectedElement.type === 'symbol' ? SYMBOLS.find(s=>s.id === selectedElement.symbolType)?.name : selectedElement.type}
+                      </h2>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase">Özellik Paneli</p>
+                    </div>
+                  </div>
+                  <button onClick={() => removeElements(selectedIds)} className="p-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-xl transition-all border border-red-500/20">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
 
-
-
-                {/* Project Metadata Management */}
-                <div className="space-y-4 pt-4 border-t border-slate-200">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1 block">Proje Ayarları</label>
-                  
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Proje Adı</label>
-                      <input 
-                        value={projectMetadata.name}
-                        onChange={(e) => setProjectMetadata({ name: e.target.value.toUpperCase() })}
-                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-accent-emerald transition-all"
-                        placeholder="PROJE ADI"
+                <InspectorSection title="Geometrik Veriler" collapsible isOpen={sections.geometry} onToggle={() => toggleSection('geometry')}>
+                  <div className="grid grid-cols-2 gap-4">
+                    <PropertyLabel label="Genişlik">
+                      <NumericInput 
+                        value={Number(((selectedElement.width || 0) / scaleConfig.pixelsPerMeter).toFixed(2))} 
+                        unit={scaleConfig.unit}
+                        onChange={(v) => updateElement(selectedElement.id, { width: v * scaleConfig.pixelsPerMeter })} 
                       />
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Hazırlayan</label>
-                      <input 
-                        value={projectMetadata.author}
-                        onChange={(e) => setProjectMetadata({ author: e.target.value.toUpperCase() })}
-                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-accent-emerald transition-all"
-                        placeholder="İSİM SOYİSİM"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Tarih</label>
-                        <input 
-                          value={projectMetadata.date}
-                          onChange={(e) => setProjectMetadata({ date: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-accent-emerald transition-all"
+                    </PropertyLabel>
+                    {selectedElement.type !== 'wall' && selectedElement.type !== 'route' && (
+                      <PropertyLabel label="Yükseklik">
+                        <NumericInput 
+                          value={Number(((selectedElement.height || 0) / scaleConfig.pixelsPerMeter).toFixed(2))} 
+                          unit={scaleConfig.unit}
+                          onChange={(v) => updateElement(selectedElement.id, { height: v * scaleConfig.pixelsPerMeter })} 
                         />
+                      </PropertyLabel>
+                    )}
+                  </div>
+                  
+                  {['symbol', 'rect', 'stairs', 'column'].includes(selectedElement.type) && (
+                    <PropertyLabel label="Rotasyon">
+                      <SliderControl 
+                        value={selectedElement.rotation || 0}
+                        min={0} max={360} step={45} unit="°"
+                        onChange={(v) => updateElement(selectedElement.id, { rotation: v })}
+                      />
+                    </PropertyLabel>
+                  )}
+                </InspectorSection>
+
+                {selectedElement.type === 'wall' && (
+                  <InspectorSection title="Duvar Mühendisliği" collapsible isOpen={sections.appearance} onToggle={() => toggleSection('appearance')}>
+                    <PropertyLabel label="Tarama Stili">
+                      <SegmentedControl
+                        value={selectedElement.wallStyle || 'hatch'}
+                        onChange={(v) => updateElement(selectedElement.id, { wallStyle: v as any })}
+                        options={[
+                          { value: 'hatch', label: 'Taralı' },
+                          { value: 'solid', label: 'Dolu' },
+                          { value: 'double', label: 'Çift' },
+                        ]}
+                      />
+                    </PropertyLabel>
+                    <PropertyLabel label="Kalınlık (cm)">
+                      <div className="grid grid-cols-4 gap-2">
+                        {[10, 12, 16, 20].map(t => (
+                          <button 
+                            key={t}
+                            onClick={() => updateElement(selectedElement.id, { thickness: t })}
+                            className={cn(
+                              "h-10 rounded-xl text-[10px] font-black border transition-all duration-300",
+                              (selectedElement.thickness || 12) === t 
+                                ? "bg-slate-900 text-white border-slate-900 shadow-lg scale-105" 
+                                : "bg-white border-slate-200/60 text-slate-500 hover:border-slate-400 hover:bg-slate-50"
+                            )}
+                          >
+                            {t}
+                          </button>
+                        ))}
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Revizyon</label>
-                        <input 
+                    </PropertyLabel>
+                  </InspectorSection>
+                )}
+
+                <InspectorSection title="Görsel Kimlik">
+                  {selectedElement.type === 'symbol' ? (
+                    <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-2xl flex items-center gap-4 group">
+                      <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                        <ShieldCheck className="w-5 h-5" />
+                      </div>
+                      <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest leading-tight">ISO Standart Rengi<br/>Aktif</span>
+                    </div>
+                  ) : (
+                    <ColorSelector 
+                      value={selectedElement.color || '#050b16'} 
+                      colors={Object.values(ISO_STANDARDS)} 
+                      onChange={(c) => updateElement(selectedElement.id, { color: c })} 
+                    />
+                  )}
+                </InspectorSection>
+              </>
+            ) : tool !== 'select' && tool !== 'symbol' ? (
+              /* --- TOOL INSPECTOR --- */
+              <ToolInspector />
+            ) : (
+              /* --- PREMIUM DASHBOARD STATE --- */
+              <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-[32px] shadow-2xl group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[60px] group-hover:bg-emerald-500/20 transition-all duration-1000" />
+                  <div className="relative z-10 space-y-6">
+                    <div className="w-14 h-14 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl">
+                      <Sparkles className="w-7 h-7 text-emerald-400 animate-pulse" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-black text-white leading-tight">Hoş Geldiniz</h2>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Planify Pro Stüdyo</p>
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="flex-1 p-3 bg-white/5 rounded-2xl border border-white/5 text-center">
+                        <div className="text-[10px] font-black text-emerald-400 uppercase mb-1">Katman</div>
+                        <div className="text-xl font-black text-white">{layers.length}</div>
+                      </div>
+                      <div className="flex-1 p-3 bg-white/5 rounded-2xl border border-white/5 text-center">
+                        <div className="text-[10px] font-black text-emerald-400 uppercase mb-1">Obje</div>
+                        <div className="text-xl font-black text-white">{elements.length}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <InspectorSection title="Proje Kimliği" collapsible isOpen={sections.meta} onToggle={() => toggleSection('meta')}>
+                  <div className="space-y-4">
+                    <PropertyLabel label="Proje Adı">
+                      <div className="relative">
+                        <input
+                          value={projectMetadata.name}
+                          onChange={(e) => setProjectMetadata({ name: e.target.value.toUpperCase() })}
+                          className="w-full bg-white border border-slate-200/60 rounded-xl px-4 py-3 text-xs font-black tracking-wide outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
+                        />
+                        <Bookmark className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
+                      </div>
+                    </PropertyLabel>
+                    
+                    <div className="grid grid-cols-1 gap-4">
+                      <PropertyLabel label="Hazırlayan Uzman">
+                        <div className="relative">
+                          <input
+                            value={projectMetadata.author}
+                            onChange={(e) => setProjectMetadata({ author: e.target.value.toUpperCase() })}
+                            className="w-full bg-white border border-slate-200/60 rounded-xl px-4 py-3 text-xs font-black outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
+                          />
+                          <User className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
+                        </div>
+                      </PropertyLabel>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <PropertyLabel label="Tarih">
+                        <div className="relative">
+                          <input
+                            value={projectMetadata.date}
+                            onChange={(e) => setProjectMetadata({ date: e.target.value })}
+                            className="w-full bg-white border border-slate-200/60 rounded-xl px-4 py-3 text-xs font-black outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
+                          />
+                          <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
+                        </div>
+                      </PropertyLabel>
+                      <PropertyLabel label="Revizyon">
+                        <input
                           value={projectMetadata.revision}
                           onChange={(e) => setProjectMetadata({ revision: e.target.value.toUpperCase() })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-accent-emerald transition-all"
-                          placeholder="00"
+                          className="w-full bg-white border border-slate-200/60 rounded-xl px-4 py-3 text-xs font-black text-center outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
                         />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Kurumsal Logo (PNG/SVG)</label>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => {
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.accept = 'image/*';
-                            input.onchange = (e) => {
-                              const file = (e.target as HTMLInputElement).files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (re) => {
-                                  setProjectMetadata({ logoUrl: re.target?.result as string });
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            };
-                            input.click();
-                          }}
-                          className="flex-1 bg-white border border-slate-200 p-2 rounded-lg text-[10px] font-black text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
-                        >
-                          <Plus className="w-3 h-3" /> Logo Yükle
-                        </button>
-                        {projectMetadata.logoUrl && (
-                          <button 
-                            onClick={() => setProjectMetadata({ logoUrl: '' })}
-                            className="p-2 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-all"
-                            title="Logoyu Kaldır"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        )}
-                      </div>
+                      </PropertyLabel>
                     </div>
                   </div>
-                </div>
+                </InspectorSection>
 
-                {/* File Management */}
-                <div className="space-y-3 pt-4 border-t border-slate-200">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1 block">Dosya Yönetimi</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={saveProject}
-                      className="flex flex-col items-center gap-3 p-4 bg-white border-slate-200/50 border border-slate-200 rounded-2xl hover:border-accent-emerald/50 hover:bg-accent-emerald/5 transition-all group"
-                    >
-                      <FileDown className="w-6 h-6 text-slate-500 group-hover:text-accent-emerald transition-colors" />
-                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Kaydet</span>
+                <InspectorSection title="Sistem Yönetimi" collapsible isOpen={sections.files} onToggle={() => toggleSection('files')}>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button onClick={saveProject} className="flex flex-col items-center gap-3 p-6 bg-white border border-slate-200/60 rounded-3xl hover:border-emerald-500/50 transition-all group shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 active:scale-95">
+                      <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:bg-emerald-500 transition-colors">
+                        <FileDown className="w-6 h-6 text-emerald-500 group-hover:text-white" />
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900">Projeyi İndir</span>
                     </button>
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex flex-col items-center gap-3 p-4 bg-white border-slate-200/50 border border-slate-200 rounded-2xl hover:border-accent-emerald/50 hover:bg-accent-emerald/5 transition-all group"
-                    >
-                      <FileUp className="w-6 h-6 text-slate-500 group-hover:text-accent-emerald transition-colors" />
-                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Yükle</span>
+                    <button onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center gap-3 p-6 bg-white border border-slate-200/60 rounded-3xl hover:border-emerald-500/50 transition-all group shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 active:scale-95">
+                      <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-slate-900 transition-colors">
+                        <FileUp className="w-6 h-6 text-slate-400 group-hover:text-white" />
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900">Dosya Yükle</span>
                       <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={onFileLoad} />
                     </button>
                   </div>
+                </InspectorSection>
+                
+                <div className="p-6 bg-white/40 border border-white rounded-[32px] flex items-center gap-4 group cursor-help transition-all hover:bg-white shadow-sm">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg border border-slate-100 group-hover:rotate-12 transition-transform">
+                    <ShieldCheck className="w-6 h-6 text-emerald-500" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest">ISO 7010 / 23601</div>
+                    <div className="text-[9px] font-bold text-slate-400 uppercase">Tam Uyumluluk Aktif</div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-300 ml-auto group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
             )}
@@ -669,4 +519,3 @@ export function EditorRightSidebar({ mobileMenu, setMobileMenu }: EditorRightSid
     </aside>
   );
 }
-

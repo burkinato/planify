@@ -1,7 +1,10 @@
-import { AlertTriangle, Archive, ClipboardCheck, FileCheck2 } from 'lucide-react';
+'use client';
+
+import { AlertTriangle, Archive, ClipboardCheck, FileCheck2, Sparkles } from 'lucide-react';
 import type { ProjectExport } from '@/store/useProjectStore';
 import type { ProjectAudit } from '@/lib/projects/compliance';
 import { formatPortalDate } from '@/lib/projects/compliance';
+import { cn } from '@/lib/utils';
 
 interface DashboardMetricsProps {
   projectCount: number;
@@ -18,47 +21,53 @@ export function DashboardMetrics({ projectCount, audits, exports }: DashboardMet
     {
       label: 'Toplam Dosya',
       value: projectCount,
-      helper: 'Aktif tahliye planı projesi',
+      helper: 'Aktif tahliye planı',
       icon: Archive,
-      tone: 'text-slate-700 bg-slate-100 border-slate-200',
+      color: 'bg-slate-500/5 text-slate-600',
     },
     {
       label: 'Denetime Hazır',
       value: readyCount,
-      helper: 'Kontrol listesi tamamlanan dosya',
+      helper: 'Kontrolü tamamlanan',
       icon: ClipboardCheck,
-      tone: 'text-emerald-700 bg-emerald-50 border-emerald-100',
+      color: 'bg-emerald-500/5 text-emerald-600',
     },
     {
       label: 'Eksik Kontrol',
       value: missingCount,
-      helper: 'Tamamlanması gereken ISO maddesi',
+      helper: 'Bekleyen ISO maddesi',
       icon: AlertTriangle,
-      tone: 'text-amber-700 bg-amber-50 border-amber-100',
+      color: 'bg-amber-500/5 text-amber-600',
     },
     {
       label: 'Son Çıktı',
-      value: formatPortalDate(latestExport),
-      helper: latestExport ? 'PDF / görsel arşiv kaydı' : 'Henüz çıktı alınmadı',
+      value: latestExport ? formatPortalDate(latestExport) : '-',
+      helper: latestExport ? 'Arşiv kayıt tarihi' : 'Henüz kayıt yok',
       icon: FileCheck2,
-      tone: 'text-blue-700 bg-blue-50 border-blue-100',
+      color: 'bg-blue-500/5 text-blue-600',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-      {metrics.map(({ label, value, helper, icon: Icon, tone }) => (
-        <div key={label} className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">{label}</p>
-              <p className="mt-2 text-2xl font-black text-slate-950 tracking-tight">{value}</p>
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      {metrics.map(({ label, value, helper, icon: Icon, color }) => (
+        <div 
+          key={label} 
+          className="relative overflow-hidden bg-white/60 backdrop-blur-xl rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500"
+        >
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{label}</p>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">{value}</p>
             </div>
-            <div className={`w-10 h-10 border flex items-center justify-center ${tone}`}>
-              <Icon className="w-5 h-5" />
+            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6", color)}>
+              <Icon className="w-6 h-6" />
             </div>
           </div>
-          <p className="mt-4 text-xs font-semibold text-slate-500">{helper}</p>
+          <div className="mt-6 flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-200 group-hover:bg-emerald-400 transition-colors" />
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{helper}</p>
+          </div>
         </div>
       ))}
     </div>

@@ -18,6 +18,15 @@ import type {
   TemplateState,
   TemplateRegionState,
   ProjectMetadata,
+  ToolOptions,
+  WallToolOptions,
+  DoorToolOptions,
+  WindowToolOptions,
+  StairsToolOptions,
+  ElevatorToolOptions,
+  ColumnToolOptions,
+  TextToolOptions,
+  RouteToolOptions,
 } from '@/types/editor';
 import {
   sanitizeDebugEditorStatePayload,
@@ -26,6 +35,30 @@ import {
   sanitizeScaleConfig,
   sanitizeTemplateState,
 } from '@/lib/editor/sanitizeEditorState';
+import { normalizePagePreset, normalizeTemplateLayout } from '@/lib/editor/templateLayouts';
+
+// Samet (P1 Fix): Debounce utility for localStorage writes
+let saveElementsTimer: ReturnType<typeof setTimeout> | null = null;
+let saveLayersTimer: ReturnType<typeof setTimeout> | null = null;
+const DEBOUNCE_DELAY = 500; // 500ms debounce for localStorage writes
+
+const debouncedSaveElements = (elements: EditorElement[]) => {
+  if (saveElementsTimer) clearTimeout(saveElementsTimer);
+  saveElementsTimer = setTimeout(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('planify-elements', JSON.stringify(elements));
+    }
+  }, DEBOUNCE_DELAY);
+};
+
+const debouncedSaveLayers = (layers: LayerDef[]) => {
+  if (saveLayersTimer) clearTimeout(saveLayersTimer);
+  saveLayersTimer = setTimeout(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('planify-layers', JSON.stringify(layers));
+    }
+  }, DEBOUNCE_DELAY);
+};
 
 interface HistorySnapshot {
   elements: EditorElement[];
@@ -59,8 +92,10 @@ interface EditorState {
   canRedo: boolean;
   past: HistorySnapshot[];
   future: HistorySnapshot[];
-  advancedType: 'title' | 'body' | 'meta' | null;
+  advancedType: 'title' | 'body' | 'meta' | 'content' | null;
   projectId: string | null;
+  toolOptions: ToolOptions;
+  recentTools: EditorTool[];
 
   // Actions
   setProjectId: (id: string | null) => void;
@@ -99,7 +134,9 @@ interface EditorState {
   clearAll: () => void;
   undo: () => void;
   redo: () => void;
-  setAdvancedType: (type: 'title' | 'body' | 'meta' | null) => void;
+  setAdvancedType: (type: 'title' | 'body' | 'meta' | 'content' | null) => void;
+  updateToolOptions: (tool: EditorTool, options: Partial<Record<string, unknown>>) => void;
+  updateRecentTools: (tool: EditorTool) => void;
 }
 
 const DEFAULT_LAYER: LayerDef = {
@@ -109,6 +146,23 @@ const DEFAULT_LAYER: LayerDef = {
   locked: false,
   order: 0,
 };
+
+const getDefaultToolOptions = (): ToolOptions => ({
+  wall: { style: 'hatch', thickness: 12 },
+  door: { width: 80, swingDirection: 'right', doorType: 'single' },
+  window: { width: 100, height: 10, panes: 2 },
+  stairs: { stairsType: 'straight', width: 100, height: 130 },
+  elevator: { width: 150, height: 150, elevatorType: 'passenger' },
+  column: { size: 40, shape: 'square' },
+  text: { fontSize: 16, fontWeight: 'bold', color: '#050b16', textAlign: 'left' },
+  'evacuation-route': { lineStyle: 'solid', width: 3, color: '#008F4C' },
+  'rescue-route': { lineStyle: 'dashed', width: 3, color: '#E81123' },
+  rect: { width: 100, height: 100, color: '#050b16' },
+  symbol: { symbolId: null },
+  scale: { pixelsPerMeter: 50, unit: 'm' },
+  eraser: {},
+  select: {},
+});
 
 const getInitialState = () => {
   if (typeof window === 'undefined') {
@@ -128,6 +182,8 @@ const getInitialState = () => {
       innerZoom: 1,
       innerPan: { x: 0, y: 0 },
       projectId: null as string | null,
+      toolOptions: getDefaultToolOptions(),
+      recentTools: [] as EditorTool[],
     };
   }
 
@@ -144,25 +200,24 @@ const getInitialState = () => {
     projectTemplate: (localStorage.getItem('planify-template') as ProjectTemplate) || 'blank',
     templateLayoutId: localStorage.getItem('planify-template-layout-id'),
     activeTemplateLayout: null as TemplateLayout | null,
-    pagePreset: (localStorage.getItem('planify-preset') as PagePreset) || 'Landscape',
+    pagePreset: normalizePagePreset(localStorage.getItem('planify-preset')),
     templateState: sanitizeTemplateState(JSON.parse(localStorage.getItem('planify-template-state') || '{}')),
     projectMetadata: JSON.parse(localStorage.getItem('planify-project-metadata') || JSON.stringify({ name: 'PROJE DOSYASI', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00', floor: '', scale: '100' })),
     innerZoom: parseFloat(localStorage.getItem('planify-inner-zoom') || '1') || 1,
     innerPan: JSON.parse(localStorage.getItem('planify-inner-pan') || '{"x":0,"y":0}'),
     projectId: null as string | null,
+    toolOptions: getDefaultToolOptions(),
+    recentTools: [] as EditorTool[],
   };
 };
 
+// Samet (P1 Fix): Now using debounced versions to prevent excessive localStorage writes
 const saveElements = (elements: EditorElement[]) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('planify-elements', JSON.stringify(elements));
-  }
+  debouncedSaveElements(elements);
 };
 
 const saveLayers = (layers: LayerDef[]) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('planify-layers', JSON.stringify(layers));
-  }
+  debouncedSaveLayers(layers);
 };
 
 export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, get) => {
@@ -187,8 +242,28 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     projectId: null,
 
     setProjectId: (projectId) => set({ projectId }),
-    setTool: (tool) => set({ tool, selectedSymbol: tool === 'symbol' ? 'exit' : null }),
-    setSelectedIds: (selectedIds) => set({ selectedIds }),
+    setTool: (tool) => set((state) => {
+      const recentTools = tool === 'select' ? state.recentTools :
+        [tool, ...state.recentTools.filter(t => t !== tool)].slice(0, 5);
+      return {
+        tool,
+        selectedSymbol: tool === 'symbol' ? 'exit' : null,
+        recentTools,
+      };
+    }),
+    updateToolOptions: (tool, options) => set((state) => ({
+      toolOptions: {
+        ...state.toolOptions,
+        [tool]: { ...state.toolOptions[tool as keyof ToolOptions], ...options },
+      } as ToolOptions,
+    })),
+    updateRecentTools: (tool) => set((state) => ({
+      recentTools: [tool, ...state.recentTools.filter(t => t !== tool)].slice(0, 5),
+    })),
+    setSelectedIds: (selectedIds) => set((state) => ({
+      selectedIds,
+      focusedRegionId: selectedIds.length > 0 ? null : state.focusedRegionId,
+    })),
     setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(5, zoom)) }),
     setPan: (panUpdate) => set((state) => ({ 
       pan: typeof panUpdate === 'function' ? panUpdate(state.pan) : panUpdate 
@@ -222,18 +297,19 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     },
 
     setTemplateLayout: (layout) => {
+      const normalizedLayout = layout ? normalizeTemplateLayout(layout) : null;
       set({
-        activeTemplateLayout: layout,
-        templateLayoutId: layout?.id || null,
-        projectTemplate: layout?.slug || 'blank',
-        pagePreset: layout?.page_preset || get().pagePreset,
+        activeTemplateLayout: normalizedLayout,
+        templateLayoutId: normalizedLayout?.id || null,
+        projectTemplate: normalizedLayout?.slug || 'blank',
+        pagePreset: normalizedLayout?.page_preset || get().pagePreset,
         focusedRegionId: null,
       });
       if (typeof window !== 'undefined') {
-        if (layout) {
-          localStorage.setItem('planify-template-layout-id', layout.id);
-          localStorage.setItem('planify-template', layout.slug);
-          localStorage.setItem('planify-preset', layout.page_preset);
+        if (normalizedLayout) {
+          localStorage.setItem('planify-template-layout-id', normalizedLayout.id);
+          localStorage.setItem('planify-template', normalizedLayout.slug);
+          localStorage.setItem('planify-preset', normalizedLayout.page_preset);
         } else {
           localStorage.removeItem('planify-template-layout-id');
           localStorage.setItem('planify-template', 'blank');
@@ -242,9 +318,10 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     },
 
     setPagePreset: (preset) => {
-      set({ pagePreset: preset });
+      const pagePreset = normalizePagePreset(preset);
+      set({ pagePreset });
       if (typeof window !== 'undefined') {
-        localStorage.setItem('planify-preset', preset);
+        localStorage.setItem('planify-preset', pagePreset);
       }
     },
 
@@ -277,7 +354,10 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       }
     },
 
-    setFocusedRegionId: (focusedRegionId) => set({ focusedRegionId }),
+    setFocusedRegionId: (focusedRegionId) => set((state) => ({
+      focusedRegionId,
+      selectedIds: focusedRegionId ? [] : state.selectedIds,
+    })),
 
     setActiveLayer: (activeLayerId) => set({ activeLayerId }),
 
@@ -354,10 +434,16 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
 
     updateElement: (id, updates) => {
       const { elements, layers, past } = get();
-      const newElements = elements.map((e) => (e.id === id ? { ...e, ...updates } : e));
-      const newPast = [...past, { elements, layers }].slice(-20);
-      set({ past: newPast, elements: newElements, future: [], canUndo: true, canRedo: false });
-      saveElements(newElements);
+      // Samet (P1 Fix): Use Map for efficient element updates (avoid full array mapping)
+      const elementMap = new Map(elements.map(el => [el.id, el]));
+      const existing = elementMap.get(id);
+      if (existing) {
+        elementMap.set(id, { ...existing, ...updates });
+        const newElements = Array.from(elementMap.values());
+        const newPast = [...past, { elements, layers }].slice(-20);
+        set({ past: newPast, elements: newElements, future: [], canUndo: true, canRedo: false });
+        saveElements(newElements);
+      }
     },
 
     updateElementsBatch: (updates) => {
@@ -502,7 +588,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         elements: [],
         selectedIds: [],
         future: [],
-        canUndo: true,
+        canUndo: false,  // Samet (P1 Fix): clearAll should reset undo state
         canRedo: false,
       });
       if (typeof window !== 'undefined') {

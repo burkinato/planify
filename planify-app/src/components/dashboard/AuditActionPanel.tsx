@@ -1,7 +1,10 @@
+'use client';
+
 import Link from 'next/link';
-import { AlertCircle, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ArrowRight, CheckCircle2, ShieldCheck, Zap } from 'lucide-react';
 import type { Project } from '@/store/useProjectStore';
 import type { ProjectAudit } from '@/lib/projects/compliance';
+import { cn } from '@/lib/utils';
 
 interface AuditActionPanelProps {
   items: Array<{ project: Project; audit: ProjectAudit }>;
@@ -13,43 +16,55 @@ export function AuditActionPanel({ items }: AuditActionPanelProps) {
     .slice(0, 4);
 
   return (
-    <section className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Aksiyon Gerekiyor</p>
-          <h2 className="text-lg font-black text-slate-950 mt-1">Denetim kontrol listesi</h2>
+    <section className="bg-white/40 backdrop-blur-xl rounded-[40px] shadow-[0_8px_40px_rgba(0,0,0,0.03)] border border-white overflow-hidden p-2">
+      <div className="px-6 py-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-amber-500/10 rounded-2xl flex items-center justify-center">
+            <Zap className="w-5 h-5 text-amber-600" />
+          </div>
+          <div>
+            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Aksiyon Bekleyenler</h2>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Denetim kontrol listesi</p>
+          </div>
         </div>
-        <ShieldCheck className="w-5 h-5 text-slate-400" />
+        <div className="px-3 py-1 bg-slate-100 rounded-full text-[9px] font-black text-slate-500 uppercase tracking-widest">
+          {actionItems.length} Dosya
+        </div>
       </div>
 
       {actionItems.length === 0 ? (
-        <div className="p-6 flex items-start gap-4 bg-emerald-50/50">
-          <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-black text-emerald-900">Açık denetim uyarısı yok</p>
-            <p className="text-xs font-semibold text-emerald-700 mt-1">Projelerinizin mevcut kontrol maddeleri tamamlanmış görünüyor.</p>
-          </div>
+        <div className="mx-2 mb-2 p-8 flex flex-col items-center text-center bg-emerald-500/5 rounded-[32px] border border-emerald-500/10">
+          <CheckCircle2 className="w-8 h-8 text-emerald-500 mb-3" />
+          <p className="text-sm font-black text-emerald-900">Harika! Her Şey Yolunda</p>
+          <p className="text-xs font-bold text-emerald-600/70 mt-1 uppercase tracking-wider">Tüm projeleriniz denetime hazır durumda.</p>
         </div>
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div className="space-y-1 pb-2 px-2">
           {actionItems.map(({ project, audit }) => (
             <Link
               key={project.id}
               href={`/editor?id=${project.id}`}
-              className="group p-5 flex items-start justify-between gap-4 hover:bg-slate-50 transition-colors"
+              className="group p-4 flex items-center justify-between gap-4 bg-white/60 hover:bg-white rounded-2xl transition-all border border-transparent hover:border-slate-100 hover:shadow-lg hover:shadow-slate-200/50"
             >
-              <div className="flex items-start gap-3 min-w-0">
-                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center group-hover:bg-amber-50 group-hover:text-amber-600 transition-colors shrink-0">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
                 <div className="min-w-0">
                   <p className="text-sm font-black text-slate-900 truncate">{project.title}</p>
-                  <p className="text-xs font-semibold text-slate-500 mt-1 line-clamp-1">
-                    {audit.missing.length > 0 ? audit.missing.join(', ') : 'Plan içeriği henüz başlamadı'}
+                  <p className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wide truncate">
+                    {audit.missing.length > 0 ? audit.missing.join(' · ') : 'İçerik planlaması bekleniyor'}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest shrink-0">
-                {audit.score}%
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="flex flex-col items-end">
+                  <span className="text-xs font-black text-slate-900">{audit.score}%</span>
+                  <div className="w-12 h-1 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                    <div className="h-full bg-amber-500 rounded-full" style={{ width: `${audit.score}%` }} />
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 group-hover:text-slate-900 transition-all" />
               </div>
             </Link>
           ))}

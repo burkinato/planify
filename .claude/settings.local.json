@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx jest *)",
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Bash(PORT=3010 npm run dev)",
+      "Bash(netstat -ano)",
+      "Bash(node -e \"try { require\\('./src/components/editor/EditorLeftSidebar.tsx'\\); console.log\\('OK'\\); } catch\\(e\\) { console.log\\('Error:', e.message\\); }\")",
+      "Bash(git ls-tree *)",
+      "Bash(git add *)"
+    ]
+  }
+}

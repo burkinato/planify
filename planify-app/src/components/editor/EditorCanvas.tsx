@@ -7,7 +7,7 @@ import '@/lib/editor/konva-init';
 import { Stage, Layer, Rect, Line, Text, Group, Circle, Image as KonvaImage, Shape, Arrow } from 'react-konva';
 import { useEditorStore, useShallow } from '@/store/useEditorStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { SYMBOLS, SNAP_DISTANCE, GRID_SIZE, THEME_CONFIGS, type EditorElement, type EditorTheme } from '@/types/editor';
+import { SYMBOLS, SNAP_DISTANCE, GRID_SIZE, THEME_CONFIGS, type EditorElement, type EditorTheme, type WallToolOptions, type DoorToolOptions, type WindowToolOptions, type StairsToolOptions, type ElevatorToolOptions, type ColumnToolOptions, type TextToolOptions } from '@/types/editor';
 import { ImageUp, Layers, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { mergeTemplateState } from '@/lib/editor/templateLayouts';
@@ -195,14 +195,19 @@ const BrandingBanner = ({ width, height, tier }: { width: number; height: number
   );
 };
 
+const clampNumber = (value: number | undefined, min: number, max: number) => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  return Math.max(min, Math.min(max, value));
+};
+
 export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, setContainerNode, projectId }: EditorCanvasProps) {
   const DEFAULT_PLAN_HEADER = 'ACİL DURUM TAHLİYE PLANI';
-  const ISO_HEADER_GREEN = '#00A651';
+  const ISO_HEADER_GREEN = '#008F4C';
   const { profile, user } = useAuthStore();
   const subscriptionTier = profile?.subscription_tier || 'free';
 
   const {
-    elements, layers, tool, zoom, pan, gridVisible, selectedIds, customSymbols,
+    elements, layers, tool, toolOptions, zoom, pan, gridVisible, selectedIds, customSymbols,
     addElement, updateElement, updateElementsBatch, removeElements, setSelectedIds, scaleConfig, setScaleConfig, setTool,
     editorTheme, setZoom, setPan, activeTemplateLayout, projectTemplate, templateLayoutId, templateState, focusedRegionId, setFocusedRegionId, updateTemplateRegion,
     innerZoom, innerPan, setInnerZoom, setInnerPan, projectMetadata, setProjectMetadata
@@ -210,6 +215,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     elements: s.elements,
     layers: s.layers,
     tool: s.tool,
+    toolOptions: s.toolOptions,
     zoom: s.zoom,
     pan: s.pan,
     gridVisible: s.gridVisible,
@@ -312,8 +318,23 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   const [currentLine, setCurrentLine] = useState<number[] | null>(null);
   const [orthoLine, setOrthoLine] = useState<{ axis: 'x' | 'y', pos: number } | null>(null);
   const [alignLine, setAlignLine] = useState<{ axis: 'x' | 'y', pos: number } | null>(null);
+  const [isFocused, setIsFocused] = useState(true);
   const isInnerPanningRef = useRef(false);
   const innerPanStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+
+  // ── Manual Coordinate Engine ──────────────────────────────────────────
+  const getRelativePointerPosition = (stage: Konva.Stage): { x: number, y: number } | null => {
+    // Konva's getPointerPosition() is automatically relative to the stage container
+    // and correctly accounts for the CSS scale of the container (e.g. from parent zoom).
+    const pos = stage.getPointerPosition();
+    if (!pos) return null;
+
+    // Convert from Stage Units to the inner Drawing space (accounting for internal zoom/pan)
+    return {
+      x: (pos.x - innerPan.x) / innerZoom,
+      y: (pos.y - innerPan.y) / innerZoom
+    };
+  };
 
   const page = activeTemplateLayout?.layout_json.page;
   const paperWidth = activeTemplateLayout && page ? page.width : 2000;
@@ -323,7 +344,6 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   const stageWidth = drawingRegion ? paperWidth * (drawingRegion.w / 100) : 2000;
   const stageHeight = drawingRegion ? paperHeight * (drawingRegion.h / 100) : 2000;
 
-  const [isFocused, setIsFocused] = useState(true);
 
   useEffect(() => {
     const handleFocus = () => setIsFocused(true);
@@ -494,8 +514,8 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     visibleElements.forEach(el => {
       if (el.type !== 'wall' && el.points) {
         for (let i = 0; i < el.points.length; i += 2) {
-          const px = el.points[i];
-          const py = el.points[i + 1];
+          const px = el.points[i] + (el.x || 0);
+          const py = el.points[i + 1] + (el.y || 0);
           const d = Math.sqrt((pos.x - px) ** 2 + (pos.y - py) ** 2);
           if (d < minDist) {
             bestPoint = { x: px, y: py };
@@ -533,7 +553,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
 
     const stage = e.target.getStage();
     if (!stage) return;
-    const pos = stage.getRelativePointerPosition();
+    const pos = getRelativePointerPosition(stage);
     if (!pos) return;
     const snapped = findSnapPoint(pos);
 
@@ -547,18 +567,79 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
       const typeMap = { symbol: 'symbol', rect: 'rect', text: 'text', stairs: 'stairs', elevator: 'elevator', column: 'column' } as const;
       const canvasTool = tool as keyof typeof typeMap;
 
-      addElement({
+      const baseElement: Record<string, unknown> = {
         type: typeMap[canvasTool],
         x: snapped.x,
         y: snapped.y,
-        width: ['rect', 'stairs', 'elevator'].includes(tool) ? 100 : (tool === 'column' ? 30 : undefined),
-        height: ['rect', 'stairs', 'elevator'].includes(tool) ? 80 : (tool === 'column' ? 30 : undefined),
-        symbolType: tool === 'symbol' ? useEditorStore.getState().selectedSymbol || 'exit' : undefined,
-        label: tool === 'text' ? 'METİN EKLE' : (tool === 'elevator' ? 'ASANSÖR' : undefined),
-        color: tool === 'rect' ? undefined : (tool === 'stairs' ? '#94a3b8' : (tool === 'elevator' ? '#64748b' : (tool === 'column' ? '#1e293b' : undefined))),
-        stairsType: tool === 'stairs' ? 'straight' : undefined,
-        columnShape: tool === 'column' ? 'rect' : undefined
-      });
+      };
+
+      // Use toolOptions for tool-specific properties
+      if (tool === 'stairs') {
+        const opts = toolOptions.stairs as StairsToolOptions;
+        Object.assign(baseElement, {
+          width: opts.width || 100,
+          height: opts.height || 130,
+          stairsType: opts.stairsType || 'straight',
+          color: '#94a3b8',
+        });
+      } else if (tool === 'wall') {
+        const opts = toolOptions.wall as WallToolOptions;
+        Object.assign(baseElement, {
+          width: 200,
+          height: 10,
+          wallStyle: opts.style || 'hatch',
+          thickness: opts.thickness || 12,
+        });
+      } else if (tool === 'door') {
+        const opts = toolOptions.door as DoorToolOptions;
+        Object.assign(baseElement, {
+          width: opts.width || 80,
+          doorSwing: opts.swingDirection || 'right',
+        });
+      } else if (tool === 'window') {
+        const opts = toolOptions.window as WindowToolOptions;
+        Object.assign(baseElement, {
+          width: opts.width || 100,
+          height: opts.height || 10,
+          windowPanes: opts.panes || 2,
+        });
+      } else if (tool === 'elevator') {
+        const opts = toolOptions.elevator as ElevatorToolOptions;
+        Object.assign(baseElement, {
+          width: opts.width || 150,
+          height: opts.height || 150,
+          label: 'ASANSÖR',
+        });
+      } else if (tool === 'column') {
+        const opts = toolOptions.column as ColumnToolOptions;
+        Object.assign(baseElement, {
+          width: opts.size || 40,
+          height: opts.size || 40,
+          columnShape: opts.shape || 'square',
+        });
+      } else if (tool === 'text') {
+        const opts = toolOptions.text as TextToolOptions;
+        Object.assign(baseElement, {
+          label: 'METİN EKLE',
+          fontSize: opts.fontSize || 16,
+          fontWeight: opts.fontWeight || 'bold',
+          color: opts.color || '#050b16',
+          textAlign: opts.textAlign || 'left',
+        });
+      } else if (tool === 'symbol') {
+        Object.assign(baseElement, {
+          symbolType: useEditorStore.getState().selectedSymbol || 'exit',
+        });
+      } else if (tool === 'rect') {
+        const opts = toolOptions.rect;
+        Object.assign(baseElement, {
+          width: opts.width || 100,
+          height: opts.height || 100,
+          color: opts.color || '#050b16',
+        });
+      }
+
+      addElement(baseElement as Partial<EditorElement>);
       if (tool !== 'symbol') setTool('select');
     }
   };
@@ -577,21 +658,21 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     if (!isDrawing || !currentLine) return;
     const stage = e.target.getStage();
     if (!stage) return;
-    const pos = stage.getRelativePointerPosition();
+    const pos = getRelativePointerPosition(stage);
     if (!pos) return;
     const snapped = findSnapPoint(pos);
 
     // Magnetic alignment logic (Smart Guides)
     let magneticAxis: { axis: 'x' | 'y', pos: number } | null = null;
     if (!e.evt.shiftKey) {
-      const minAlignDist = 15 / zoom;
+      const minAlignDist = 15 / (zoom * innerZoom);
       for (const w of wallElements) {
         if (!w.points) continue;
         for (let i = 0; i < w.points.length; i += 2) {
-          const px = w.points[i];
-          const py = w.points[i + 1];
+          const px = w.points[i] + (w.x || 0);
+          const py = w.points[i + 1] + (w.y || 0);
           // Skip if this is the start point of the current line
-          if (Math.abs(px - currentLine[0]) < 1 && Math.abs(py - currentLine[1]) < 1) continue;
+          if (Math.abs(px - currentLine[0]) < 0.1 && Math.abs(py - currentLine[1]) < 0.1) continue;
 
           if (Math.abs(snapped.x - px) < minAlignDist) {
             snapped.x = px;
@@ -753,11 +834,19 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
         const [x1, y1, x2, y2] = finalPoints;
         const midX = (x1 + x2) / 2;
         const midY = (y1 + y2) / 2;
-        // Convert canvas midpoint to screen coordinates
-        const host = infiniteHostRef.current;
-        const hostRect = host ? host.getBoundingClientRect() : { left: 0, top: 0 };
-        const screenX = hostRect.left + (midX + (finalX || 0)) * zoom + pan.x;
-        const screenY = hostRect.top + (midY + (finalY || 0)) * zoom + pan.y;
+        const stage = stageRef.current;
+        if (!stage) return;
+
+        const stageX = (midX + (finalX || 0)) * innerZoom + innerPan.x;
+        const stageY = (midY + (finalY || 0)) * innerZoom + innerPan.y;
+        
+        // Use container's actual CSS scale for accurate screen positioning
+        const container = stage.container();
+        const stageRect = container.getBoundingClientRect();
+        const cssScaleX = stageRect.width / stage.width();
+        const cssScaleY = stageRect.height / stage.height();
+        const screenX = stageRect.left + stageX * cssScaleX;
+        const screenY = stageRect.top + stageY * cssScaleY;
 
         const drawnPixels = wallLength(finalPoints);
         const displayVal = toDisplayUnit(drawnPixels);
@@ -818,6 +907,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
 
   const selectOrErase = (id: string, isLocked?: boolean, e?: CanvasStageEvent) => {
     if (isLocked) return;
+    if (focusedRegionId) setFocusedRegionId(null);
     if (tool === 'eraser') {
       removeElements([id]);
       return;
@@ -1531,6 +1621,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
       onClick={() => {
         if (mobileMenu) setMobileMenu(null);
         if (focusedRegionId) setFocusedRegionId(null);
+        if (selectedIds.length > 0) setSelectedIds([]);
       }}
     >
       {/* Infinite canvas host — fills main, handles wheel+pan */}
@@ -1585,9 +1676,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                   outline: none !important;
                   --tw-ring-shadow: 0 0 #0000 !important;
                 }
-                [data-template-paper][data-export-mode="true"] button,
-                [data-template-paper][data-export-mode="true"] input,
-                [data-template-paper][data-export-mode="true"] textarea {
+                [data-template-paper][data-export-mode="true"] button {
                   display: none !important;
                 }
               `}</style>
@@ -1626,13 +1715,21 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                       tone === 'info' ? 'border-slate-200 bg-white shadow-sm' :
                         tone === 'green' ? 'border-emerald-100 bg-white shadow-md shadow-emerald-900/5' :
                           'border-slate-200 bg-white shadow-sm';
+                const headerTitleSize = clampNumber(content.titleSize, 24, 48);
+                const headerTitleSpacing = clampNumber(content.titleLetterSpacing, 0, 8);
+                const headerMetaSize = clampNumber(content.metaSize, 9, 20);
+                const headerMetaSpacing = clampNumber(content.metaLetterSpacing, 0, 4);
                 return (
                   <section
                     key={region.id}
-                    onClick={(event) => { event.stopPropagation(); if (!focused) setFocusedRegionId(region.id); }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (selectedIds.length > 0) setSelectedIds([]);
+                      if (!focused) setFocusedRegionId(region.id);
+                    }}
                     className={cn(
                       "absolute border box-border transition-all duration-300",
-                      focused && isHeader ? "overflow-visible" : "overflow-hidden",
+                      "overflow-hidden",
                       isHeader ? "border-none" : "rounded-[12px]",
                       !isHeader && toneClass,
                       focused && (isHeader
@@ -1651,7 +1748,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                       background: isHeader ? ISO_HEADER_GREEN : undefined,
                     }}
                   >
-                    {focused ? (
+                    {false && focused ? (
                       <div
                         className={cn(
                           "flex flex-col bg-white animate-fade-in relative z-10",
@@ -1828,15 +1925,10 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                       </div>
                     ) : isHeader ? (
                       // ── IMPROVED HEADER BLOCK ───────────────────────────────────────
-                      <div className="w-full h-full flex items-center group/header relative" style={{ containerType: 'size' } as React.CSSProperties}>
+                      <div className="pointer-events-none w-full h-full flex items-center group/header relative" style={{ containerType: 'size' } as React.CSSProperties}>
                         {/* Logo Area */}
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            logoFileInputRef.current?.click();
-                          }}
-                          className="h-full aspect-square flex items-center justify-center bg-white/10 border-r border-white/10 overflow-hidden cursor-pointer hover:bg-white/20 transition-all"
+                        <div
+                          className="h-full aspect-square flex items-center justify-center bg-white/10 border-r border-white/10 overflow-hidden"
                           title={isLogoLoading ? 'Logo yükleniyor' : 'Logo yükle / değiştir'}
                         >
                           {projectMetadata.logoUrl ? (
@@ -1845,21 +1937,36 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                           ) : (
                             <svg className="w-1/2 h-1/2 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
                           )}
-                        </button>
+                        </div>
 
                         {/* Title & Meta Group */}
                         <div className="flex-1 flex flex-col items-center justify-center text-center px-[3cqw] overflow-hidden">
                           <div
-                            className="w-full text-center font-black uppercase tracking-[0.02em] text-white leading-[1.04] truncate"
-                            style={{ fontSize: 'min(40cqh, 5.8cqw)', textShadow: '0 1px 0 rgba(0,0,0,0.24)' }}
-                            title={DEFAULT_PLAN_HEADER}
+                            className="w-full text-center uppercase text-white truncate"
+                            style={{
+                              fontFamily: 'Arial, Helvetica, sans-serif',
+                              fontSize: headerTitleSize ? `${headerTitleSize}px` : 'clamp(24px, 3.2cqw, 44px)',
+                              fontWeight: 800,
+                              letterSpacing: `${headerTitleSpacing ?? 4}px`,
+                              lineHeight: 1.05,
+                              color: '#ffffff',
+                              textShadow: '0 1px 0 rgba(0,0,0,0.24)',
+                            }}
+                            title={content.title || DEFAULT_PLAN_HEADER}
                           >
-                            {DEFAULT_PLAN_HEADER}
+                            {content.title || DEFAULT_PLAN_HEADER}
                           </div>
                           {!!content.meta?.trim() && (
                             <div
-                              className="w-full text-center font-black uppercase tracking-[0.07em] text-white/92 truncate mt-[0.7cqh]"
-                              style={{ fontSize: 'min(15cqh, 2.2cqw)' }}
+                              className="w-full text-center uppercase text-white truncate mt-[0.7cqh]"
+                              style={{
+                                fontFamily: 'Arial, Helvetica, sans-serif',
+                                fontSize: headerMetaSize ? `${headerMetaSize}px` : 'clamp(9px, 1.1cqw, 14px)',
+                                fontWeight: 700,
+                                letterSpacing: `${headerMetaSpacing ?? 0.5}px`,
+                                lineHeight: 1.15,
+                                color: '#ffffff',
+                              }}
                               title={content.meta}
                             >
                               {content.meta}
@@ -1898,7 +2005,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                       </div>
 
                     ) : (
-                      <div className="w-full h-full flex flex-col overflow-hidden" style={{ containerType: 'size' } as React.CSSProperties}>
+                      <div className="pointer-events-none w-full h-full flex flex-col overflow-hidden" style={{ containerType: 'size' } as React.CSSProperties}>
                         {/* Gradient Pill Header */}
                         <div className="shrink-0 p-[3cqmin]">
                           <div className={cn(
@@ -1908,7 +2015,13 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                                 tone === 'green' ? "text-white bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-md shadow-emerald-500/20" :
                                   "text-slate-700 bg-slate-100 shadow-inner border border-slate-200/60"
                           )}
-                            style={{ fontSize: 'max(8px, min(3.5cqw, 15cqh))' }}>
+                            style={{
+                              fontSize: content.titleSize ? `${content.titleSize}px` : 'max(8px, min(3.5cqw, 15cqh))',
+                              fontWeight: content.titleWeight || 'black',
+                              letterSpacing: content.titleLetterSpacing !== undefined ? `${content.titleLetterSpacing}px` : undefined,
+                              lineHeight: content.titleLineHeight || 1.15,
+                              color: content.titleColor || undefined,
+                            }}>
                             {region.type === 'assembly' && <svg className="w-[1.4em] h-[1.4em]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M12 2v4" /><path d="M12 2l-2 2" /><path d="M12 2l2 2" /></svg>}
                             {region.type !== 'assembly' && tone === 'red' && <svg className="w-[1.2em] h-[1.2em]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}
                             {region.type !== 'assembly' && tone === 'green' && <svg className="w-[1.2em] h-[1.2em]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
@@ -2031,13 +2144,31 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                                     <span className="font-black leading-none" style={{ fontSize: 'max(14px, min(8cqmin, 18cqh))' }}>112</span>
                                   </div>
                                   <div className="min-w-0 flex-1">
-                                    <p className="font-black uppercase tracking-tight text-red-700 leading-none" style={{ fontSize: 'max(10px, min(4.8cqw, 16cqh))' }}>
+                                    <p className="font-black uppercase tracking-tight text-red-700 leading-none" style={{
+                                      fontSize: content.titleSize ? `${content.titleSize}px` : 'max(10px, min(4.8cqw, 16cqh))',
+                                      fontWeight: content.titleWeight || 'black',
+                                      letterSpacing: content.titleLetterSpacing !== undefined ? `${content.titleLetterSpacing}px` : undefined,
+                                      lineHeight: content.titleLineHeight || 1,
+                                      color: content.titleColor || undefined,
+                                    }}>
                                       {content.title || '112 Acil Durum Telefonu'}
                                     </p>
-                                    <p className="mt-[1.5cqmin] font-bold leading-snug text-slate-700" style={{ fontSize: 'max(8px, min(3.4cqw, 9cqh))' }}>
+                                    <p className="mt-[1.5cqmin] font-bold leading-snug text-slate-700" style={{
+                                      fontSize: content.bodySize ? `${content.bodySize}px` : 'max(8px, min(3.4cqw, 9cqh))',
+                                      fontWeight: content.bodyWeight || 'bold',
+                                      letterSpacing: content.bodyLetterSpacing !== undefined ? `${content.bodyLetterSpacing}px` : undefined,
+                                      lineHeight: content.bodyLineHeight || undefined,
+                                      color: content.bodyColor || undefined,
+                                    }}>
                                       {content.body || 'Acil durumlarda 112 aranmalıdır.'}
                                     </p>
-                                    <p className="mt-[1cqmin] font-black uppercase tracking-widest text-red-400" style={{ fontSize: 'max(6px, min(2.2cqw, 6cqh))' }}>
+                                    <p className="mt-[1cqmin] font-black uppercase tracking-widest text-red-400" style={{
+                                      fontSize: content.metaSize ? `${content.metaSize}px` : 'max(6px, min(2.2cqw, 6cqh))',
+                                      fontWeight: content.metaWeight || 'black',
+                                      letterSpacing: content.metaLetterSpacing !== undefined ? `${content.metaLetterSpacing}px` : undefined,
+                                      lineHeight: content.metaLineHeight || undefined,
+                                      color: content.metaColor || undefined,
+                                    }}>
                                       {content.meta || 'EMERGENCY CALL'}
                                     </p>
                                   </div>
@@ -2059,8 +2190,11 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                                     <div className="flex-1 overflow-hidden relative flex flex-col justify-center">
                                       <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.3]"
                                         style={{
-                                          fontSize: `max(12px, min(3.8cqw, ${65 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`,
-                                          lineHeight: (content.body.split('\n').length || 1) > 6 ? 1.15 : 1.35
+                                          fontSize: content.bodySize ? `${content.bodySize}px` : `max(12px, min(3.8cqw, ${65 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`,
+                                          fontWeight: content.bodyWeight || 'bold',
+                                          letterSpacing: content.bodyLetterSpacing !== undefined ? `${content.bodyLetterSpacing}px` : undefined,
+                                          lineHeight: content.bodyLineHeight || ((content.body.split('\n').length || 1) > 6 ? 1.15 : 1.35),
+                                          color: content.bodyColor || undefined,
                                         }}>
                                         {content.body}
                                       </p>
@@ -2073,7 +2207,13 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                                     <div className="mx-auto flex h-[18cqmin] w-[18cqmin] items-center justify-center rounded-full bg-blue-600 text-white shadow-md">
                                       <svg className="h-[55%] w-[55%]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11Z" /><circle cx="12" cy="10" r="2.5" /></svg>
                                     </div>
-                                    <p className="text-center font-bold text-slate-700 leading-[1.25]" style={{ fontSize: 'max(9px, min(3.7cqw, 10cqh))' }}>
+                                    <p className="text-center font-bold text-slate-700 leading-[1.25]" style={{
+                                      fontSize: content.bodySize ? `${content.bodySize}px` : 'max(9px, min(3.7cqw, 10cqh))',
+                                      fontWeight: content.bodyWeight || 'bold',
+                                      letterSpacing: content.bodyLetterSpacing !== undefined ? `${content.bodyLetterSpacing}px` : undefined,
+                                      lineHeight: content.bodyLineHeight || 1.25,
+                                      color: content.bodyColor || undefined,
+                                    }}>
                                       {content.body || 'Toplanma noktası bina dışında, güvenli uzaklıkta işaretlenmiş alanda bulunmaktadır.'}
                                     </p>
                                   </div>
@@ -2081,8 +2221,11 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                                   <div className="flex-1 min-h-0 flex flex-col justify-center">
                                     <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.3]"
                                       style={{
-                                        fontSize: `max(11px, min(4cqw, ${85 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`,
-                                        lineHeight: (content.body.split('\n').length || 1) > 6 ? 1.15 : 1.3
+                                        fontSize: content.bodySize ? `${content.bodySize}px` : `max(11px, min(4cqw, ${85 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`,
+                                        fontWeight: content.bodyWeight || 'bold',
+                                        letterSpacing: content.bodyLetterSpacing !== undefined ? `${content.bodyLetterSpacing}px` : undefined,
+                                        lineHeight: content.bodyLineHeight || ((content.body.split('\n').length || 1) > 6 ? 1.15 : 1.3),
+                                        color: content.bodyColor || undefined,
                                       }}>
                                       {content.body}
                                     </p>
@@ -2092,7 +2235,13 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
 
                               {content.meta && (
                                 <p className="shrink-0 mt-auto pt-[2cqh] font-black uppercase tracking-widest text-slate-400"
-                                  style={{ fontSize: 'max(6px, min(2.5cqw, 8cqh))' }}>
+                                  style={{
+                                    fontSize: content.metaSize ? `${content.metaSize}px` : 'max(6px, min(2.5cqw, 8cqh))',
+                                    fontWeight: content.metaWeight || 'black',
+                                    letterSpacing: content.metaLetterSpacing !== undefined ? `${content.metaLetterSpacing}px` : undefined,
+                                    lineHeight: content.metaLineHeight || undefined,
+                                    color: content.metaColor || undefined,
+                                  }}>
                                   {content.meta}
                                 </p>
                               )}
@@ -2110,6 +2259,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                 <div
                   onClick={(event) => {
                     event.stopPropagation();
+                    if (selectedIds.length > 0) setSelectedIds([]);
                     if (focusedRegionId !== 'drawing') setFocusedRegionId('drawing');
                   }}
                   className={cn(
@@ -2131,6 +2281,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                     onMouseDown={(e) => {
                       if (activeTemplateLayout && focusedRegionId !== 'drawing') {
                         setFocusedRegionId('drawing');
+                        if (selectedIds.length > 0) setSelectedIds([]);
                       }
                       handleStageMouseDown(e);
                     }}

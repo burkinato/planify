@@ -1,8 +1,8 @@
 const STEPS = [
   {
     num: '01',
-    color: 'from-blue-500 to-blue-600',
-    textColor: 'text-blue-600',
+    color: 'from-primary-500 to-primary-600',
+    textColor: 'text-primary-600',
     title: 'Kayıt Olun',
     desc: 'Kredi kartı olmadan 7 günlük ücretsiz deneme başlatın. Sadece e-posta adresiniz yeterli.',
     badge: '2 dakika',
@@ -30,7 +30,7 @@ export default function LandingHowItWorks() {
     <section id="how" className="py-24 px-6 bg-white">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-16 space-y-4">
-          <span className="inline-block text-sm font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-1.5 rounded-full">
+          <span className="inline-block text-sm font-bold text-primary-600 uppercase tracking-widest bg-primary-50 px-4 py-1.5 rounded-full">
             Nasıl Çalışır?
           </span>
           <h2 className="text-3xl md:text-5xl font-black text-slate-900">3 Adımda Denetime Hazır</h2>
@@ -42,7 +42,7 @@ export default function LandingHowItWorks() {
         {/* Steps */}
         <div className="relative">
           {/* Connector line */}
-          <div className="hidden md:block absolute top-16 left-[16.7%] right-[16.7%] h-0.5 bg-gradient-to-r from-blue-200 via-violet-200 to-cyan-200" />
+          <div className="hidden md:block absolute top-16 left-[16.7%] right-[16.7%] h-0.5 bg-gradient-to-r from-primary-200 via-violet-200 to-cyan-200" />
 
           <div className="grid md:grid-cols-3 gap-8 relative">
             {STEPS.map(({ num, color, textColor, title, desc, badge }, i) => (
@@ -69,7 +69,7 @@ export default function LandingHowItWorks() {
         <div className="mt-16 text-center">
           <p className="text-slate-500 mb-4 font-medium">Ortalama plan oluşturma süresi:</p>
           <div className="inline-flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-2xl px-8 py-4">
-            <span className="text-4xl font-black gradient-text-blue">12</span>
+            <span className="text-4xl font-black gradient-text-primary">12</span>
             <span className="text-slate-700 font-bold">dakika</span>
             <span className="text-slate-300 text-2xl">vs</span>
             <span className="text-4xl font-black text-slate-300 line-through">3 saat</span>

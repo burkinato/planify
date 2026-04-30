@@ -1,21 +1,24 @@
-# Dependencies
-node_modules/
-.next/
-.next_old/
-.vercel/
-dist/
-build/
-
-# Debug and Logs
+# Logs
+logs
 *.log
-.debug/
-.konva-debug-dom.txt
-.konva-profile*-state.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Environment
-.env*
-!.env.example
+node_modules
+dist
+dist-ssr
+*.local
 
-# OS
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

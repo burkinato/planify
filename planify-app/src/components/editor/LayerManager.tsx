@@ -1,6 +1,6 @@
 'use client';
 
-import { Layers, Eye, EyeOff, Lock, Unlock, Plus, Trash2, GripVertical } from 'lucide-react';
+import { Layers, Eye, EyeOff, Lock, Unlock, Plus, Trash2, GripVertical, Info, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/store/useEditorStore';
@@ -11,7 +11,7 @@ export function LayerManager() {
   const [editName, setEditName] = useState('');
 
   const handleAdd = () => {
-    addLayer(`Katman ${layers.length + 1}`);
+    addLayer(`Yeni Katman ${layers.length + 1}`);
   };
 
   const startEdit = (id: string, currentName: string) => {
@@ -27,18 +27,30 @@ export function LayerManager() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50/50">
-      <div className="p-4 flex justify-between items-center bg-white border-b border-slate-200">
-        <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-cyan-600" />
-          <span className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-800">Katmanlar</span>
+    <div className="flex flex-col h-full bg-transparent">
+      {/* Premium Header */}
+      <div className="p-6 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/60 backdrop-blur-md rounded-xl flex items-center justify-center border border-white shadow-sm">
+            <Layers className="w-5 h-5 text-emerald-500" />
+          </div>
+          <div>
+            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-900">Katman Havuzu</h3>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{layers.length} Aktif Kanal</p>
+          </div>
         </div>
-        <button onClick={handleAdd} className="flex h-6 w-6 items-center justify-center bg-cyan-50 text-cyan-700 hover:bg-cyan-600 hover:text-white rounded-md transition-all shadow-sm" title="Yeni Katman Ekle">
-          <Plus className="w-3.5 h-3.5" />
+        <button 
+          onClick={handleAdd} 
+          className="group relative flex h-10 w-10 items-center justify-center bg-slate-900 text-white hover:bg-emerald-500 rounded-xl transition-all duration-500 shadow-xl shadow-slate-900/10 active:scale-95" 
+          title="Yeni Katman Ekle"
+        >
+          <Plus className="w-5 h-5 transition-transform duration-500 group-hover:rotate-90" />
+          <div className="absolute -inset-1 bg-emerald-500/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      {/* Layer List Container */}
+      <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-4 custom-scrollbar">
         {layers.map((layer) => {
           const elementCount = elements.filter(e => e.layerId === layer.id).length;
           const isActive = activeLayerId === layer.id;
@@ -47,26 +59,31 @@ export function LayerManager() {
             <div
               key={layer.id}
               className={cn(
-                "group relative flex items-center p-2 rounded-xl border transition-all cursor-pointer",
+                "group relative flex items-center p-4 rounded-[24px] border transition-all duration-500 cursor-pointer overflow-hidden",
                 isActive 
-                  ? "bg-white border-cyan-300 shadow-sm shadow-cyan-900/5 ring-1 ring-cyan-500/10" 
-                  : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
+                  ? "bg-white border-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] transform -translate-y-1 scale-[1.02]" 
+                  : "bg-white/40 border-white/60 hover:bg-white hover:border-white hover:shadow-lg"
               )}
               onClick={() => setActiveLayer(layer.id)}
               onDoubleClick={() => startEdit(layer.id, layer.name)}
             >
-              {/* Drag Handle (Visual Only for now) */}
-              <div className="text-slate-300 mr-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <GripVertical className="w-3.5 h-3.5" />
+              {/* Active Indicator */}
+              {isActive && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-emerald-500 rounded-r-full animate-in slide-in-from-left duration-500" />
+              )}
+
+              {/* Drag Handle (Visual Only) */}
+              <div className="text-slate-300 mr-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <GripVertical className="w-4 h-4" />
               </div>
 
               {/* Layer Info */}
-              <div className="flex-1 min-w-0 pr-2">
+              <div className="flex-1 min-w-0 pr-3">
                 {editingId === layer.id ? (
                   <input
                     autoFocus
                     type="text"
-                    className="w-full text-xs font-bold bg-slate-50 text-slate-800 px-2 py-1 rounded outline-none border border-cyan-500 shadow-inner"
+                    className="w-full text-xs font-black bg-slate-50 text-slate-900 px-4 py-2 rounded-xl outline-none border-2 border-emerald-500 shadow-inner"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     onBlur={finishEdit}
@@ -77,29 +94,31 @@ export function LayerManager() {
                     onClick={(e) => e.stopPropagation()}
                   />
                 ) : (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-0.5">
                     <span className={cn(
-                      "text-xs font-bold truncate transition-colors", 
-                      isActive ? "text-slate-900" : "text-slate-600"
+                      "text-xs font-black truncate transition-colors uppercase tracking-widest", 
+                      isActive ? "text-slate-900" : "text-slate-500"
                     )}>
                       {layer.name}
                     </span>
-                    <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">
-                      {elementCount}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-black text-slate-300 bg-slate-100/50 px-2 py-0.5 rounded-lg border border-slate-200/20 group-hover:text-emerald-600 transition-colors">
+                        {elementCount} Obje
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-0.5 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleLayerLock(layer.id); }}
                   className={cn(
-                    "p-1.5 rounded-lg transition-all",
+                    "p-2 rounded-xl transition-all duration-300",
                     layer.locked 
-                      ? "text-red-500 bg-red-50 hover:bg-red-100 opacity-100" 
-                      : "text-slate-400 hover:text-slate-700 hover:bg-slate-100 opacity-0 group-hover:opacity-100"
+                      ? "text-red-500 bg-red-50 border border-red-100 shadow-sm" 
+                      : "text-slate-300 hover:text-slate-900 hover:bg-slate-100 opacity-0 group-hover:opacity-100"
                   )}
                   title={layer.locked ? "Kilidi Aç" : "Kilitle"}
                 >
@@ -109,10 +128,10 @@ export function LayerManager() {
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleLayerVisibility(layer.id); }}
                   className={cn(
-                    "p-1.5 rounded-lg transition-all",
+                    "p-2 rounded-xl transition-all duration-300",
                     layer.visible 
-                      ? "text-cyan-600 hover:bg-cyan-50 opacity-100" 
-                      : "text-slate-300 hover:text-slate-500 hover:bg-slate-100 opacity-50 group-hover:opacity-100"
+                      ? "text-emerald-500 bg-emerald-50 border border-emerald-100 shadow-sm" 
+                      : "text-slate-300 hover:text-slate-500 hover:bg-slate-100"
                   )}
                   title={layer.visible ? "Gizle" : "Göster"}
                 >
@@ -123,11 +142,11 @@ export function LayerManager() {
                   <button
                     onClick={(e) => { 
                       e.stopPropagation(); 
-                      if(window.confirm('Bu katmanı ve içindeki tüm nesneleri silmek istediğinize emin misiniz?')) {
+                      if(window.confirm('Bu katmanı silmek istediğinize emin misiniz?')) {
                         removeLayer(layer.id); 
                       }
                     }}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all ml-1"
+                    className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-red-500 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-sm hover:shadow-red-500/20 border border-transparent hover:border-red-600"
                     title="Katmanı Sil"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -139,11 +158,17 @@ export function LayerManager() {
         })}
       </div>
       
-      {/* Help Text */}
-      <div className="p-4 border-t border-slate-200 bg-white">
-        <p className="text-[10px] text-slate-500 font-medium leading-relaxed text-center">
-          Yeniden adlandırmak için katmana <b className="text-slate-700">çift tıklayın</b>.
-        </p>
+      {/* Footer / Smart Tip */}
+      <div className="p-6 border-t border-white/60 bg-white/40 backdrop-blur-md rounded-t-[32px]">
+        <div className="flex items-center gap-4 p-4 bg-slate-900 rounded-2xl shadow-xl">
+          <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div className="flex-1">
+            <div className="text-[9px] font-black text-white uppercase tracking-widest leading-none mb-1">Profesyonel İpucu</div>
+            <div className="text-[8px] font-bold text-slate-400 uppercase leading-tight">Katmanı adlandırmak için<br/>üzerine çift tıkla.</div>
+          </div>
+        </div>
       </div>
     </div>
   );

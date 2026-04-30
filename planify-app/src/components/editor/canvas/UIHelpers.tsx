@@ -55,6 +55,11 @@ export const CustomSymbolImage = React.memo(({ src, size, isSelected }: { src: s
     const img = new window.Image();
     img.src = src;
     img.onload = () => setImage(img);
+    // Samet (P0 Fix): Memory leak önleme - cleanup on unmount/src change
+    return () => {
+      img.onload = null;
+      img.src = '';
+    };
   }, [src]);
 
   const r = size / 2;

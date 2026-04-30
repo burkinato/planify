@@ -2,11 +2,8 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
-import { AuditActionPanel } from '@/components/dashboard/AuditActionPanel';
-import { DashboardMetrics } from '@/components/dashboard/DashboardMetrics';
-import { PortalSidePanel } from '@/components/dashboard/PortalSidePanel';
 import { ProjectCreationModal, type ProjectCreationDraft } from '@/components/dashboard/ProjectCreationModal';
 import { ProjectDossierGrid } from '@/components/dashboard/ProjectDossierGrid';
 import { TemplateSelectorModal } from '@/components/editor/TemplateSelectorModal';
@@ -26,15 +23,20 @@ const DEFAULT_DRAFT: ProjectCreationDraft = {
 export default function DashboardPage() {
   return (
     <Suspense fallback={<DashboardLoading />}>
-      <DashboardPortal />
+      <div className="min-h-screen bg-[#fcfdfe]">
+        <DashboardPortal />
+      </div>
     </Suspense>
   );
 }
 
 function DashboardLoading() {
   return (
-    <div className="flex justify-center py-24 bg-white border border-slate-200 rounded-lg">
-      <Loader2 className="w-8 h-8 text-slate-500 animate-spin" />
+    <div className="flex flex-col items-center justify-center py-48 space-y-4">
+      <div className="w-16 h-16 bg-white rounded-[32px] shadow-xl flex items-center justify-center border border-slate-50">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Portal Yükleniyor</p>
     </div>
   );
 }
@@ -44,8 +46,6 @@ function DashboardPortal() {
   const searchParams = useSearchParams();
   const {
     projects,
-    projectExports,
-    templateLayouts,
     isLoading,
     fetchProjects,
     fetchProjectExports,
@@ -56,7 +56,6 @@ function DashboardPortal() {
   } = useProjectStore();
   const { profile } = useAuthStore();
 
-  const isPro = profile?.subscription_tier === 'pro';
   const [isCreating, setIsCreating] = useState(false);
   const [showIdentityModal, setShowIdentityModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -87,18 +86,12 @@ function DashboardPortal() {
     }
   }, [searchParams, router, handleStartCreation]);
 
-  const auditItems = useMemo(() => {
-    return projects.map((project) => ({
-      project,
-      audit: analyzeProjectCompliance(project),
-    }));
-  }, [projects]);
-
   const filteredAuditItems = useMemo(() => {
     const q = searchTerm.trim().toLocaleLowerCase('tr-TR');
-    if (!q) return auditItems;
+    const items = projects.map(p => ({ project: p, audit: analyzeProjectCompliance(p) }));
+    if (!q) return items;
 
-    return auditItems.filter(({ project }) => {
+    return items.filter(({ project }) => {
       const text = [
         project.title,
         project.client_name,
@@ -109,9 +102,9 @@ function DashboardPortal() {
 
       return text.includes(q);
     });
-  }, [auditItems, searchTerm]);
+  }, [projects, searchTerm]);
 
-  const recentAuditItems = useMemo(() => filteredAuditItems.slice(0, 5), [filteredAuditItems]);
+  const recentAuditItems = useMemo(() => filteredAuditItems.slice(0, 10), [filteredAuditItems]);
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -183,60 +176,39 @@ function DashboardPortal() {
 
   return (
     <>
-      <div className="space-y-6 animate-fade-in font-sans">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Planify Kurumsal Portal</p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Denetim Merkezi</h1>
-            <p className="mt-2 text-sm font-semibold text-slate-500 max-w-2xl">
-              Tahliye planı dosyalarınızı, ISO kontrol eksiklerini, son çıktıları ve resmi proje kimlik bilgilerini tek ekranda yönetin.
-            </p>
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-12 space-y-12 animate-in fade-in duration-1000">
+        {/* Top Search Area Only */}
+        <div className="flex justify-end">
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+            <input
+              value={searchTerm}
+              onChange={(event) => handleSearchChange(event.target.value)}
+              placeholder="Dosya veya tesis ara..."
+              className="w-full sm:w-80 h-14 pl-12 pr-6 bg-white/60 backdrop-blur-xl border border-white rounded-[24px] text-xs font-black text-slate-900 outline-none focus:bg-white focus:ring-8 focus:ring-slate-900/5 transition-all shadow-sm"
+            />
           </div>
-          <button
-            onClick={handleStartCreation}
-            disabled={isCreating}
-            className="h-11 px-5 bg-slate-950 text-white text-xs font-black uppercase tracking-widest hover:bg-slate-800 disabled:opacity-50 lg:self-start"
-          >
-            Yeni Denetim Dosyası
-          </button>
         </div>
-
-        <DashboardMetrics projectCount={projects.length} audits={auditItems.map((item) => item.audit)} exports={projectExports} />
 
         {isLoading ? (
           <DashboardLoading />
         ) : (
-          <div className="grid grid-cols-1 2xl:grid-cols-[1fr_360px] gap-6 items-start">
-            <div className="space-y-6">
-              <AuditActionPanel items={auditItems} />
-              <ProjectDossierGrid
-                items={recentAuditItems}
-                searchTerm={searchTerm}
-                eyebrow="Son Dosyalar"
-                title="Son 5 tahliye planı"
-                description="Tüm tahliye planlarını geniş arşiv ekranında yönetebilirsiniz."
-                showSearch={false}
-                viewAllHref="/dashboard/archive"
-                viewAllLabel="Tahliye Planı Arşivi"
-                isCreating={isCreating}
-                renamingId={renamingId}
-                renamingTitle={renamingTitle}
-                onSearchChange={handleSearchChange}
-                onCreate={handleStartCreation}
-                onRenameStart={handleRenameStart}
-                onRenameTitleChange={setRenamingTitle}
-                onRenameCancel={() => setRenamingId(null)}
-                onRenameSubmit={handleRename}
-                onDelete={handleDelete}
-              />
-            </div>
-
-            <PortalSidePanel
-              profile={profile}
-              isPro={isPro}
-              exports={projectExports}
-              templates={templateLayouts}
-              onNewProject={handleStartCreation}
+          <div className="animate-in slide-in-from-bottom-4 duration-700">
+            <ProjectDossierGrid
+              items={recentAuditItems}
+              searchTerm={searchTerm}
+              showSearch={false}
+              viewAllHref="/dashboard/archive"
+              viewAllLabel="Tüm Arşivi Görüntüle"
+              isCreating={isCreating}
+              renamingId={renamingId}
+              renamingTitle={renamingTitle}
+              onSearchChange={handleSearchChange}
+              onRenameStart={handleRenameStart}
+              onRenameTitleChange={setRenamingTitle}
+              onRenameCancel={() => setRenamingId(null)}
+              onRenameSubmit={handleRename}
+              onDelete={handleDelete}
             />
           </div>
         )}

@@ -8,6 +8,7 @@ import type {
   TemplateState,
   ProjectMetadata,
 } from '@/types/editor';
+import { normalizePagePreset } from '@/lib/editor/templateLayouts';
 
 const DEFAULT_LAYER_ID = 'default';
 
@@ -60,7 +61,6 @@ const VALID_TEXT_ALIGN = new Set<NonNullable<EditorElement['textAlign']>>([
   'right',
 ]);
 
-const VALID_PAGE_PRESETS = new Set<PagePreset>(['Landscape', 'Portrait']);
 const VALID_SCALE_UNITS = new Set<ScaleConfig['unit']>(['mm', 'cm', 'm']);
 
 type UnknownRecord = Record<string, unknown>;
@@ -321,7 +321,7 @@ export function sanitizeDebugEditorStatePayload(value: unknown): DebugEditorStat
     scaleConfig: sanitizeScaleConfig(raw.scaleConfig),
     projectTemplate: asString(raw.projectTemplate, 'blank'),
     templateLayoutId: asNullableString(raw.templateLayoutId),
-    pagePreset: VALID_PAGE_PRESETS.has(raw.pagePreset as PagePreset) ? (raw.pagePreset as PagePreset) : 'Landscape',
+    pagePreset: normalizePagePreset(raw.pagePreset),
     templateState: sanitizeTemplateState(raw.templateState),
     projectMetadata: sanitizeProjectMetadata(raw.projectMetadata),
     innerZoom: asPositiveNumber(raw.innerZoom, 1) ?? 1,

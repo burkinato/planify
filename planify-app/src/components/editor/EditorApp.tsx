@@ -431,7 +431,6 @@ export default function EditorApp() {
             setMobileMenu={setMobileMenu}
             stageRef={stageRef}
             setContainerNode={handleContainerNode}
-            projectId={projectId}
           />
           {!isPreview && (
             <EditorRightSidebar
