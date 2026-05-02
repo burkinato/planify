@@ -170,23 +170,23 @@ export default function ProfilePage() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-20 w-full">
-        <Loader2 className="w-8 h-8 text-slate-500 animate-spin" />
+        <Loader2 className="w-8 h-8 text-surface-400 animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="animate-fade-in font-sans space-y-6 pb-12">
-      <section className="bg-white border border-slate-200 rounded-lg p-6 lg:p-7">
+      <section className="bg-surface-900 border border-surface-600 rounded-lg p-6 lg:p-7">
         <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-surface-400">
               Hesap ve Firma Kimliği
             </p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
+            <h1 className="mt-2 text-3xl font-medium tracking-tight text-surface-200">
               Profil / Firma Bilgileri
             </h1>
-            <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-500">
+            <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-surface-400">
               Bu bilgiler yeni denetim dosyalarında varsayılan firma kimliği olarak kullanılır.
               E-posta hesabın giriş kimliğidir ve buradan değiştirilemez.
             </p>
@@ -206,15 +206,15 @@ export default function ProfilePage() {
       </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-6 items-start">
-        <form onSubmit={handleProfileSubmit} className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-          <div className="border-b border-slate-200 px-6 py-5">
+        <form onSubmit={handleProfileSubmit} className="bg-surface-900 border border-surface-600 rounded-lg overflow-hidden">
+          <div className="border-b border-surface-600 px-6 py-5">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
                 <IdCard className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-lg font-black text-slate-950">Resmi Profil Bilgileri</h2>
-                <p className="text-sm font-semibold text-slate-500">Firma ve iletişim kayıtları</p>
+                <h2 className="text-lg font-medium text-surface-200">Resmi Profil Bilgileri</h2>
+                <p className="text-sm font-medium text-surface-400">Firma ve iletişim kayıtları</p>
               </div>
             </div>
           </div>
@@ -225,7 +225,7 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <ProfileInput
                 label="Ad Soyad"
-                icon={<UserCircle className="h-5 w-5 text-slate-400" />}
+                icon={<UserCircle className="h-5 w-5 text-surface-500" />}
                 value={formData.full_name}
                 onChange={(value) => setFormData({ ...formData, full_name: value })}
                 placeholder="Ahmet Yılmaz"
@@ -233,7 +233,7 @@ export default function ProfilePage() {
 
               <ProfileInput
                 label="E-posta Adresi"
-                icon={<Mail className="h-5 w-5 text-slate-400" />}
+                icon={<Mail className="h-5 w-5 text-surface-500" />}
                 value={formData.email}
                 disabled
                 type="email"
@@ -241,7 +241,7 @@ export default function ProfilePage() {
 
               <ProfileInput
                 label="Firma / Kurum Adı"
-                icon={<Building2 className="h-5 w-5 text-slate-400" />}
+                icon={<Building2 className="h-5 w-5 text-surface-500" />}
                 value={formData.company}
                 onChange={(value) => setFormData({ ...formData, company: value })}
                 placeholder="Güven İş OSGB"
@@ -249,7 +249,7 @@ export default function ProfilePage() {
 
               <ProfileInput
                 label="Telefon Numarası"
-                icon={<Phone className="h-5 w-5 text-slate-400" />}
+                icon={<Phone className="h-5 w-5 text-surface-500" />}
                 value={formData.phone}
                 onChange={(value) => setFormData({ ...formData, phone: value })}
                 placeholder="05XX XXX XX XX"
@@ -258,7 +258,7 @@ export default function ProfilePage() {
 
               <ProfileSelect
                 label="Cinsiyet"
-                icon={<Users className="h-5 w-5 text-slate-400" />}
+                icon={<Users className="h-5 w-5 text-surface-500" />}
                 value={formData.gender}
                 onChange={(value) => setFormData({ ...formData, gender: value })}
                 options={[
@@ -270,24 +270,24 @@ export default function ProfilePage() {
               />
             </div>
 
-            <label className="flex items-start gap-3 p-4 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer">
+            <label className="flex items-start gap-3 p-4 rounded-lg bg-surface-800 border border-surface-600 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.marketing_consent}
                 onChange={(e) => setFormData({ ...formData, marketing_consent: e.target.checked })}
-                className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                className="mt-1 w-4 h-4 rounded border-surface-600 text-primary-500 focus:ring-primary-500 cursor-pointer bg-surface-900"
               />
-              <span className="text-sm font-semibold leading-6 text-slate-600">
+              <span className="text-sm font-medium leading-6 text-surface-300">
                 Planify yenilikleri, bakım duyuruları ve ürün güncellemeleri hakkında e-posta almak istiyorum.
               </span>
             </label>
           </div>
 
-          <div className="px-6 py-5 border-t border-slate-200 bg-slate-50 flex justify-end">
+          <div className="px-6 py-5 border-t border-surface-600 bg-surface-800 flex justify-end">
             <button
               type="submit"
               disabled={isSaving}
-              className="w-full sm:w-auto h-11 px-6 bg-slate-950 text-white text-xs font-black uppercase tracking-widest hover:bg-slate-800 disabled:opacity-60 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto h-11 px-6 bg-primary-500 text-white text-xs font-bold uppercase tracking-widest hover:bg-primary-600 rounded disabled:opacity-60 flex items-center justify-center gap-2 transition-colors"
             >
               {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
               {isSaving ? 'Kaydediliyor' : 'Bilgileri Kaydet'}
@@ -296,14 +296,14 @@ export default function ProfilePage() {
         </form>
 
         <aside className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-lg p-6">
+          <div className="bg-surface-900 border border-surface-600 rounded-lg p-6">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-base font-black text-slate-950">Hesap Durumu</h2>
-                <p className="mt-1 text-sm font-semibold text-slate-500">
+                <h2 className="text-base font-medium text-surface-200">Hesap Durumu</h2>
+                <p className="mt-1 text-sm font-medium text-surface-400">
                   {isPro
                     ? 'Pro hesabınız aktif. Abonelik yükseltme ekranı bu hesap için gizlenir.'
                     : 'Ücretsiz plan kullanıyorsunuz. Pro yükseltme gerektiğinde abonelik ekranı açılır.'}
@@ -316,10 +316,10 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <form onSubmit={handlePasswordSubmit} className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-            <div className="border-b border-slate-200 px-6 py-5">
-              <h2 className="text-lg font-black text-slate-950">Güvenlik</h2>
-              <p className="text-sm font-semibold text-slate-500">Şifre değişikliği</p>
+          <form onSubmit={handlePasswordSubmit} className="bg-surface-900 border border-surface-600 rounded-lg overflow-hidden">
+            <div className="border-b border-surface-600 px-6 py-5">
+              <h2 className="text-lg font-medium text-surface-200">Güvenlik</h2>
+              <p className="text-sm font-medium text-surface-400">Şifre değişikliği</p>
             </div>
 
             <div className="p-6 space-y-5">
@@ -327,7 +327,7 @@ export default function ProfilePage() {
 
               <ProfileInput
                 label="Yeni Şifre"
-                icon={<ShieldAlert className="h-5 w-5 text-slate-400" />}
+                icon={<ShieldAlert className="h-5 w-5 text-surface-500" />}
                 value={passwordData.newPassword}
                 onChange={(value) => setPasswordData({ ...passwordData, newPassword: value })}
                 placeholder="En az 8 karakter"
@@ -337,7 +337,7 @@ export default function ProfilePage() {
 
               <ProfileInput
                 label="Yeni Şifre (Tekrar)"
-                icon={<ShieldAlert className="h-5 w-5 text-slate-400" />}
+                icon={<ShieldAlert className="h-5 w-5 text-surface-500" />}
                 value={passwordData.confirmPassword}
                 onChange={(value) => setPasswordData({ ...passwordData, confirmPassword: value })}
                 placeholder="Şifreyi onaylayın"
@@ -348,7 +348,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={isPasswordSaving || !passwordData.newPassword}
-                className="w-full h-11 px-5 border border-slate-300 bg-white text-slate-800 text-xs font-black uppercase tracking-widest hover:bg-slate-50 disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full h-11 px-5 border border-surface-600 bg-surface-900 text-surface-200 text-xs font-bold uppercase tracking-widest hover:bg-surface-800 disabled:opacity-60 flex items-center justify-center gap-2 rounded transition-colors"
               >
                 {isPasswordSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {isPasswordSaving ? 'Güncelleniyor' : 'Şifreyi Değiştir'}
@@ -373,16 +373,16 @@ function SummaryItem({
   tone?: 'default' | 'success' | 'muted';
 }) {
   const toneClass = tone === 'success'
-    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
     : tone === 'muted'
-      ? 'bg-slate-50 border-slate-200 text-slate-700'
-      : 'bg-white border-slate-200 text-slate-900';
+      ? 'bg-surface-800 border-surface-600 text-surface-300'
+      : 'bg-surface-900 border-surface-600 text-surface-200';
 
   return (
     <div className={`border rounded-lg p-3 min-w-0 ${toneClass}`}>
-      <p className="text-[10px] font-black uppercase tracking-[0.16em] opacity-70">{label}</p>
-      <p className="mt-1 text-sm font-black truncate">{value}</p>
-      {helper && <p className="mt-1 text-[11px] font-bold opacity-70">{helper}</p>}
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] opacity-70">{label}</p>
+      <p className="mt-1 text-sm font-medium truncate">{value}</p>
+      {helper && <p className="mt-1 text-[11px] font-medium opacity-70">{helper}</p>}
     </div>
   );
 }
@@ -394,10 +394,10 @@ function StatusMessage({
 }) {
   return (
     <div
-      className={`p-4 rounded-lg flex items-center gap-3 text-sm font-bold ${
+      className={`p-4 rounded-lg flex items-center gap-3 text-sm font-medium ${
         message.type === 'success'
-          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-          : 'bg-red-50 text-red-700 border border-red-200'
+          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+          : 'bg-red-500/10 text-red-400 border border-red-500/20'
       }`}
     >
       {message.type === 'success' && <CheckCircle2 className="w-5 h-5 shrink-0" />}
@@ -427,7 +427,7 @@ function ProfileInput({
 }) {
   return (
     <div>
-      <label className="block text-xs font-black uppercase tracking-[0.12em] text-slate-500 mb-2">{label}</label>
+      <label className="block text-xs font-bold uppercase tracking-[0.12em] text-surface-400 mb-2">{label}</label>
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
           {icon}
@@ -439,10 +439,10 @@ function ProfileInput({
           placeholder={placeholder}
           disabled={disabled}
           autoComplete={autoComplete}
-          className={`w-full h-11 pl-10 pr-4 border text-sm font-semibold outline-none transition-all ${
+          className={`w-full h-11 pl-10 pr-4 border rounded text-sm font-medium outline-none transition-all ${
             disabled
-              ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
-              : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-slate-950'
+              ? 'bg-surface-800 border-surface-600 text-surface-500 cursor-not-allowed'
+              : 'bg-surface-900 border-surface-600 text-surface-200 placeholder-surface-500 focus:border-primary-500'
           }`}
         />
       </div>
@@ -465,7 +465,7 @@ function ProfileSelect({
 }) {
   return (
     <div>
-      <label className="block text-xs font-black uppercase tracking-[0.12em] text-slate-500 mb-2">{label}</label>
+      <label className="block text-xs font-bold uppercase tracking-[0.12em] text-surface-400 mb-2">{label}</label>
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
           {icon}
@@ -473,10 +473,10 @@ function ProfileSelect({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full h-11 pl-10 pr-4 bg-white border border-slate-300 text-sm font-semibold text-slate-900 outline-none transition-all focus:border-slate-950 appearance-none"
+          className="w-full h-11 pl-10 pr-4 bg-surface-900 rounded border border-surface-600 text-sm font-medium text-surface-200 outline-none transition-all focus:border-primary-500 appearance-none"
         >
           {options.map((option) => (
-            <option key={option.value} value={option.value}>
+            <option key={option.value} value={option.value} className="bg-surface-900 text-surface-200">
               {option.label}
             </option>
           ))}

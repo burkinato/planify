@@ -16,50 +16,44 @@
   --color-primary-800: #9a3412;
   --color-primary-900: #7c2d12;
 
-  /* Surface — Premium Dark (Admin Default) */
-  --color-surface-950: #06060a;
-  --color-surface-900: #0a0a12;
-  --color-surface-800: #10101c;
-  --color-surface-700: #181828;
-  --color-surface-600: #222236;
-  --color-surface-500: #2d2d44;
-  --color-surface-400: #3d3d58;
-  --color-surface-300: #52526e;
+  /* VibeCode Surface (Dark Mode Default) */
+  --color-surface-950: #1e1e1e; /* Editor BG */
+  --color-surface-900: #252526; /* Sidebar/Panel BG */
+  --color-surface-800: #2d2d30; /* Activity Bar */
+  --color-surface-700: #333333; /* Tab active / Hover BG */
+  --color-surface-600: #3c3c3c; /* Border / Input Border */
+  --color-surface-500: #454545; /* Border Hover */
+  --color-surface-400: #555555; /* Placeholder */
+  --color-surface-300: #858585; /* Secondary Text */
+  --color-surface-200: #cccccc; /* Primary Text */
 
-  /* Light Theme Surface (Admin Toggle) */
-  --color-surface-light-950: #ffffff;
-  --color-surface-light-900: #f8fafc;
-  --color-surface-light-800: #f1f5f9;
-  --color-surface-light-700: #e2e8f0;
-  --color-surface-light-600: #cbd5e1;
-  --color-surface-light-500: #94a3b8;
-  --color-surface-light-400: #64748b;
+  /* VibeCode Surface (Light Mode Toggle) */
+  --color-surface-light-950: #ffffff; /* Editor BG */
+  --color-surface-light-900: #f3f3f3; /* Sidebar/Panel BG */
+  --color-surface-light-800: #ececec; /* Hover */
+  --color-surface-light-700: #e4e4e4;
+  --color-surface-light-600: #cecece; /* Border */
+  --color-surface-light-500: #b8b8b8; /* Border Hover */
+  --color-surface-light-400: #6f6f6f; /* Secondary Text */
+  --color-surface-light-300: #3b3b3b; /* Primary Text */
 
-  /* Accent — Professional Emerald & Slate (Purple Ban Refactor) */
-  --color-accent-emerald: #10b981;
-  --color-accent-emerald-dark: #059669;
-  --color-accent-slate: #475569;
-  --color-accent-cyan: #0891b2;
+  /* Primary Accent - VS Code Blue */
+  --color-primary-400: #4daafc;
+  --color-primary-500: #007acc;
+  --color-primary-600: #006bb3;
 
   /* Safety Colors */
   --color-safety-green: #10b981;
   --color-safety-red: #ef4444;
-  --color-safety-blue: #3b82f6;
+  --color-safety-blue: #007acc;
   --color-safety-amber: #f59e0b;
 
-  /* Deep Navy SaaS Theme */
-  --color-navy-950: #050b16;
-  --color-navy-900: #0a192f;
-  --color-navy-800: #112240;
-  --color-navy-700: #233554;
-  --color-navy-600: #334a73;
-
   /* Border Radius */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
+  --radius-sm: 0.25rem; /* VS Code is usually less rounded */
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
 
   --ease-spring: cubic-bezier(0.68, -0.6, 0.32, 1.6);
 }
@@ -96,16 +90,16 @@ html {
 
 body {
   background: var(--color-surface-950);
-  color: #e2e8f0;
+  color: var(--color-surface-200);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-html.light body {
+.light body {
   background: var(--color-surface-light-950);
-  color: #1e293b;
+  color: var(--color-surface-light-300);
 }
 
-html.light {
+.light {
   --color-surface-950: var(--color-surface-light-950);
   --color-surface-900: var(--color-surface-light-900);
   --color-surface-800: var(--color-surface-light-800);
@@ -113,6 +107,8 @@ html.light {
   --color-surface-600: var(--color-surface-light-600);
   --color-surface-500: var(--color-surface-light-500);
   --color-surface-400: var(--color-surface-light-400);
+  --color-surface-300: var(--color-surface-light-300);
+  --color-surface-200: var(--color-surface-light-300); /* Dark text for light mode */
 }
 
 /* Glass Effect */

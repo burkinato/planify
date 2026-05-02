@@ -1,9 +1,8 @@
 'use client';
-import React, { useState, useLayoutEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
 import Image from 'next/image';
 
-import { ArrowLeft, BadgeCheck, ClipboardList, Flame, MapPinned, ShieldCheck, ChevronRight, Settings2, Sparkles } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, ClipboardList, Flame, MapPinned, ShieldCheck, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/store/useEditorStore';
 import { mergeTemplateState } from '@/lib/editor/templateLayouts';
@@ -401,28 +400,6 @@ export function TemplatePaperRenderer({
   const state = mergeTemplateState(templateState);
   const regions = layout.layout_json.regions || [];
   const accent = layout.layout_json.accent || '#00965e';
-  const [hintRect, setHintRect] = useState<DOMRect | null>(null);
-
-  useLayoutEffect(() => {
-    if (!focusedRegionId || typeof document === 'undefined') {
-      return;
-    }
-    
-    let frameId: number;
-    const update = () => {
-      const el = document.getElementById(`region-${focusedRegionId}`);
-      if (el) {
-        setHintRect(el.getBoundingClientRect());
-      }
-      frameId = requestAnimationFrame(update);
-    };
-    
-    update();
-    return () => {
-      cancelAnimationFrame(frameId);
-      setHintRect(null);
-    };
-  }, [focusedRegionId]);
 
   return (
     <div className="flex h-full w-full items-center justify-center overflow-auto p-3 md:p-6">
@@ -494,9 +471,6 @@ export function TemplatePaperRenderer({
                 </div>
               ) : (
                 <div className="relative h-full w-full group/region">
-                  {focused && (
-                    <div className="absolute inset-0 pointer-events-none z-50 border-4 border-cyan-500/20 animate-pulse rounded-sm" />
-                  )}
                   <ReadOnlyRegion 
                     region={region} 
                     title={content.title} 
@@ -522,27 +496,6 @@ export function TemplatePaperRenderer({
                 </div>
               )}
 
-              {focused && hintRect && typeof document !== 'undefined' && createPortal(
-                <div 
-                  className="fixed z-[10000] flex items-center pointer-events-none animate-in fade-in slide-in-from-left-4 duration-300"
-                  style={{
-                    left: `${hintRect.right}px`,
-                    top: `${hintRect.top + hintRect.height / 2}px`,
-                    transform: 'translateY(-50%)'
-                  }}
-                >
-                  <div className="w-10 h-[1.5px] bg-gradient-to-r from-cyan-500 to-cyan-500/50 rounded-full" />
-                  <div className="flex flex-col items-start gap-1">
-                    <div className="flex items-center gap-2 bg-slate-900 text-white px-3 py-2 rounded-xl shadow-2xl border border-white/10 ring-1 ring-white/5">
-                      <Settings2 className="w-3 h-3 text-cyan-400 animate-[spin_4s_linear_infinite]" />
-                      <span className="text-[9px] font-black uppercase tracking-[0.1em] whitespace-nowrap">AYARLAR SAĞ PANELDE</span>
-                      <ChevronRight className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-                    </div>
-                    <span className="text-[7px] font-black text-cyan-600 uppercase tracking-widest pl-1 opacity-80">Düzenleme Modu Aktif</span>
-                  </div>
-                </div>,
-                document.body
-              )}
             </section>
           );
         })}

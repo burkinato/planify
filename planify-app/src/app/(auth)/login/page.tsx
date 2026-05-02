@@ -131,12 +131,12 @@ export default function LoginPage() {
   return (
     <div className="w-full space-y-4 lg:space-y-6 font-sans">
       <div className="text-center md:text-left">
-        <h1 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">Hoş Geldiniz</h1>
-        <p className="text-slate-500 mt-1 lg:mt-2 font-medium text-sm">Hesabınıza giriş yapın ve çizime devam edin.</p>
+        <h1 className="text-2xl lg:text-3xl font-medium text-surface-100 tracking-tight">Hoş Geldiniz</h1>
+        <p className="text-surface-400 mt-1 lg:mt-2 font-medium text-sm">Hesabınıza giriş yapın ve çizime devam edin.</p>
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-xl text-xs font-medium flex items-center gap-2">
+        <div className="p-3 bg-red-500/10 text-red-400 border border-red-500/20 rounded text-xs font-medium flex items-center gap-2">
           <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
@@ -149,7 +149,7 @@ export default function LoginPage() {
           onClick={() => handleOAuth('google')}
           type="button"
           disabled={isDisabled}
-          className="py-2.5 px-4 bg-white border border-slate-200 rounded-xl text-slate-700 font-bold text-xs hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+          className="py-2.5 px-4 bg-surface-900 border border-surface-600 rounded text-surface-200 font-bold text-xs hover:bg-surface-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {oauthLoading === 'google' ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
           Google
@@ -158,7 +158,7 @@ export default function LoginPage() {
           onClick={() => handleOAuth('linkedin_oidc')}
           type="button"
           disabled={isDisabled}
-          className="py-2.5 px-4 bg-white border border-slate-200 rounded-xl text-slate-700 font-bold text-xs hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+          className="py-2.5 px-4 bg-surface-900 border border-surface-600 rounded text-surface-200 font-bold text-xs hover:bg-surface-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {oauthLoading === 'linkedin' ? <Loader2 className="w-4 h-4 animate-spin" /> : <LinkedInIcon />}
           LinkedIn
@@ -166,14 +166,14 @@ export default function LoginPage() {
       </div>
 
       <div className="relative flex items-center">
-        <div className="flex-grow border-t border-slate-100" />
-        <span className="flex-shrink-0 px-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">veya</span>
-        <div className="flex-grow border-t border-slate-100" />
+        <div className="flex-grow border-t border-surface-600" />
+        <span className="flex-shrink-0 px-4 text-[10px] text-surface-500 font-bold uppercase tracking-widest">veya</span>
+        <div className="flex-grow border-t border-surface-600" />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3 lg:space-y-4">
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">E-posta</label>
+          <label className="block text-xs font-bold text-surface-300 mb-1">E-posta</label>
           <input
             type="email"
             required
@@ -182,14 +182,14 @@ export default function LoginPage() {
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             disabled={isDisabled}
             autoComplete="email"
-            className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-sm"
+            className="w-full px-4 py-2.5 rounded bg-surface-900 border border-surface-600 text-surface-100 placeholder-surface-500 focus:bg-surface-800 focus:border-primary-500 outline-none transition-all text-sm"
           />
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="block text-xs font-bold text-slate-700">Şifre</label>
-            <Link href="/forgot-password" className="text-[10px] font-bold text-blue-600 hover:text-blue-700">
+            <label className="block text-xs font-bold text-surface-300">Şifre</label>
+            <Link href="/forgot-password" university-auth-link="true" className="text-[10px] font-bold text-primary-500 hover:text-primary-400">
               Şifremi Unuttum
             </Link>
           </div>
@@ -202,12 +202,12 @@ export default function LoginPage() {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               disabled={isDisabled}
               autoComplete="current-password"
-              className="w-full px-4 py-2.5 pr-12 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-sm"
+              className="w-full px-4 py-2.5 pr-12 rounded bg-surface-900 border border-surface-600 text-surface-100 placeholder-surface-500 focus:bg-surface-800 focus:border-primary-500 outline-none transition-all text-sm"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-500 hover:text-surface-300 p-1"
             >
               {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             </button>
@@ -215,34 +215,34 @@ export default function LoginPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-1.5 py-1">
-          <label className="relative flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 transition-all group">
+          <label className="relative flex items-center justify-between p-2.5 rounded border border-surface-600 bg-surface-900/50 cursor-pointer hover:border-primary-500/50 hover:bg-primary-500/5 transition-all group">
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={rememberEmail}
                 onChange={(e) => setRememberEmailState(e.target.checked)}
                 disabled={isDisabled}
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all"
+                className="w-4 h-4 rounded border-surface-600 text-primary-500 focus:ring-primary-500/20 bg-surface-950 transition-all"
               />
               <div className="flex flex-col">
-                <span className="text-[11px] font-black text-slate-700 uppercase tracking-tight">Beni Hatırla</span>
-                <span className="text-[9px] text-slate-400 font-bold leading-tight group-hover:text-slate-500 transition-colors">E-posta adresimi bu cihazda güvenle sakla</span>
+                <span className="text-[11px] font-bold text-surface-300 uppercase tracking-tight">Beni Hatırla</span>
+                <span className="text-[9px] text-surface-500 font-bold leading-tight group-hover:text-surface-400 transition-colors">E-posta adresimi bu cihazda güvenle sakla</span>
               </div>
             </div>
           </label>
 
-          <label className="relative flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 transition-all group">
+          <label className="relative flex items-center justify-between p-2.5 rounded border border-surface-600 bg-surface-900/50 cursor-pointer hover:border-primary-500/50 hover:bg-primary-500/5 transition-all group">
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={keepActive}
                 onChange={(e) => setKeepActive(e.target.checked)}
                 disabled={isDisabled}
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all"
+                className="w-4 h-4 rounded border-surface-600 text-primary-500 focus:ring-primary-500/20 bg-surface-950 transition-all"
               />
               <div className="flex flex-col">
-                <span className="text-[11px] font-black text-slate-700 uppercase tracking-tight">Oturumu Açık Tut</span>
-                <span className="text-[9px] text-slate-400 font-bold leading-tight group-hover:text-slate-500 transition-colors">30 gün boyunca şifre sormadan girişi sürdür</span>
+                <span className="text-[11px] font-bold text-surface-300 uppercase tracking-tight">Oturumu Açık Tut</span>
+                <span className="text-[9px] text-surface-500 font-bold leading-tight group-hover:text-surface-400 transition-colors">30 gün boyunca şifre sormadan girişi sürdür</span>
               </div>
             </div>
           </label>
@@ -251,16 +251,16 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isDisabled}
-          className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-600/20 transition-all disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-2"
+          className="w-full py-3 bg-primary-500 text-white rounded font-bold text-sm hover:bg-primary-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-2 shadow-lg shadow-primary-500/10"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
           {loading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
         </button>
       </form>
 
-      <p className="text-center text-xs text-slate-500 font-medium pt-2">
+      <p className="text-center text-xs text-surface-500 font-medium pt-2">
         Hesabınız yok mu?{' '}
-        <Link href="/register" className="text-blue-600 font-bold hover:text-blue-700">
+        <Link href="/register" className="text-primary-500 font-bold hover:text-primary-400">
           Ücretsiz Kayıt Olun
         </Link>
       </p>

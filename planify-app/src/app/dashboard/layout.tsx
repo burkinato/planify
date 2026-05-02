@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Archive, CreditCard, LayoutDashboard, LogOut, Plus, Search, ShieldCheck, UserCircle } from 'lucide-react';
+import { Archive, CreditCard, LayoutDashboard, LogOut, Plus, Search, ShieldCheck, UserCircle, Sun, Moon } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useTheme } from 'next-themes';
 import { ClientOnly } from '@/components/shared/ClientOnly';
 import { Logo } from '@/components/shared/Logo';
 
@@ -15,6 +16,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { profile, signOut } = useAuthStore();
+  const { theme, setTheme } = useTheme();
 
   type MenuItem = {
     href: string;
@@ -58,29 +60,29 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex font-sans">
+    <div className="min-h-screen bg-surface-950 flex font-sans text-surface-200 transition-colors">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col hidden md:flex">
-        <div className="h-16 flex items-center px-6 border-b border-slate-100">
+      <aside className="w-64 bg-surface-900 border-r border-surface-600 flex flex-col hidden md:flex">
+        <div className="h-16 flex items-center px-6 border-b border-surface-600">
           <Link href="/dashboard">
             <Logo size="sm" />
           </Link>
         </div>
         
         <nav className="flex-1 px-4 py-6 space-y-1.5">
-          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Menü</div>
+          <div className="text-xs font-bold text-surface-400 uppercase tracking-wider mb-4 px-2">Menü</div>
           {menu.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link 
                 key={item.href}
                 href={item.href} 
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded text-sm transition-all font-medium ${
                   isActive 
-                    ? 'bg-blue-50 text-blue-700' 
+                    ? 'bg-primary-500/20 text-primary-500' 
                     : item.highlight
-                      ? 'text-amber-600 hover:bg-amber-50 hover:text-amber-700'
-                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'text-amber-500 hover:bg-amber-500/10 hover:text-amber-400'
+                      : 'text-surface-300 hover:bg-surface-800 hover:text-surface-200'
                 } ${item.child ? 'ml-7 py-2 text-xs' : ''}`}
               >
                 {item.icon} {item.label}
@@ -89,21 +91,21 @@ export default function DashboardLayout({
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-surface-600">
           {isPro && (
-            <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-emerald-800">
-              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider">
+            <div className="mb-3 rounded border border-emerald-500/30 bg-emerald-500/10 px-3 py-3 text-emerald-500">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider">
                 <ShieldCheck className="w-4 h-4" />
                 Pro Aktif
               </div>
-              <p className="mt-1 text-[11px] font-semibold leading-5 text-emerald-700">
+              <p className="mt-1 text-[11px] leading-5 text-emerald-400">
                 Abonelik yükseltme ekranı bu hesapta gizlenir.
               </p>
             </div>
           )}
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 font-bold text-sm transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 w-full rounded text-surface-400 hover:text-red-400 hover:bg-red-400/10 font-medium text-sm transition-colors"
           >
             <LogOut className="w-4 h-4" /> Çıkış Yap
           </button>
@@ -113,17 +115,25 @@ export default function DashboardLayout({
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
         {/* Navbar */}
-        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-10 sticky top-0">
+        <header className="h-16 bg-surface-900 border-b border-surface-600 flex items-center justify-between px-6 shrink-0 z-10 sticky top-0">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Planify Portal</p>
-            <h2 className="font-black text-slate-800 tracking-tight">{pageTitle}</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-400">Planify Portal</p>
+            <h2 className="font-medium text-surface-200 tracking-tight">{pageTitle}</h2>
           </div>
           
           <ClientOnly>
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="p-2 hover:bg-surface-800 rounded text-surface-400 hover:text-surface-200 transition-all"
+                title="Temayı Değiştir"
+              >
+                {theme === 'dark' ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+              </button>
+
               {(pathname === '/dashboard' || pathname === '/dashboard/archive') && (
                 <label className="hidden lg:block relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
                   <input
                     defaultValue=""
                     onKeyDown={(event) => {
@@ -131,11 +141,11 @@ export default function DashboardLayout({
                     }}
                     onBlur={(event) => handleSearch(event.currentTarget.value)}
                     placeholder="Proje, tesis veya kat ara"
-                    className="h-10 w-72 pl-10 pr-3 rounded-none bg-slate-50 border border-slate-200 text-sm font-semibold outline-none focus:bg-white focus:border-slate-400"
+                    className="h-10 w-72 pl-10 pr-3 rounded bg-surface-950 border border-surface-600 text-surface-200 text-sm font-medium outline-none focus:bg-surface-800 focus:border-primary-500 transition-colors"
                   />
                 </label>
               )}
-              <Link href="/dashboard?new=1" className="flex items-center gap-2 px-4 py-2 bg-slate-950 text-white rounded-none text-sm font-bold hover:bg-slate-800 transition-all">
+              <Link href="/dashboard?new=1" className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded text-sm font-medium hover:bg-primary-600 transition-all">
                 <Plus className="w-4 h-4" /> Yeni Proje
               </Link>
             </div>

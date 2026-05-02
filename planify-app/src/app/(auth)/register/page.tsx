@@ -39,11 +39,11 @@ function PasswordStrength({ password }: { password: string }) {
   return (
     <div className="mt-2 space-y-1">
       {checks.map(({ label, ok }) => (
-        <div key={label} className="flex items-center gap-2 text-xs">
-          <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-colors ${ok ? 'bg-green-500' : 'bg-slate-200'}`}>
-            {ok && <Check className="w-2.5 h-2.5 text-white" />}
+        <div key={label} className="flex items-center gap-2 text-[10px]">
+          <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 transition-colors ${ok ? 'bg-primary-500' : 'bg-surface-800 border border-surface-600'}`}>
+            {ok && <Check className="w-2 h-2 text-white" />}
           </div>
-          <span className={ok ? 'text-green-600 font-medium' : 'text-slate-400'}>{label}</span>
+          <span className={ok ? 'text-primary-500 font-medium' : 'text-surface-500'}>{label}</span>
         </div>
       ))}
     </div>
@@ -187,14 +187,14 @@ export default function RegisterPage() {
   return (
     <div className="w-full space-y-3 lg:space-y-4 font-sans">
       <div className="text-center md:text-left">
-        <h1 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tight leading-none">Hesap Oluşturun</h1>
-        <p className="text-slate-500 mt-1 font-medium text-[11px] lg:text-xs">
+        <h1 className="text-xl lg:text-2xl font-medium text-surface-100 tracking-tight leading-none">Hesap Oluşturun</h1>
+        <p className="text-surface-400 mt-1 font-medium text-[11px] lg:text-xs">
           Kayıt olun ve hemen çizim yapmaya başlayın.
         </p>
       </div>
 
       {error && (
-        <div className="p-2 bg-red-50 text-red-700 border border-red-200 rounded-xl text-[10px] font-medium flex items-center gap-2">
+        <div className="p-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded text-[10px] font-medium flex items-center gap-2">
           <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
@@ -207,7 +207,7 @@ export default function RegisterPage() {
           onClick={() => handleOAuth('google')}
           type="button"
           disabled={isDisabled}
-          className="w-full py-2 bg-white border border-slate-200 rounded-lg text-slate-700 font-bold text-[10px] hover:bg-slate-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full py-2 bg-surface-900 border border-surface-600 rounded text-surface-200 font-bold text-[10px] hover:bg-surface-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {oauthLoading === 'google' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <GoogleIcon />}
           Google
@@ -216,7 +216,7 @@ export default function RegisterPage() {
           onClick={() => handleOAuth('linkedin_oidc')}
           type="button"
           disabled={isDisabled}
-          className="w-full py-2 bg-white border border-slate-200 rounded-lg text-slate-700 font-bold text-[10px] hover:bg-slate-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full py-2 bg-surface-900 border border-surface-600 rounded text-surface-200 font-bold text-[10px] hover:bg-surface-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {oauthLoading === 'linkedin' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LinkedInIcon />}
           LinkedIn
@@ -224,15 +224,15 @@ export default function RegisterPage() {
       </div>
 
       <div className="relative flex items-center">
-        <div className="flex-grow border-t border-slate-100" />
-        <span className="flex-shrink-0 px-3 text-[9px] text-slate-400 font-bold uppercase tracking-widest">veya</span>
-        <div className="flex-grow border-t border-slate-100" />
+        <div className="flex-grow border-t border-surface-600" />
+        <span className="flex-shrink-0 px-3 text-[9px] text-surface-500 font-bold uppercase tracking-widest">veya</span>
+        <div className="flex-grow border-t border-surface-600" />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-2 lg:space-y-3">
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Ad</label>
+            <label className="block text-[10px] font-bold text-surface-300 mb-0.5">Ad</label>
             <input
               type="text"
               required
@@ -240,11 +240,11 @@ export default function RegisterPage() {
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               disabled={isDisabled}
-              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-xs"
+              className="w-full px-3 py-2 rounded bg-surface-900 border border-surface-600 text-surface-100 placeholder-surface-500 focus:bg-surface-800 focus:border-primary-500 outline-none transition-all text-xs"
             />
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Soyad</label>
+            <label className="block text-[10px] font-bold text-surface-300 mb-0.5">Soyad</label>
             <input
               type="text"
               required
@@ -252,14 +252,14 @@ export default function RegisterPage() {
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               disabled={isDisabled}
-              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-xs"
+              className="w-full px-3 py-2 rounded bg-surface-900 border border-surface-600 text-surface-100 placeholder-surface-500 focus:bg-surface-800 focus:border-primary-500 outline-none transition-all text-xs"
             />
           </div>
           <PasswordStrength password={formData.password} />
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold text-slate-700 mb-0.5">E-posta</label>
+          <label className="block text-[10px] font-bold text-surface-300 mb-0.5">E-posta</label>
           <input
             type="email"
             required
@@ -267,30 +267,30 @@ export default function RegisterPage() {
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             disabled={isDisabled}
-            className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-xs"
+            className="w-full px-3 py-2 rounded bg-surface-900 border border-surface-600 text-surface-100 placeholder-surface-500 focus:bg-surface-800 focus:border-primary-500 outline-none transition-all text-xs"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Telefon</label>
+            <label className="block text-[10px] font-bold text-surface-300 mb-0.5">Telefon</label>
             <input
               type="tel"
               placeholder="05XX..."
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               disabled={isDisabled}
-              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-xs"
+              className="w-full px-3 py-2 rounded bg-surface-900 border border-surface-600 text-surface-100 placeholder-surface-500 focus:bg-surface-800 focus:border-primary-500 outline-none transition-all text-xs"
             />
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Cinsiyet</label>
+            <label className="block text-[10px] font-bold text-surface-300 mb-0.5">Cinsiyet</label>
             <div className="relative">
               <select
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                 disabled={isDisabled}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 focus:bg-white focus:border-blue-500 outline-none transition-all text-xs appearance-none"
+                className="w-full px-3 py-2 rounded bg-surface-900 border border-surface-600 text-surface-100 focus:bg-surface-800 focus:border-primary-500 outline-none transition-all text-xs appearance-none"
               >
                 <option value="">Seçiniz</option>
                 <option value="Erkek">Erkek</option>
@@ -302,7 +302,7 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Şifre</label>
+          <label className="block text-[10px] font-bold text-surface-300 mb-0.5">Şifre</label>
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
@@ -311,12 +311,12 @@ export default function RegisterPage() {
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               disabled={isDisabled}
-              className="w-full px-3 py-2 pr-10 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all text-xs"
+              className="w-full px-3 py-2 pr-10 rounded bg-surface-900 border border-surface-600 text-surface-100 placeholder-surface-500 focus:bg-surface-800 focus:border-primary-500 outline-none transition-all text-xs"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 p-1"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-surface-500 hover:text-surface-300 p-1"
             >
               {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             </button>
@@ -324,34 +324,34 @@ export default function RegisterPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-1.5 py-1">
-          <label className="relative flex items-center justify-between p-2 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 transition-all group">
+          <label className="relative flex items-center justify-between p-2 rounded border border-surface-600 bg-surface-900/50 cursor-pointer hover:border-primary-500/50 hover:bg-primary-500/5 transition-all group">
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={keepActive}
                 onChange={(e) => setKeepActive(e.target.checked)}
                 disabled={isDisabled}
-                className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all"
+                className="w-3.5 h-3.5 rounded border-surface-600 text-primary-500 focus:ring-primary-500/20 bg-surface-950 transition-all"
               />
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight">Oturumu Açık Tut</span>
-                <span className="text-[9px] text-slate-400 font-bold leading-tight group-hover:text-slate-500 transition-colors">30 gün boyunca şifre sormadan girişi sürdür</span>
+                <span className="text-[10px] font-bold text-surface-300 uppercase tracking-tight">Oturumu Açık Tut</span>
+                <span className="text-[9px] text-surface-500 font-bold leading-tight group-hover:text-surface-400 transition-colors">30 gün boyunca şifre sormadan girişi sürdür</span>
               </div>
             </div>
           </label>
 
-          <label className="relative flex items-center justify-between p-2 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 transition-all group">
+          <label className="relative flex items-center justify-between p-2 rounded border border-surface-600 bg-surface-900/50 cursor-pointer hover:border-primary-500/50 hover:bg-primary-500/5 transition-all group">
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={formData.marketingConsent}
                 onChange={(e) => setFormData({ ...formData, marketingConsent: e.target.checked })}
                 disabled={isDisabled}
-                className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all"
+                className="w-3.5 h-3.5 rounded border-surface-600 text-primary-500 focus:ring-primary-500/20 bg-surface-950 transition-all"
               />
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight">Gelişmelerden Haber Al</span>
-                <span className="text-[9px] text-slate-400 font-bold leading-tight group-hover:text-slate-500 transition-colors">Yenilikler ve fırsatlar hakkında e-posta almayı kabul ediyorum</span>
+                <span className="text-[10px] font-bold text-surface-300 uppercase tracking-tight">Gelişmelerden Haber Al</span>
+                <span className="text-[9px] text-surface-500 font-bold leading-tight group-hover:text-surface-400 transition-colors">Yenilikler ve fırsatlar hakkında e-posta almayı kabul ediyorum</span>
               </div>
             </div>
           </label>
@@ -360,24 +360,24 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={isDisabled}
-          className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full py-2.5 bg-primary-500 text-white rounded font-bold text-xs hover:bg-primary-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-primary-500/10"
         >
           {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           {loading ? 'İşleniyor...' : 'Hesap Oluştur'}
         </button>
 
-        <p className="text-center text-[9px] text-slate-400 leading-tight">
+        <p className="text-center text-[9px] text-surface-500 leading-tight">
           Kayıt olarak{' '}
-          <a href="#" className="text-blue-600 font-bold">Koşulları</a>
+          <a href="#" className="text-primary-500 font-bold">Koşulları</a>
           {' '}ve{' '}
-          <a href="#" className="text-blue-600 font-bold">Gizliliği</a>
+          <a href="#" className="text-primary-500 font-bold">Gizliliği</a>
           {' '}kabul etmiş olursunuz.
         </p>
       </form>
 
-      <p className="text-center text-xs text-slate-500 font-medium pt-1">
+      <p className="text-center text-xs text-surface-500 font-medium pt-1">
         Hesabınız var mı?{' '}
-        <Link href="/login" className="text-blue-600 font-bold">
+        <Link href="/login" className="text-primary-500 font-bold hover:text-primary-400">
           Giriş Yapın
         </Link>
       </p>

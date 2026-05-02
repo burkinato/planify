@@ -64,10 +64,12 @@ export function ExportModal({
 
   const handleExport = async () => {
     setIsExporting(true);
+    // Capture inner zoom/pan before the try block so they're accessible in finally
+    const { innerZoom: savedInnerZoom, innerPan: savedInnerPan } = useEditorStore.getState();
     try {
       // 1. Store original visibility
       const originalVisibility = layers.map(l => ({ id: l.id, visible: l.visible }));
-      
+
       // 2. Temporarily set visibility for export
       const { toggleLayerVisibility } = useEditorStore.getState();
       layers.forEach(l => {
@@ -79,6 +81,12 @@ export function ExportModal({
 
       // 3. Trigger Export
       useEditorStore.getState().setFocusedRegionId(null);
+
+      // Reset inner zoom/pan so the full drawing area is captured at 1:1 scale.
+      // Without this, exports capture whatever zoom level the user was editing at.
+      useEditorStore.getState().setInnerZoom(1);
+      useEditorStore.getState().setInnerPan({ x: 0, y: 0 });
+
       await waitForPaint();
       if (selectedFormat === 'pdf') {
         const fileName = `${(projectName || projectMetadata.name).replace(/\s+/g, '-')}.pdf`;
@@ -146,6 +154,9 @@ export function ExportModal({
       console.error('Export error:', error);
       toast.error('Dışa aktarma sırasında bir hata oluştu.');
     } finally {
+      // Always restore inner zoom/pan to pre-export state
+      useEditorStore.getState().setInnerZoom(savedInnerZoom);
+      useEditorStore.getState().setInnerPan(savedInnerPan);
       setIsExporting(false);
     }
   };

@@ -48,10 +48,10 @@ export function Logo({
   );
 
   const textVariants = {
-    default: "text-slate-900",
+    default: "text-surface-200",
     white: "text-white",
-    dark: "text-slate-900",
-    monochrome: "text-slate-800",
+    dark: "text-surface-200",
+    monochrome: "text-surface-300",
   };
 
   const suffixVariants = {

@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { Sparkles, X } from 'lucide-react';
 import { EditorHeader } from './EditorHeader';
 import { EditorLeftSidebar } from './EditorLeftSidebar';
-import { EditorRightSidebar } from './EditorRightSidebar';
 import { EditorCanvas } from './EditorCanvas';
 import { EditorErrorBoundary } from './EditorErrorBoundary';
 import { TemplateSelectorModal } from './TemplateSelectorModal';
@@ -75,7 +74,7 @@ export default function EditorApp() {
   // Auth Guard: Redirect unauthenticated users
   useEffect(() => {
     if (!isLoading && !user && !profile) {
-      toast.error('EditorÃ¼ kullanmak iÃ§in giriÅŸ yapmalÄ±sÄ±nÄ±z.');
+      toast.error('Editörü kullanmak için giriş yapmalısınız.');
       router.push('/login');
     }
   }, [user, profile, isLoading, router]);
@@ -221,11 +220,11 @@ export default function EditorApp() {
         console.error('Auto-save failed', error);
         const isOffline = typeof window !== 'undefined' && !window.navigator.onLine;
         const errorMessage = isOffline
-          ? 'Ä°nternet baÄŸlantÄ±nÄ±z koptu.'
+          ? 'İnternet bağlantınız koptu.'
           : error instanceof Error
             ? error.message
-            : 'Bilinmeyen bir hata oluÅŸtu';
-        toast.error(`Otomatik kayÄ±t baÅŸarÄ±sÄ±z: ${errorMessage}`, {
+            : 'Bilinmeyen bir hata oluştu';
+        toast.error(`Otomatik kayıt başarısız: ${errorMessage}`, {
           id: 'autosave-error',
           duration: 5000,
         });
@@ -237,21 +236,21 @@ export default function EditorApp() {
 
   const validateCompliance = () => {
     const missing: string[] = [];
-    // E004 = BuradasÄ±nÄ±z iÅŸareti
+    // E004 = Buradasınız işareti
     if (!elements.some((el) => el.type === 'symbol' && el.symbolType === 'E004')) {
-      missing.push('BuradasÄ±nÄ±z iÅŸareti');
+      missing.push('Buradasınız işareti');
     }
-    // Tahliye rotasÄ±
+    // Tahliye rotası
     if (!elements.some((el) => el.type === 'route' && el.routeType === 'evacuation')) {
-      missing.push('Tahliye rotasÄ±');
+      missing.push('Tahliye rotası');
     }
-    // Lejand kontrolÃ¼
+    // Lejand kontrolü
     if (!activeTemplateLayout && !elements.some((el) => el.type === 'symbol')) {
       missing.push('Lejand/sembol bilgisi');
     }
 
     if (missing.length > 0) {
-      toast.warning(`ISO kontrol uyarÄ±sÄ±: ${missing.join(', ')} eksik gÃ¶rÃ¼nÃ¼yor.`);
+      toast.warning(`ISO kontrol uyarısı: ${missing.join(', ')} eksik görünüyor.`);
     }
   };
 
@@ -366,9 +365,9 @@ export default function EditorApp() {
   // Show loading state while checking auth or loading project
   if (isLoading && !profile) {
     return (
-      <div className="flex items-center justify-center h-screen bg-slate-50">
-        <div className="animate-pulse text-slate-400 font-bold uppercase tracking-widest text-xs">
-          KullanÄ±cÄ± DoÄŸrulanÄ±yor...
+      <div className="flex items-center justify-center h-screen bg-surface-950 transition-colors">
+        <div className="animate-pulse text-surface-400 font-bold uppercase tracking-widest text-xs">
+          Kullanıcı Doğrulanıyor...
         </div>
       </div>
     );
@@ -376,7 +375,7 @@ export default function EditorApp() {
 
   return (
     <EditorErrorBoundary onReset={() => window.location.reload()}>
-      <div className="flex flex-col h-screen bg-slate-50 text-slate-200 font-sans overflow-hidden">
+      <div className="flex flex-col h-screen bg-surface-950 text-surface-200 font-sans overflow-hidden transition-colors">
         <EditorHeader
           projectId={projectId}
           isPreview={isPreview}
@@ -385,6 +384,8 @@ export default function EditorApp() {
           exportPdf={exportPdf}
           onOpenTemplateModal={() => setIsTemplateModalOpen(true)}
           onOpenExportModal={() => setIsExportModalOpen(true)}
+          mobileMenu={mobileMenu}
+          setMobileMenu={setMobileMenu}
         />
         <div className="flex flex-1 overflow-hidden relative">
           {!isPro && !isPreview && showUpgradeBanner && (
@@ -401,12 +402,12 @@ export default function EditorApp() {
                   </div>
                   <div className="flex flex-col items-start gap-0.5">
                     <span className="relative z-10">
-                      Plus&apos;a YÃ¼ksel: <span className="text-cyan-600">FiligransÄ±z Temiz Ã‡Ä±ktÄ± Al</span>
+                      Plus&apos;a Yüksel: <span className="text-cyan-600">Filigransız Temiz Çıktı Al</span>
                     </span>
                   </div>
                   <div className="h-8 w-px bg-slate-200 mx-2" />
                   <span className="px-4 py-2 bg-slate-900 text-white rounded-none text-[10px] font-black tracking-widest group-hover:bg-cyan-600 transition-colors relative flex items-center gap-2">
-                    Hemen BaÅŸla
+                    Hemen Başla
                     <div className="w-1 h-1 bg-cyan-400 animate-pulse rounded-full" />
                   </span>
                 </Link>
@@ -432,12 +433,7 @@ export default function EditorApp() {
             stageRef={stageRef}
             setContainerNode={handleContainerNode}
           />
-          {!isPreview && (
-            <EditorRightSidebar
-              mobileMenu={mobileMenu}
-              setMobileMenu={setMobileMenu}
-            />
-          )}
+
         </div>
 
         {isTemplateModalOpen && (

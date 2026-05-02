@@ -341,8 +341,11 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   const paperHeight = activeTemplateLayout && page ? page.height : 2000;
   
   const drawingRegion = activeTemplateLayout?.layout_json.regions.find(r => r.type === 'drawing');
-  const stageWidth = drawingRegion ? paperWidth * (drawingRegion.w / 100) : 2000;
-  const stageHeight = drawingRegion ? paperHeight * (drawingRegion.h / 100) : 2000;
+  // Subtract 12px (6px inset per side) to match the container CSS `calc(...% - 12px)`
+  // This ensures 1 Konva unit = 1 CSS pixel, eliminating coordinate distortion in editor and exports.
+  const REGION_INSET = 12;
+  const stageWidth = drawingRegion ? Math.round(paperWidth * (drawingRegion.w / 100) - REGION_INSET) : 2000;
+  const stageHeight = drawingRegion ? Math.round(paperHeight * (drawingRegion.h / 100) - REGION_INSET) : 2000;
 
 
   useEffect(() => {
@@ -1809,17 +1812,17 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                                 />
                               </div>
                               <div className="space-y-2">
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">BaÅŸlÄ±k Logosu</label>
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Başlık Logosu</label>
                                 {projectMetadata.logoUrl && (
                                   <div className="relative h-20 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={projectMetadata.logoUrl} alt="BaÅŸlÄ±k logosu" className="h-full w-full object-contain" />
+                                    <img src={projectMetadata.logoUrl} alt="Başlık logosu" className="h-full w-full object-contain" />
                                   </div>
                                 )}
                                 <div className="grid grid-cols-2 gap-2">
                                   <label className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 text-[10px] font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-100">
                                     <ImageUp className="h-4 w-4" />
-                                    {isLogoLoading ? 'YÃ¼kleniyor' : 'Logo SeÃ§'}
+                                    {isLogoLoading ? 'Yükleniyor' : 'Logo Seç'}
                                     <input
                                       type="file"
                                       accept="image/*"
@@ -1838,7 +1841,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                                     className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                                   >
                                     <Trash2 className="h-4 w-4" />
-                                    KaldÄ±r
+                                    Kaldır
                                   </button>
                                 </div>
                               </div>
@@ -2296,7 +2299,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                       transition: 'filter 0.3s ease-in-out'
                     }}
                   >
-                    <Layer>
+                    <Layer clipX={0} clipY={0} clipWidth={stageWidth} clipHeight={stageHeight}>
                       {/* Drawing Content - Transformable */}
                       <Group
                         scaleX={innerZoom}

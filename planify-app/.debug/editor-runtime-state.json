@@ -1,144 +1,64 @@
 {
   "elements": [
     {
-      "id": "140d0b44-2b31-49b2-b3d6-fa4e261b6d52",
+      "id": "0e5d3668-279b-421f-bb6c-bfc5fbd8a97c",
+      "type": "symbol",
+      "layerId": "default",
+      "x": 100,
+      "y": 250,
+      "symbolType": "E002"
+    },
+    {
+      "id": "f35230c7-5fc1-40ae-a375-c9b80d625fd6",
+      "type": "symbol",
+      "layerId": "default",
+      "x": 214.18962012150772,
+      "y": 270.7878040670577,
+      "symbolType": "E002"
+    },
+    {
+      "id": "bd7c3d27-5214-4022-8923-8d430330f235",
+      "type": "symbol",
+      "layerId": "default",
+      "x": 470.15570634562295,
+      "y": 411.0769226258393,
+      "symbolType": "E004"
+    },
+    {
+      "id": "0772966c-c45b-4a12-b813-ca45be13533a",
+      "type": "symbol",
+      "layerId": "default",
+      "x": 354.47872507126317,
+      "y": 278.17144188594096,
+      "symbolType": "E004"
+    },
+    {
+      "id": "f5b6eca4-07d5-4698-96ec-b32e3ac2fe4b",
       "type": "wall",
       "layerId": "default",
       "x": 0,
       "y": 0,
       "points": [
-        109.06772717471945,
-        427.65055194757883,
-        170.56772717471944,
-        427.65055194757883
+        182.7103675647481,
+        172.34837645580686,
+        398.2103675647481,
+        172.34837645580686
       ],
       "color": "#1e293b",
       "thickness": 12,
       "wallStyle": "hatch"
     },
     {
-      "id": "5a14fa66-4cc3-4c28-adc9-235c10bec292",
+      "id": "f9799109-4afe-4f29-90ca-f542e80f181a",
       "type": "wall",
       "layerId": "default",
       "x": 0,
       "y": 0,
       "points": [
-        200,
-        400,
-        300,
-        400
-      ],
-      "color": "#1e293b",
-      "thickness": 12,
-      "wallStyle": "hatch"
-    },
-    {
-      "id": "66552479-b605-4d70-84cb-9431fa5a00d9",
-      "type": "wall",
-      "layerId": "default",
-      "x": 0,
-      "y": 0,
-      "points": [
-        45.71127161946019,
-        271.09611044763005,
-        146.7112716194602,
-        271.09611044763005
-      ],
-      "color": "#1e293b",
-      "thickness": 12,
-      "wallStyle": "hatch"
-    },
-    {
-      "id": "a57dcc57-c696-44b0-a303-90679d34d0bf",
-      "type": "wall",
-      "layerId": "default",
-      "x": 0,
-      "y": 0,
-      "points": [
-        300,
-        200,
-        415.5,
-        200
-      ],
-      "color": "#1e293b",
-      "thickness": 12,
-      "wallStyle": "hatch"
-    },
-    {
-      "id": "af1c3339-bd3c-4a2d-94f5-05066656feff",
-      "type": "wall",
-      "layerId": "default",
-      "x": 0,
-      "y": 0,
-      "points": [
-        258.32370172816735,
-        131.41121910293666,
-        366.82370172816735,
-        131.41121910293666
-      ],
-      "color": "#1e293b",
-      "thickness": 12,
-      "wallStyle": "hatch"
-    },
-    {
-      "id": "eda82255-a158-45df-a8c6-2256a7290b95",
-      "type": "wall",
-      "layerId": "default",
-      "x": 0,
-      "y": 0,
-      "points": [
-        258.32370172816735,
-        131.41121910293666,
-        258.32370172816735,
-        270.9112191029367
-      ],
-      "color": "#1e293b",
-      "thickness": 12,
-      "wallStyle": "hatch"
-    },
-    {
-      "id": "6dcf39f0-d3d1-46ac-a8f6-d3d7b4ed19d4",
-      "type": "wall",
-      "layerId": "default",
-      "x": 0,
-      "y": 0,
-      "points": [
-        258.32370172816735,
-        270.9112191029367,
-        366.82370172816735,
-        270.9112191029367
-      ],
-      "color": "#1e293b",
-      "thickness": 12,
-      "wallStyle": "hatch"
-    },
-    {
-      "id": "37a46cb4-0d51-4658-ab85-17bbbfe93430",
-      "type": "wall",
-      "layerId": "default",
-      "x": 0,
-      "y": 0,
-      "points": [
-        366.82370172816735,
-        270.9112191029367,
-        366.82370172816735,
-        199.91121910293668
-      ],
-      "color": "#1e293b",
-      "thickness": 12,
-      "wallStyle": "hatch"
-    },
-    {
-      "id": "4e3675f0-f038-4bcd-8906-d7d90265175f",
-      "type": "wall",
-      "layerId": "default",
-      "x": 0,
-      "y": 0,
-      "points": [
-        366.82370172816735,
-        131.41121910293666,
-        366.82370172816735,
-        199.91121910293666
+        182.7103675647481,
+        172.34837645580686,
+        182.7103675647481,
+        336.34837645580683
       ],
       "color": "#1e293b",
       "thickness": 12,
@@ -161,35 +81,11 @@
   "projectTemplate": "wide-legend-a3-landscape",
   "templateLayoutId": "53c70e0f-2b72-4a1b-8575-0c461af284b3",
   "pagePreset": "Landscape",
-  "templateState": {
-    "header": {
-      "title": "ACİL DURUM TAHLİYE PLANI",
-      "body": "deneme",
-      "meta": "deneme",
-      "titleSize": 48,
-      "titleWeight": "normal",
-      "titleLetterSpacing": 5,
-      "titleLineHeight": 1.15,
-      "bodySize": 31,
-      "bodyLetterSpacing": 9,
-      "bodyLineHeight": 0.5,
-      "metaSize": 12,
-      "gap": 12,
-      "titleColor": "#065f46"
-    },
-    "instructions": {
-      "body": "1. Sakin kalın, paniğe kapılmayın.\n2. En yakın çıkışa yönelin.\n3. Toplanma alanına gidin.\n4. Asansör kullanmayın.\n5. DENEMEE\n6. DENEME\n7. DENEME\n8. DENEME\n",
-      "bodySize": 16
-    },
-    "fireInstruction": {
-      "body": "1. Fire alarm activate and warn everyone.\n2. Call fire department 110 immediately.\n3. Use nearest fire extinguisher.\n4. Stay low to avoid smoke inhalation.\n5. Do not use elevator, take stairs.\n6. Close windows and doors to stop spread.\n7. Go to assembly point and wait there.",
-      "bodySize": 11
-    }
-  },
+  "templateState": {},
   "projectMetadata": {
     "name": "PROJE DOSYASI",
     "author": "",
-    "date": "30.04.2026",
+    "date": "02.05.2026",
     "revision": "00",
     "floor": "",
     "scale": "100"
@@ -202,6 +98,6 @@
   "selectedIds": [],
   "invalidChildren": [],
   "invalidChildrenText": null,
-  "location": "http://localhost:3000/editor?id=16ffa331-4ce6-45de-b88e-3d0232fc9be3",
-  "capturedAt": "2026-04-30T13:08:00.510Z"
+  "location": "http://localhost:3000/editor?id=d05d2d9f-d8ec-41ba-84a5-b875662e6c17&template=panoramic-a3-a3-landscape",
+  "capturedAt": "2026-05-02T05:06:04.736Z"
 }

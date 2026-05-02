@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Check, Database, LayoutTemplate, Monitor, Smartphone, Sparkles, X,
   Lock, ShieldCheck, Building2, Wrench, Palette, Filter,
-  ArrowRight, AlertCircle, MapPin
+  ArrowRight, AlertCircle, MapPin, ChevronRight, Info
 } from 'lucide-react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { useProjectStore } from '@/store/useProjectStore';
@@ -20,123 +20,87 @@ interface TemplateSelectorModalProps {
 
 // ── Türkçe etiketler ve İkonlar ──────────────────────────────────────────────
 const CATEGORY_META: Record<string, { label: string; Icon: React.ElementType; color: string }> = {
-  TUMU: { label: 'Tüm Şablonlar', Icon: LayoutTemplate, color: 'text-blue-500' },
-  STANDART: { label: 'Standart ISO', Icon: ShieldCheck, color: 'text-emerald-500' },
-  TEKNİK: { label: 'Teknik CAD', Icon: Wrench, color: 'text-slate-600' },
-  KURUMSAL: { label: 'Kurumsal', Icon: Building2, color: 'text-slate-700' },
-  MİNİMAL: { label: 'Minimalist', Icon: Palette, color: 'text-emerald-500' },
-  ENDÜSTRİ: { label: 'Endüstriyel', Icon: Wrench, color: 'text-amber-600' },
-  SAHA: { label: 'Saha / Şantiye', Icon: MapPin, color: 'text-emerald-600' },
-  KAMU: { label: 'Kamu / Devlet', Icon: Building2, color: 'text-slate-800' },
-  GENEL: { label: 'Genel Amaçlı', Icon: LayoutTemplate, color: 'text-slate-500' },
-  PREMIUM: { label: 'Premium ISO', Icon: Sparkles, color: 'text-emerald-600' },
+  TUMU: { label: 'Tüm Koleksiyon', Icon: LayoutTemplate, color: 'text-primary-400' },
+  STANDART: { label: 'ISO Standartları', Icon: ShieldCheck, color: 'text-emerald-400' },
+  TEKNİK: { label: 'Teknik / CAD', Icon: Wrench, color: 'text-blue-400' },
+  KURUMSAL: { label: 'Kurumsal Kimlik', Icon: Building2, color: 'text-indigo-400' },
+  MİNİMAL: { label: 'Minimal Tasarım', Icon: Palette, color: 'text-rose-400' },
+  ENDÜSTRİ: { label: 'Endüstriyel Üretim', Icon: Wrench, color: 'text-amber-400' },
+  SAHA: { label: 'Saha Operasyonları', Icon: MapPin, color: 'text-orange-400' },
+  KAMU: { label: 'Kamu / Mevzuat', Icon: Building2, color: 'text-slate-400' },
+  GENEL: { label: 'Genel Kullanım', Icon: LayoutTemplate, color: 'text-surface-400' },
+  PREMIUM: { label: 'Premium Paket', Icon: Sparkles, color: 'text-primary-500' },
 };
 
 const PRESETS: { id: PagePreset; label: string; sub: string; Icon: React.ElementType }[] = [
-  { id: 'Landscape', label: 'Yatay', sub: 'Geniş format', Icon: Monitor },
-  { id: 'Portrait', label: 'Dikey', sub: 'Uzun format', Icon: Smartphone },
+  { id: 'Landscape', label: 'Yatay Görünüm', sub: 'Landscape', Icon: Monitor },
+  { id: 'Portrait', label: 'Dikey Görünüm', sub: 'Portrait', Icon: Smartphone },
 ];
 
-function TemplateThumbnail({ layout }: { layout: TemplateLayout }) {
+function TemplateThumbnail({ layout, isLarge = false }: { layout: TemplateLayout; isLarge?: boolean }) {
   const regions = layout.layout_json.regions || [];
 
   const toneStyle = (region: TemplateRegion): React.CSSProperties => {
-    // Premium color mapping matching TemplatePaperRenderer toneStyles
     const map: Record<string, { bg: string; border: string }> = {
-      green: { bg: '#059669', border: '#047857' }, // emerald-600
-      red: { bg: '#e11d48', border: '#be123c' }, // rose-600
-      blue: { bg: '#2563eb', border: '#1d4ed8' }, // blue-600
-      info: { bg: '#f8fafc', border: '#cbd5e1' }, // slate-50/300
-      neutral: { bg: '#ffffff', border: '#e2e8f0' },
-      paper: { bg: '#ffffff', border: '#cbd5e1' },
+      green: { bg: '#10b981', border: '#059669' }, 
+      red: { bg: '#ef4444', border: '#dc2626' }, 
+      blue: { bg: '#3b82f6', border: '#2563eb' }, 
+      info: { bg: '#252526', border: '#3c3c3c' }, 
+      neutral: { bg: '#1e1e1e', border: '#333333' },
+      paper: { bg: '#1e1e1e', border: '#333333' },
     };
 
     const style = map[region.tone ?? 'neutral'] ?? map.neutral;
 
-    if (region.type === 'header' || region.type === 'emergency' || region.type === 'instruction' || region.type === 'assembly' || region.type === 'drawing') {
-      if (region.type === 'drawing') return { background: '#ffffff', border: '1px dashed #0ea5e9', borderRadius: '2px' };
-      return {
-        background: style.bg,
-        borderColor: style.border,
-        color: 'white',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-      };
-    }
+    if (region.type === 'drawing') return { 
+        background: 'transparent', 
+        border: '1px dashed #404040', 
+        borderRadius: isLarge ? '4px' : '2px' 
+    };
 
     return {
       background: style.bg,
       borderColor: style.border,
-      borderLeftWidth: region.tone === 'neutral' ? 1 : 4
+      borderWidth: '1px',
     };
   };
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white aspect-video md:aspect-square group-hover:scale-105 transition-all duration-500 shadow-inner">
+    <div className={cn(
+        "relative overflow-hidden rounded border border-surface-600 bg-surface-950 transition-all duration-700",
+        isLarge ? "w-full h-full p-4" : "aspect-video"
+    )}>
       {/* Blueprint grid background */}
-      <div className="absolute inset-0 bg-[#f8fafc] opacity-40" style={{ backgroundImage: 'linear-gradient(#e2e8f0 0.5px, transparent 0.5px), linear-gradient(90deg, #e2e8f0 0.5px, transparent 0.5px)', backgroundSize: '10px 10px' }} />
+      <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px)', backgroundSize: isLarge ? '20px 20px' : '10px 10px' }} />
 
-      {regions.map((region) => (
-        <div
-          key={region.id}
-          className={cn(
-            "absolute border overflow-hidden transition-all",
-            region.type === 'header' ? "rounded-none" : "rounded-[4px]"
-          )}
-          style={{
-            left: `${region.x}%`,
-            top: `${region.y}%`,
-            width: `${region.w}%`,
-            height: `${region.h}%`,
-            ...toneStyle(region),
-          }}
-        >
-          {region.type === 'drawing' ? (
-            <div className="w-full h-full bg-white/60 flex items-center justify-center p-2">
-              <div className="w-full h-full border border-dashed border-slate-200 rounded flex items-center justify-center">
-                <div className="w-1/2 h-[1px] bg-slate-100 rotate-45 absolute" />
-                <div className="w-1/2 h-[1px] bg-slate-100 -rotate-45 absolute" />
-              </div>
+      <div className="relative w-full h-full">
+        {regions.map((region) => (
+            <div
+            key={region.id}
+            className={cn(
+                "absolute border transition-all flex items-center justify-center",
+                region.type === 'header' ? "rounded-none" : "rounded-sm"
+            )}
+            style={{
+                left: `${region.x}%`,
+                top: `${region.y}%`,
+                width: `${region.w}%`,
+                height: `${region.h}%`,
+                ...toneStyle(region),
+            }}
+            >
+            {region.type === 'drawing' && (
+                <div className="opacity-20 flex items-center justify-center w-full h-full">
+                    <LayoutTemplate className={isLarge ? "w-12 h-12" : "w-4 h-4"} />
+                </div>
+            )}
             </div>
-          ) : region.type === 'header' ? (
-            <div className="w-full h-full flex items-center px-[8%] gap-[10%] relative">
-              {/* Mini Logo Box */}
-              <div className="h-[50%] aspect-square bg-white/20 rounded-sm border border-white/30" />
-              {/* Mini Title Lines */}
-              <div className="flex-1 flex flex-col gap-[15%]">
-                <div className="h-[15%] w-full bg-white/50 rounded-full" />
-                <div className="h-[8%] w-[60%] bg-white/30 rounded-full mx-auto" />
-              </div>
-              {/* Mini Meta info */}
-              <div className="h-[40%] w-[15%] border-l border-white/20 pl-2 hidden sm:flex flex-col justify-center gap-1">
-                <div className="h-[4px] w-full bg-white/20 rounded-full" />
-                <div className="h-[4px] w-[60%] bg-white/20 rounded-full" />
-              </div>
-            </div>
-          ) : (
-            <div className="p-[8%] space-y-[10%] h-full flex flex-col">
-              {/* Region Label Line */}
-              <div className={cn(
-                "h-[12%] w-[60%] rounded-full shrink-0",
-                ['green', 'red', 'blue'].includes(region.tone || '') ? "bg-white/40" : "bg-slate-200"
-              )} />
-              {/* Dummy content lines */}
-              <div className="flex-1 space-y-[8%] opacity-20">
-                {[80, 65, 75].map((w, i) => (
-                  <div key={i} className={cn(
-                    "h-[6%] rounded-full",
-                    ['green', 'red', 'blue'].includes(region.tone || '') ? "bg-white" : "bg-slate-300"
-                  )} style={{ width: `${w}%` }} />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
 
-// ── Ana modal ─────────────────────────────────────────────────────────────────
 export function TemplateSelectorModal({
   isOpen,
   onClose,
@@ -152,7 +116,7 @@ export function TemplateSelectorModal({
     setProjectTemplate,
   } = useEditorStore();
   const { templateLayouts, fetchTemplateLayouts } = useProjectStore();
-  const isPro = true; // Force all users to be treated as Pro for templates
+  const isPro = true;
 
   const [activeCategory, setActiveCategory] = useState('TUMU');
   const [localSelectedLayout, setLocalSelectedLayout] = useState<TemplateLayout | null>(
@@ -168,7 +132,6 @@ export function TemplateSelectorModal({
     const raw = (templateLayouts && templateLayouts.length > 0) ? templateLayouts : FALLBACK_TEMPLATE_LAYOUTS;
     return raw.map(l => ({
       ...normalizeTemplateLayout(l),
-      // Normalize preset for comparison
       normalizedPreset: normalizePagePreset(l.page_preset).toLowerCase()
     }));
   }, [templateLayouts]);
@@ -184,14 +147,10 @@ export function TemplateSelectorModal({
 
   const visibleLayouts = useMemo(() => {
     return layouts.filter((layout) => {
-      // Kategori filtresi
       const categoryMatch = activeCategory === 'TUMU' || layout.category?.toUpperCase() === activeCategory.toUpperCase();
-
-      // Sayfa yönü filtresi
       const lp = layout.normalizedPreset;
       const cp = localPagePreset.toLowerCase();
       const presetMatch = lp === cp || lp.includes(cp) || cp.includes(lp);
-
       return categoryMatch && presetMatch;
     });
   }, [layouts, activeCategory, localPagePreset]);
@@ -199,8 +158,6 @@ export function TemplateSelectorModal({
   if (!isOpen) return null;
 
   const handleApply = () => {
-    // Pro check removed - all users can apply
-
     if (onSelect) {
       onSelect(localSelectedLayout, localPagePreset);
     } else {
@@ -216,290 +173,237 @@ export function TemplateSelectorModal({
     onClose();
   };
 
-  const isSelectionPro = localSelectedLayout?.is_pro && !isPro;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center bg-slate-950/80 p-0 sm:p-4 backdrop-blur-xl animate-fade-in">
-      <div className="flex h-[95vh] sm:h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-t-[32px] sm:rounded-[32px] bg-white shadow-2xl border border-white/20 animate-scale-in">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-surface-950/80 backdrop-blur-xl animate-fade-in p-4">
+      
+      {/* ── Main Container ── */}
+      <div className="relative w-full max-w-7xl h-[85vh] bg-surface-950 rounded-xl border border-surface-600 shadow-[0_32px_80px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col animate-scale-in">
+        
+        {/* Glow Effects */}
+        <div className="absolute top-0 left-1/4 w-1/2 h-1 bg-gradient-to-r from-transparent via-primary-500/50 to-transparent" />
+        <div className="absolute -top-24 -left-24 w-64 h-64 bg-primary-500/10 rounded-full blur-[100px] pointer-events-none" />
 
-        {/* ── Başlık çubuğu ── */}
-        <div className="flex-shrink-0 flex items-center justify-between border-b border-slate-100 px-8 py-5 bg-white">
+        {/* ── Header ── */}
+        <div className="flex-shrink-0 flex items-center justify-between px-8 h-20 border-b border-surface-600 bg-surface-900/50">
+          <div className="flex items-center gap-5">
+            <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center shadow-lg shadow-primary-500/20">
+              <LayoutTemplate className="w-5 h-5 text-white" />
+            </div>
+            <div>
+                <h2 className="text-xl font-medium text-surface-100 tracking-tight">Şablon Galerisi</h2>
+                <p className="text-[10px] font-bold text-surface-500 uppercase tracking-[0.2em] mt-0.5">Profesyonel Denetim Standartları</p>
+            </div>
+          </div>
+
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-xl shadow-emerald-500/20">
-              <LayoutTemplate className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-black text-slate-900 tracking-tight">Proje Şablonları</h2>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">ISO 23601 & ISO 7010</span>
-                <div className="h-1 w-1 rounded-full bg-slate-200" />
-                <span className="text-[11px] text-emerald-600 font-bold uppercase tracking-widest">Profesyonel Tasarımlar</span>
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 border border-slate-100 text-slate-400 transition-all hover:bg-red-50 hover:text-red-500 hover:border-red-100 active:scale-90"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* ── İçerik alanı ── */}
-        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[240px_1fr_320px]">
-
-          {/* Sol: Filtreler ve Kategoriler */}
-          <div className="hidden lg:flex flex-col border-r border-slate-100 p-5 bg-slate-50/50 overflow-y-auto custom-scrollbar">
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4 px-2">
-                <Monitor className="w-3.5 h-3.5 text-slate-400" />
-                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Görünüm</h3>
-              </div>
-              <div className="grid grid-cols-1 gap-2">
-                {PRESETS.map(({ id, label, sub, Icon }) => (
-                  <button
-                    key={id}
-                    onClick={() => {
-                      const targetPreset = id.toLowerCase();
-                      setLocalPagePreset(id);
-                      if (localSelectedLayout) {
-                        const style = localSelectedLayout.layout_json.style;
-                        const next = layouts.find(l =>
-                          l.layout_json.style === style &&
-                          l.normalizedPreset === targetPreset
-                        );
-                        if (next) setLocalSelectedLayout(next);
-                      }
-                    }}
-                    className={cn(
-                      'group flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all',
-                      localPagePreset === id
-                        ? 'border-emerald-600 bg-white text-emerald-700 shadow-lg shadow-emerald-500/10'
-                        : 'border-transparent bg-white/50 text-slate-500 hover:bg-white hover:border-slate-200'
-                    )}
-                  >
-                    <Icon className={cn('h-5 w-5 shrink-0 transition-colors', localPagePreset === id ? 'text-emerald-600' : 'text-slate-400')} />
-                    <div>
-                      <div className="text-[11px] font-black uppercase tracking-tight">{label}</div>
-                      <div className="text-[9px] font-bold opacity-60 uppercase">{sub}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2 mb-4 px-2">
-                <Filter className="w-3.5 h-3.5 text-slate-400" />
-                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Kategoriler</h3>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                {categories.map((cat) => {
-                  const upperCat = cat.toUpperCase();
-                  const meta = CATEGORY_META[upperCat] || CATEGORY_META[cat] || { label: cat, Icon: LayoutTemplate, color: 'text-slate-500' };
-                  const Icon = meta.Icon;
-                  return (
+            {/* View Toggle */}
+            <div className="flex bg-surface-950 border border-surface-600 rounded p-1">
+                {PRESETS.map((p) => (
                     <button
-                      key={cat}
-                      onClick={() => setActiveCategory(cat)}
-                      className={cn(
-                        'flex items-center justify-between rounded-xl px-3.5 py-3 text-xs font-bold transition-all group',
-                        activeCategory === cat
-                          ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20 translate-x-1'
-                          : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                      )}
+                        key={p.id}
+                        onClick={() => setLocalPagePreset(p.id)}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-1.5 rounded text-[10px] font-bold uppercase tracking-widest transition-all",
+                            localPagePreset === p.id 
+                            ? "bg-surface-800 text-primary-500 shadow-sm" 
+                            : "text-surface-500 hover:text-surface-300"
+                        )}
                     >
-                      <div className="flex items-center gap-3">
-                        <Icon className={cn('h-4 w-4', activeCategory === cat ? 'text-white' : meta.color)} />
-                        {meta.label}
-                      </div>
-                      {activeCategory === cat && <Check className="h-3.5 w-3.5" />}
+                        <p.Icon className="w-3.5 h-3.5" />
+                        {p.label}
                     </button>
-                  );
-                })}
-              </div>
+                ))}
             </div>
 
-            {/* Pro Plan upgrade card removed */}
+            <div className="w-[1px] h-6 bg-surface-600 mx-2" />
+
+            <button 
+              onClick={onClose}
+              className="p-2 text-surface-400 hover:text-surface-100 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
-
-          {/* Orta: şablon listesi */}
-          <div className="min-h-0 overflow-y-auto p-8 bg-slate-50/30 custom-scrollbar">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-
-              {/* Boş şablon */}
-              <button
-                onClick={() => setLocalSelectedLayout(null)}
-                className={cn(
-                  'group flex flex-col rounded-[24px] border-2 p-4 text-left transition-all duration-300',
-                  !localSelectedLayout
-                    ? 'border-indigo-600 bg-white ring-8 ring-indigo-500/5 shadow-2xl shadow-indigo-500/10'
-                    : 'border-white bg-white hover:border-indigo-200 shadow-sm hover:shadow-xl hover:-translate-y-1'
-                )}
-              >
-                <div className="mb-4 aspect-[4/3] rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50 flex items-center justify-center overflow-hidden transition-colors group-hover:bg-indigo-50/50">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm text-slate-300 group-hover:text-emerald-400 group-hover:border-emerald-100 transition-all">
-                      <Database className="w-6 h-6" />
-                    </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-emerald-500 transition-colors">Temiz Sayfa</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-black text-slate-900">Şablonsuz (Blank)</h4>
-                  {!localSelectedLayout && <Check className="h-4 w-4 text-emerald-600" />}
-                </div>
-                <p className="text-[11px] text-slate-500 mt-2 line-clamp-2 leading-relaxed">Sıfırdan tasarıma başlamak için tamamen boş bir çalışma alanı.</p>
-              </button>
-
-              {/* Şablonlar */}
-              {visibleLayouts.map((layout) => {
-                const isSelected = localSelectedLayout?.id === layout.id;
-                return (
-                  <button
-                    key={layout.id}
-                    onClick={() => setLocalSelectedLayout(layout)}
-                    className={cn(
-                      'group flex flex-col rounded-[24px] border-2 p-4 text-left transition-all duration-300',
-                      isSelected
-                        ? 'border-emerald-600 bg-white ring-8 ring-emerald-500/5 shadow-2xl shadow-emerald-500/10'
-                        : 'border-white bg-white hover:border-emerald-200 shadow-sm hover:shadow-xl hover:-translate-y-1'
-                    )}
-                  >
-                    <div className="mb-4 aspect-[4/3] relative rounded-2xl overflow-hidden shadow-inner bg-slate-100">
-                      <TemplateThumbnail layout={layout} />
-
-                      {/* Pro Badge */}
-                      {/* Pro Badge removed */}
-
-                      {isSelected && (
-                        <div className="absolute inset-0 bg-emerald-600/5 flex items-center justify-center backdrop-blur-[1px]">
-                          <div className="bg-emerald-600 text-white p-2 rounded-full shadow-xl translate-y-0 opacity-100 transition-all scale-110">
-                            <Check className="h-5 w-5" />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className="text-sm font-black text-slate-900 truncate">{cleanName(layout.name)}</h4>
-                      {isSelected && <Check className="h-4 w-4 text-emerald-600 shrink-0" />}
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-2 line-clamp-2 leading-relaxed">{layout.description}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Sağ: Bilgi ve Önizleme Paneli */}
-          <aside className="hidden lg:flex flex-col border-l border-slate-100 bg-white p-6 overflow-y-auto custom-scrollbar">
-            <div className="flex-1 space-y-10">
-              {/* Önizleme Başlığı */}
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Şablon Detayı</h3>
-                  {/* PREMIUM badge removed */}
-                </div>
-
-                <div className="space-y-6">
-                  <div className="aspect-video md:aspect-square rounded-[24px] border border-slate-200 bg-slate-50 shadow-inner overflow-hidden p-3 group relative">
-                    {localSelectedLayout ? (
-                      <>
-                        <TemplateThumbnail layout={localSelectedLayout} />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </>
-                    ) : (
-                      <div className="w-full h-full border-2 border-dashed border-slate-200 bg-white flex flex-col items-center justify-center text-slate-300 gap-4">
-                        <AlertCircle className="w-10 h-10 opacity-20" />
-                        <span className="text-xs font-black uppercase tracking-widest opacity-40">Seçim Yapılmadı</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-900 leading-tight tracking-tight">
-                      {localSelectedLayout ? cleanName(localSelectedLayout.name) : 'Şablonsuz (Blank)'}
-                    </h2>
-                    <p className="text-sm text-slate-500 mt-4 leading-relaxed font-medium">
-                      {localSelectedLayout?.description ?? 'Kağıt anteti ve lejand blokları olmadan, tamamen serbest bir çalışma alanı sağlar. Mevcut çizimleriniz etkilenmez.'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Teknik Detaylar */}
-              {localSelectedLayout && (
-                <div className="space-y-6">
-                  <div className="flex flex-wrap gap-2">
-                    {localSelectedLayout.compliance_tags.map(tag => (
-                      <span key={tag} className="px-3 py-1.5 rounded-xl bg-slate-50 text-slate-600 text-[10px] font-black border border-slate-100 shadow-sm">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="space-y-3">
-                    {[
-                      { label: 'Format', value: 'ISO A3 Standard' },
-                      { label: 'Dinamik Blok', value: `${localSelectedLayout.layout_json.regions.length} Bölge` },
-                      { label: 'Sayfa Yönü', value: localPagePreset === 'Landscape' ? 'Yatay' : 'Dikey' },
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center p-3 rounded-2xl bg-slate-50/50 border border-slate-100">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{item.label}</span>
-                        <span className="text-xs text-slate-900 font-black">{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Pro Subscription required notice removed */}
-            </div>
-
-            {/* Aksiyon Butonu */}
-            <div className="mt-10 pt-8 border-t border-slate-100">
-              <button
-                onClick={handleApply}
-                disabled={isSelectionPro}
-                className={cn(
-                  "w-full group relative overflow-hidden rounded-[20px] py-5 text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-2xl",
-                  isSelectionPro
-                    ? "bg-slate-100 text-slate-400 cursor-not-allowed shadow-none"
-                    : "bg-slate-900 text-white hover:bg-slate-800 hover:-translate-y-1 shadow-slate-900/10"
-                )}
-              >
-                <div className="relative z-10 flex items-center justify-center gap-3">
-                  {isSelectionPro ? <Lock className="w-4 h-4" /> : <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />}
-                  {isSelectionPro ? 'KİLİTLİ ŞABLON' : 'ŞABLONU UYGULA'}
-                </div>
-                {!isSelectionPro && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-700 opacity-0 group-hover:opacity-100 transition-opacity" />
-                )}
-              </button>
-            </div>
-          </aside>
         </div>
 
-        {/* Mobile Action Bar */}
-        <div className="lg:hidden p-6 border-t border-slate-100 bg-white">
-            <button
-              onClick={handleApply}
-              disabled={isSelectionPro}
-              className={cn(
-                "w-full group relative overflow-hidden rounded-[20px] py-5 text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl",
-                isSelectionPro
-                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                  : "bg-slate-900 text-white hover:bg-slate-800"
-              )}
-            >
-              <div className="relative z-10 flex items-center justify-center gap-3">
-                {isSelectionPro ? <Lock className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-                {isSelectionPro ? 'KİLİTLİ ŞABLON' : 'ŞABLONU UYGULA'}
-              </div>
-              {!isSelectionPro && (
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-700 opacity-0 active:opacity-100 transition-opacity" />
-              )}
-            </button>
+        {/* ── Content ── */}
+        <div className="flex-1 flex min-h-0">
+          
+          {/* Left Sidebar: Categories */}
+          <div className="w-64 border-r border-surface-600 bg-surface-900/30 overflow-y-auto custom-scrollbar p-6 space-y-8">
+            <div>
+                <h3 className="text-[10px] font-bold text-surface-500 uppercase tracking-[0.2em] mb-4 ml-2">Kategoriler</h3>
+                <div className="space-y-1">
+                    {categories.map((cat) => {
+                        const meta = CATEGORY_META[cat.toUpperCase()] || { label: cat, Icon: LayoutTemplate, color: 'text-surface-500' };
+                        const isActive = activeCategory === cat;
+                        return (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveCategory(cat)}
+                                className={cn(
+                                    "w-full flex items-center justify-between px-3 py-2.5 rounded text-xs font-medium transition-all group",
+                                    isActive 
+                                    ? "bg-surface-800 text-surface-100 shadow-sm border border-surface-600" 
+                                    : "text-surface-400 hover:bg-surface-800/50 hover:text-surface-200"
+                                )}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <meta.Icon className={cn("w-4 h-4 transition-colors", isActive ? meta.color : "text-surface-600 group-hover:text-surface-400")} />
+                                    {meta.label}
+                                </div>
+                                {isActive && <ChevronRight className="w-3.5 h-3.5 text-primary-500" />}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div className="p-4 bg-surface-950/50 border border-surface-600 rounded-lg space-y-3">
+                <div className="flex items-center gap-2">
+                    <Info className="w-3.5 h-3.5 text-primary-500" />
+                    <span className="text-[10px] font-bold text-surface-200 uppercase tracking-widest">Bilgi</span>
+                </div>
+                <p className="text-[10px] leading-relaxed text-surface-500 font-medium">
+                    Tüm şablonlar ISO 23601 ve ISO 7010 standartlarına %100 uyumlu olarak tasarlanmıştır.
+                </p>
+            </div>
+          </div>
+
+          {/* Main Grid */}
+          <div className="flex-1 bg-surface-950 overflow-y-auto custom-scrollbar p-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                
+                {/* Blank Template */}
+                <button
+                    onClick={() => setLocalSelectedLayout(null)}
+                    className={cn(
+                        "group relative aspect-[4/3] rounded-xl border p-2 transition-all duration-500 flex flex-col",
+                        !localSelectedLayout 
+                        ? "border-primary-500 bg-surface-900 shadow-[0_0_40px_rgba(0,122,204,0.1)]" 
+                        : "border-surface-600 bg-surface-900/50 hover:border-surface-400 hover:bg-surface-900"
+                    )}
+                >
+                    <div className="flex-1 rounded-lg bg-surface-950 border border-surface-700 flex flex-col items-center justify-center gap-4 group-hover:border-primary-500/30 transition-colors">
+                        <div className="w-14 h-14 rounded-full bg-surface-900 border border-surface-600 flex items-center justify-center text-surface-500 group-hover:text-primary-500 transition-colors shadow-inner">
+                            <Database className="w-7 h-7" />
+                        </div>
+                        <span className="text-[10px] font-bold text-surface-500 uppercase tracking-[0.2em]">Boş Tuval</span>
+                    </div>
+                    <div className="h-14 flex items-center justify-between px-3">
+                        <div>
+                            <p className="text-xs font-bold text-surface-100">Blank Project</p>
+                            <p className="text-[9px] font-bold text-surface-500 uppercase">Sıfırdan Tasarım</p>
+                        </div>
+                        {!localSelectedLayout && <div className="w-5 h-5 bg-primary-500 rounded-full flex items-center justify-center shadow-lg"><Check className="w-3 h-3 text-white" /></div>}
+                    </div>
+                </button>
+
+                {/* Real Templates */}
+                {visibleLayouts.map((layout) => {
+                    const isSelected = localSelectedLayout?.id === layout.id;
+                    return (
+                        <button
+                            key={layout.id}
+                            onClick={() => setLocalSelectedLayout(layout)}
+                            className={cn(
+                                "group relative aspect-[4/3] rounded-xl border p-2 transition-all duration-500 flex flex-col",
+                                isSelected 
+                                ? "border-primary-500 bg-surface-900 shadow-[0_0_40px_rgba(0,122,204,0.15)] scale-[1.02]" 
+                                : "border-surface-600 bg-surface-900/50 hover:border-surface-400 hover:bg-surface-900 hover:-translate-y-1"
+                            )}
+                        >
+                            <div className="flex-1 rounded-lg overflow-hidden border border-surface-700 bg-surface-950">
+                                <TemplateThumbnail layout={layout} />
+                            </div>
+                            <div className="h-14 flex items-center justify-between px-3">
+                                <div className="text-left">
+                                    <p className="text-xs font-bold text-surface-100 truncate max-w-[150px]">{cleanName(layout.name)}</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-[9px] font-bold text-primary-500 uppercase">{layout.category}</p>
+                                        <div className="w-1 h-1 rounded-full bg-surface-600" />
+                                        <p className="text-[9px] font-bold text-surface-500 uppercase">{layout.layout_json.regions.length} Bölge</p>
+                                    </div>
+                                </div>
+                                {isSelected && <div className="w-5 h-5 bg-primary-500 rounded-full flex items-center justify-center shadow-lg"><Check className="w-3 h-3 text-white" /></div>}
+                            </div>
+
+                            {/* Hover info overlay */}
+                            <div className="absolute inset-x-2 top-2 h-1 bg-primary-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                    );
+                })}
+            </div>
+          </div>
+
+          {/* Right Panel: Preview & Details */}
+          <div className="w-80 border-l border-surface-600 bg-surface-900/50 flex flex-col">
+            <div className="flex-1 p-8 space-y-10 overflow-y-auto custom-scrollbar">
+                
+                <div className="space-y-6">
+                    <h3 className="text-[10px] font-bold text-surface-500 uppercase tracking-[0.2em]">Önizleme</h3>
+                    <div className="aspect-square rounded-xl bg-surface-950 border border-surface-600 p-2 shadow-2xl relative overflow-hidden group">
+                        {localSelectedLayout ? (
+                            <TemplateThumbnail layout={localSelectedLayout} isLarge />
+                        ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-surface-700">
+                                <Database className="w-12 h-12 opacity-10 mb-4" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-20">Boş Tuval</span>
+                            </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-surface-950 via-transparent to-transparent opacity-40" />
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <h2 className="text-xl font-medium text-surface-100 leading-tight">
+                        {localSelectedLayout ? cleanName(localSelectedLayout.name) : 'Şablonsuz Proje'}
+                    </h2>
+                    <p className="text-xs leading-relaxed text-surface-400 font-medium">
+                        {localSelectedLayout?.description ?? 'Sıfırdan tasarıma başlamak için tamamen boş bir çalışma alanı sağlar.'}
+                    </p>
+                </div>
+
+                {localSelectedLayout && (
+                    <div className="space-y-6">
+                         <div className="flex flex-wrap gap-2">
+                            {localSelectedLayout.compliance_tags.map(tag => (
+                                <span key={tag} className="px-2.5 py-1 rounded bg-surface-800 text-surface-300 text-[9px] font-bold border border-surface-600">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+
+                        <div className="space-y-2">
+                            {[
+                                { label: 'Standart', value: 'ISO 23601' },
+                                { label: 'Yönlendirme', value: localPagePreset === 'Landscape' ? 'Yatay' : 'Dikey' },
+                                { label: 'Bileşenler', value: `${localSelectedLayout.layout_json.regions.length} Dinamik Blok` },
+                            ].map((item, i) => (
+                                <div key={i} className="flex justify-between items-center py-2 border-b border-surface-800">
+                                    <span className="text-[10px] font-bold text-surface-500 uppercase">{item.label}</span>
+                                    <span className="text-[11px] font-medium text-surface-200">{item.value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Action Bar */}
+            <div className="p-8 border-t border-surface-600 bg-surface-900">
+                <button
+                    onClick={handleApply}
+                    className="w-full group relative flex items-center justify-center gap-3 bg-primary-500 hover:bg-primary-400 text-white py-4 rounded-lg text-[10px] font-bold uppercase tracking-[0.2em] transition-all shadow-[0_20px_40px_rgba(0,122,204,0.3)] active:scale-95"
+                >
+                    Şablonu Seç ve Başla
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    
+                    {/* Inner border glow */}
+                    <div className="absolute inset-0 rounded-lg border border-white/20 pointer-events-none" />
+                </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -30,8 +30,8 @@ export default function ArchivePage() {
 
 function ArchiveLoading() {
   return (
-    <div className="flex justify-center py-24 bg-white border border-slate-200 rounded-lg">
-      <Loader2 className="w-8 h-8 text-slate-500 animate-spin" />
+    <div className="flex justify-center py-24 bg-surface-900 border border-surface-600 rounded-lg">
+      <Loader2 className="w-8 h-8 text-surface-400 animate-spin" />
     </div>
   );
 }
@@ -181,16 +181,16 @@ function ArchivePortal() {
   return (
     <>
       <div className="space-y-6 animate-fade-in font-sans">
-        <section className="bg-white border border-slate-200 rounded-lg p-6 lg:p-7">
+        <section className="bg-surface-900 border border-surface-600 rounded-lg p-6 lg:p-7">
           <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-surface-400">
                 Denetim Merkezi / Arşiv
               </p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
+              <h1 className="mt-2 text-3xl font-medium tracking-tight text-surface-200">
                 Tahliye Planı Arşivi
               </h1>
-              <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-500">
+              <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-surface-400">
                 Kullanıcıya ait tüm tahliye planlarını, denetim durumlarını, son çıktı kayıtlarını
                 ve proje kimlik bilgilerini geniş arşiv görünümünde yönetin.
               </p>
@@ -199,7 +199,7 @@ function ArchivePortal() {
             <button
               onClick={handleStartCreation}
               disabled={isCreating}
-              className="h-11 px-5 bg-slate-950 text-white text-xs font-black uppercase tracking-widest hover:bg-slate-800 disabled:opacity-50 xl:self-start"
+              className="h-11 px-5 bg-primary-500 text-white text-xs font-bold uppercase tracking-widest hover:bg-primary-600 rounded disabled:opacity-50 xl:self-start transition-colors"
             >
               Yeni Denetim Dosyası
             </button>
@@ -268,18 +268,18 @@ function ArchiveMetric({
   tone?: 'default' | 'success' | 'warning';
 }) {
   const toneClass = tone === 'success'
-    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
     : tone === 'warning'
-      ? 'bg-amber-50 text-amber-700 border-amber-200'
-      : 'bg-slate-50 text-slate-700 border-slate-200';
+      ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+      : 'bg-surface-800 text-surface-300 border-surface-600';
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-4">
-      <div className={`w-10 h-10 border rounded-lg flex items-center justify-center ${toneClass}`}>
+    <div className="bg-surface-900 border border-surface-600 rounded-lg p-4">
+      <div className={`w-10 h-10 border rounded flex items-center justify-center ${toneClass}`}>
         {icon}
       </div>
-      <p className="mt-4 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-black text-slate-950">{value}</p>
+      <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-surface-400">{label}</p>
+      <p className="mt-1 text-2xl font-medium text-surface-200">{value}</p>
     </div>
   );
 }

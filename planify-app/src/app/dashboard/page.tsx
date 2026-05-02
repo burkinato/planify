@@ -23,7 +23,7 @@ const DEFAULT_DRAFT: ProjectCreationDraft = {
 export default function DashboardPage() {
   return (
     <Suspense fallback={<DashboardLoading />}>
-      <div className="min-h-screen bg-[#fcfdfe]">
+      <div className="min-h-screen bg-surface-950 transition-colors">
         <DashboardPortal />
       </div>
     </Suspense>
@@ -33,10 +33,10 @@ export default function DashboardPage() {
 function DashboardLoading() {
   return (
     <div className="flex flex-col items-center justify-center py-48 space-y-4">
-      <div className="w-16 h-16 bg-white rounded-[32px] shadow-xl flex items-center justify-center border border-slate-50">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      <div className="w-16 h-16 bg-surface-900 rounded-lg shadow-xl flex items-center justify-center border border-surface-600">
+        <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
       </div>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Portal Yükleniyor</p>
+      <p className="text-[10px] font-bold text-surface-400 uppercase tracking-[0.2em]">Portal Yükleniyor</p>
     </div>
   );
 }
@@ -180,12 +180,12 @@ function DashboardPortal() {
         {/* Top Search Area Only */}
         <div className="flex justify-end">
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 group-focus-within:text-primary-500 transition-colors" />
             <input
               value={searchTerm}
               onChange={(event) => handleSearchChange(event.target.value)}
               placeholder="Dosya veya tesis ara..."
-              className="w-full sm:w-80 h-14 pl-12 pr-6 bg-white/60 backdrop-blur-xl border border-white rounded-[24px] text-xs font-black text-slate-900 outline-none focus:bg-white focus:ring-8 focus:ring-slate-900/5 transition-all shadow-sm"
+              className="w-full sm:w-80 h-12 pl-12 pr-6 bg-surface-900 border border-surface-600 rounded text-xs font-medium text-surface-200 outline-none focus:bg-surface-800 focus:border-primary-500 transition-all shadow-sm"
             />
           </div>
         </div>

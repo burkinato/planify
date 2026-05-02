@@ -42,12 +42,12 @@ function ToolButton({
       className={cn(
         "flex items-center gap-2 p-2 rounded-lg text-xs font-bold transition-all duration-200 border",
         active
-          ? "tool-active border-transparent"
+          ? "bg-primary-500/20 border-primary-500 text-primary-400"
           : variant === 'green'
             ? "border-safety-green/20 text-safety-green/80 hover:bg-safety-green/10 hover:border-safety-green/40"
             : variant === 'red'
               ? "border-safety-red/20 text-safety-red/80 hover:bg-safety-red/10 hover:border-safety-red/40"
-              : "border-slate-200/50 text-slate-600 hover:bg-slate-100/50 hover:border-slate-300 hover:text-slate-800"
+              : "border-surface-600 text-surface-300 hover:bg-surface-800 hover:border-surface-500 hover:text-surface-200"
       )}
     >
       <Icon className="w-3.5 h-3.5" />
@@ -60,7 +60,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
   const [activeTab, setActiveTab] = useState<'tools' | 'library'>('tools');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const { tool, setTool, selectedSymbol, setSelectedSymbol, clearAll, customSymbols, addCustomSymbol, addElement, focusedRegionId, recentTools } = useEditorStore();
+  const { tool, setTool, selectedSymbol, setSelectedSymbol, clearAll, customSymbols, addCustomSymbol, addElement, focusedRegionId } = useEditorStore();
   const { updateProject } = useProjectStore();
   const { isPro } = useProAccess();
 
@@ -128,7 +128,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
 
   return (
     <aside className={cn(
-      "fixed md:static inset-y-0 left-0 bg-white border-slate-200 border-r flex flex-col z-30 md:z-10 shadow-2xl transition-all duration-300 overflow-hidden",
+      "fixed md:static inset-y-0 left-0 bg-surface-900 border-surface-600 border-r flex flex-col z-30 md:z-10 shadow-2xl transition-all duration-300 overflow-hidden",
       mobileMenu === 'tools' ? "translate-x-0" : "-translate-x-full md:translate-x-0",
       focusedRegionId && focusedRegionId !== 'drawing' ? "w-0 border-r-0 opacity-0 pointer-events-none" : "w-56 opacity-100"
     )}>
@@ -136,39 +136,39 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
       {showClearConfirm && (
         <>
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]" onClick={() => setShowClearConfirm(false)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white border-slate-200 rounded-2xl shadow-2xl z-[70] p-6 border border-white/10 animate-fade-in">
-            <h3 className="font-bold text-slate-800 text-sm mb-2">Tuvali Temizle</h3>
-            <p className="text-xs text-slate-600 mb-6">Tüm katmanlardaki bütün nesneleri silmek istediğinizden emin misiniz?</p>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-surface-900 border-surface-600 rounded-md shadow-2xl z-[70] p-6 border animate-fade-in">
+            <h3 className="font-bold text-surface-200 text-sm mb-2">Tuvali Temizle</h3>
+            <p className="text-xs text-surface-400 mb-6">Tüm katmanlardaki bütün nesneleri silmek istediğinizden emin misiniz?</p>
             <div className="flex gap-3">
-              <button onClick={() => setShowClearConfirm(false)} className="flex-1 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-all">İptal</button>
-              <button onClick={() => { clearAll(); setShowClearConfirm(false); }} className="flex-1 py-2.5 text-xs font-bold bg-safety-red text-white rounded-xl hover:bg-safety-red/80 transition-all">Temizle</button>
+              <button onClick={() => setShowClearConfirm(false)} className="flex-1 py-2.5 text-xs font-bold text-surface-300 hover:bg-surface-800 rounded-md transition-all border border-surface-600">İptal</button>
+              <button onClick={() => { clearAll(); setShowClearConfirm(false); }} className="flex-1 py-2.5 text-xs font-bold bg-safety-red text-white rounded-md hover:bg-safety-red/80 transition-all border border-safety-red">Temizle</button>
             </div>
           </div>
         </>
       )}
 
       {/* Logo */}
-      <div className="p-4 border-b border-slate-200 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-600 flex justify-between items-center bg-surface-950">
         <div>
-          <h1 className="text-base font-black tracking-tight text-slate-800">
-            Planify {isPro && <span className="text-accent-emerald font-medium text-xs ml-1">Pro</span>}
+          <h1 className="text-base font-black tracking-tight text-surface-200">
+            Planify {isPro && <span className="text-primary-500 font-medium text-xs ml-1">Pro</span>}
           </h1>
-          <p className="text-[9px] text-slate-500 uppercase tracking-[0.2em] mt-0.5 font-bold">Tahliye Planı Editörü</p>
+          <p className="text-[9px] text-surface-400 uppercase tracking-[0.2em] mt-0.5 font-bold">Tahliye Planı Editörü</p>
         </div>
-        <button onClick={() => setMobileMenu(null)} className="md:hidden p-2 text-slate-400">
+        <button onClick={() => setMobileMenu(null)} className="md:hidden p-2 text-surface-400 hover:text-surface-200 transition-colors">
           <Plus className="rotate-45 w-5 h-5" />
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex p-2 gap-1 bg-white/50">
+      <div className="flex p-2 gap-1 bg-surface-950 border-b border-surface-600">
         <button
           onClick={() => setActiveTab('tools')}
           className={cn(
-            "flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all",
+            "flex-1 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-all",
             activeTab === 'tools'
-              ? "bg-slate-100 text-slate-800 shadow-sm"
-              : "text-slate-400 hover:text-slate-600"
+              ? "bg-surface-800 text-surface-200"
+              : "text-surface-400 hover:text-surface-300"
           )}
         >
           Araçlar
@@ -176,10 +176,10 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
         <button
           onClick={() => setActiveTab('library')}
           className={cn(
-            "flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all",
+            "flex-1 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-all",
             activeTab === 'library'
-              ? "bg-slate-100 text-slate-800 shadow-sm"
-              : "text-slate-400 hover:text-slate-600"
+              ? "bg-surface-800 text-surface-200"
+              : "text-surface-400 hover:text-surface-300"
           )}
         >
           Semboller
@@ -190,52 +190,8 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {activeTab === 'tools' ? (
           <>
-            {recentTools.length > 0 && (
-              <section>
-                <label className="text-[9px] uppercase font-black text-slate-400 tracking-[0.15em] block mb-2 px-1">
-                  Son Kullanılanlar
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {recentTools.map(toolName => {
-                    const toolConfig = {
-                      'select': { icon: MousePointer2, label: 'Seçim' },
-                      'wall': { icon: PenTool, label: 'Duvar' },
-                      'door': { icon: DoorIcon, label: 'Kapı' },
-                      'window': { icon: Scaling, label: 'Pencere' },
-                      'stairs': { icon: MoveUp, label: 'Merdiven' },
-                      'elevator': { icon: Box, label: 'Asansör' },
-                      'column': { icon: Box, label: 'Kolon' },
-                      'text': { icon: Type, label: 'Metin' },
-                      'evacuation-route': { icon: ArrowRight, label: 'Tahliye' },
-                      'rescue-route': { icon: ArrowRight, label: 'Kurtarma' },
-                      'eraser': { icon: Trash2, label: 'Silgi' },
-                      'symbol': { icon: PenTool, label: 'Sembol' },
-                      'rect': { icon: Box, label: 'Dikdörtgen' },
-                      'scale': { icon: Scaling, label: 'Ölçek' },
-                    }[toolName];
-                    if (!toolConfig) return null;
-                    const Icon = toolConfig.icon;
-                    return (
-                      <button
-                        key={toolName}
-                        onClick={() => setTool(toolName)}
-                        className={cn(
-                          "flex items-center gap-1 px-2 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all border",
-                          tool === toolName
-                            ? "bg-slate-900 text-white border-transparent"
-                            : "bg-white border-slate-200/60 text-slate-600 hover:border-slate-400 hover:bg-slate-50"
-                        )}
-                      >
-                        <Icon className="w-3 h-3" />
-                        <span>{toolConfig.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
             <section>
-              <label className="text-[9px] uppercase font-black text-slate-400 tracking-[0.15em] block mb-3 px-1">
+              <label className="text-[9px] uppercase font-black text-surface-400 tracking-[0.15em] block mb-3 px-1">
                 Mimari Çizim
               </label>
               <div className="grid grid-cols-2 gap-1.5">
@@ -255,7 +211,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
             </section>
 
             <section>
-              <label className="text-[9px] uppercase font-black text-slate-400 tracking-[0.15em] block mb-3 px-1">
+              <label className="text-[9px] uppercase font-black text-surface-400 tracking-[0.15em] block mb-3 px-1">
                 Tahliye Yolları
               </label>
               <div className="grid grid-cols-2 gap-1.5">
@@ -264,10 +220,10 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
               </div>
             </section>
 
-            <section className="pt-4 border-t border-slate-200">
+            <section className="pt-4 border-t border-surface-600">
               <button
                 onClick={() => setShowClearConfirm(true)}
-                className="w-full flex items-center justify-center gap-3 p-3 text-[10px] uppercase tracking-widest font-bold text-slate-400 hover:text-safety-red hover:bg-safety-red/5 rounded-xl transition-all border border-transparent hover:border-safety-red/20"
+                className="w-full flex items-center justify-center gap-3 p-3 text-[10px] uppercase tracking-widest font-bold text-surface-400 hover:text-safety-red hover:bg-safety-red/10 rounded transition-all border border-surface-600 hover:border-safety-red/30"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Tuvali Temizle</span>
@@ -282,7 +238,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
               
               return (
                 <div key={catId} className="mb-6">
-                  <label className="text-[9px] uppercase font-black text-slate-400 tracking-[0.15em] block mb-3 px-1 border-b border-slate-100 pb-2">
+                  <label className="text-[9px] uppercase font-black text-surface-400 tracking-[0.15em] block mb-3 px-1 border-b border-surface-600 pb-2">
                     {catName}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -291,10 +247,10 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
                         key={sym.id}
                         onClick={() => { setTool('symbol'); setSelectedSymbol(sym.id); }}
                         className={cn(
-                          "flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all group",
+                          "flex flex-col items-center gap-1.5 p-2.5 rounded border transition-all group",
                           selectedSymbol === sym.id && tool === 'symbol'
-                            ? "border-accent-emerald/50 bg-accent-emerald/10 text-white glow-accent"
-                            : "border-slate-200/30 bg-white border-slate-200/50 hover:border-slate-300 text-slate-500 hover:text-slate-800"
+                            ? "border-primary-500 bg-primary-500/20 text-primary-400"
+                            : "border-surface-600 bg-surface-950 hover:border-surface-500 text-surface-400 hover:text-surface-200"
                         )}
                         title={sym.name}
                       >
@@ -317,7 +273,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
               
               {customSymbols.length > 0 && (
                 <div className="mb-6">
-                  <label className="text-[9px] uppercase font-black text-slate-400 tracking-[0.15em] block mb-3 px-1 border-b border-slate-100 pb-2">
+                  <label className="text-[9px] uppercase font-black text-surface-400 tracking-[0.15em] block mb-3 px-1 border-b border-surface-600 pb-2">
                     Özel Semboller
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -326,10 +282,10 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
                         key={cs.id}
                         onClick={() => { setTool('symbol'); setSelectedSymbol(cs.id); }}
                         className={cn(
-                          "flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all group",
+                          "flex flex-col items-center gap-1.5 p-2.5 rounded border transition-all group",
                           selectedSymbol === cs.id && tool === 'symbol'
-                            ? "border-accent-emerald/50 bg-accent-emerald/10 text-white glow-accent"
-                            : "border-slate-200/30 bg-white border-slate-200/50 hover:border-slate-300 text-slate-500 hover:text-slate-800"
+                            ? "border-primary-500 bg-primary-500/20 text-primary-400"
+                            : "border-surface-600 bg-surface-950 hover:border-surface-500 text-surface-400 hover:text-surface-200"
                         )}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -341,8 +297,8 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
                 </div>
               )}
 
-            <div className="mt-4 pt-4 border-t border-slate-200">
-              <label className="w-full flex items-center justify-center gap-2 py-3 px-2 bg-white border-slate-200/80 hover:bg-slate-100 border border-dashed border-slate-300 text-slate-600 hover:text-slate-800 rounded-xl text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-colors">
+            <div className="mt-4 pt-4 border-t border-surface-600">
+              <label className="w-full flex items-center justify-center gap-2 py-3 px-2 bg-surface-950 border-surface-600 hover:bg-surface-800 border border-dashed text-surface-300 hover:text-surface-200 rounded text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-colors">
                 <Upload className="w-4 h-4" />
                 <span>Yeni Sembol Ekle</span>
                 <input type="file" accept="image/svg+xml,image/png,image/jpeg" className="hidden" onChange={handleFileUpload} />
@@ -353,11 +309,11 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
       </div>
 
       {/* Bottom CTA */}
-      <div className="p-4 border-t border-slate-200 bg-white/50">
+      <div className="p-4 border-t border-surface-600 bg-surface-950">
         <button 
           onClick={handleSavePlan}
           disabled={isSaving}
-          className="w-full bg-gradient-to-r from-accent-emerald to-accent-emerald-dark text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg glow-accent hover:opacity-90 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
+          className="w-full bg-primary-500 text-white py-2.5 rounded hover:bg-primary-600 font-medium text-xs uppercase tracking-widest shadow transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
         >
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {isSaving ? 'Kaydediliyor...' : 'Planı Kaydet / Yayınla'}
