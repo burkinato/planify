@@ -1,70 +1,5 @@
 {
-  "elements": [
-    {
-      "id": "0e5d3668-279b-421f-bb6c-bfc5fbd8a97c",
-      "type": "symbol",
-      "layerId": "default",
-      "x": 100,
-      "y": 250,
-      "symbolType": "E002"
-    },
-    {
-      "id": "f35230c7-5fc1-40ae-a375-c9b80d625fd6",
-      "type": "symbol",
-      "layerId": "default",
-      "x": 214.18962012150772,
-      "y": 270.7878040670577,
-      "symbolType": "E002"
-    },
-    {
-      "id": "bd7c3d27-5214-4022-8923-8d430330f235",
-      "type": "symbol",
-      "layerId": "default",
-      "x": 470.15570634562295,
-      "y": 411.0769226258393,
-      "symbolType": "E004"
-    },
-    {
-      "id": "0772966c-c45b-4a12-b813-ca45be13533a",
-      "type": "symbol",
-      "layerId": "default",
-      "x": 354.47872507126317,
-      "y": 278.17144188594096,
-      "symbolType": "E004"
-    },
-    {
-      "id": "f5b6eca4-07d5-4698-96ec-b32e3ac2fe4b",
-      "type": "wall",
-      "layerId": "default",
-      "x": 0,
-      "y": 0,
-      "points": [
-        182.7103675647481,
-        172.34837645580686,
-        398.2103675647481,
-        172.34837645580686
-      ],
-      "color": "#1e293b",
-      "thickness": 12,
-      "wallStyle": "hatch"
-    },
-    {
-      "id": "f9799109-4afe-4f29-90ca-f542e80f181a",
-      "type": "wall",
-      "layerId": "default",
-      "x": 0,
-      "y": 0,
-      "points": [
-        182.7103675647481,
-        172.34837645580686,
-        182.7103675647481,
-        336.34837645580683
-      ],
-      "color": "#1e293b",
-      "thickness": 12,
-      "wallStyle": "hatch"
-    }
-  ],
+  "elements": [],
   "layers": [
     {
       "id": "default",
@@ -98,6 +33,6 @@
   "selectedIds": [],
   "invalidChildren": [],
   "invalidChildrenText": null,
-  "location": "http://localhost:3000/editor?id=d05d2d9f-d8ec-41ba-84a5-b875662e6c17&template=panoramic-a3-a3-landscape",
-  "capturedAt": "2026-05-02T05:06:04.736Z"
+  "location": "http://localhost:3000/editor?id=f0052201-64f0-456e-95e5-a7af80851daa",
+  "capturedAt": "2026-05-02T12:36:37.576Z"
 }

@@ -13,12 +13,16 @@ import { ISO_SYMBOLS } from '@/lib/editor/isoSymbols';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { useProAccess } from '@/hooks/useProAccess';
+import { ComplianceChecker } from './ComplianceChecker';
 
 const CATEGORY_NAMES: Record<SymbolCategory, string> = {
   'E_ACIL': 'Acil Çıkış & Tahliye',
   'F_YANGIN': 'Yangın Güvenliği',
   'E_SAGLIK': 'İlk Yardım & Sağlık',
   'W_TEHLIKE': 'Tehlike & Uyarı',
+  'P_YASAK': 'Yasak İşaretleri',
+  'M_ZORUNLU': 'Zorunluluk İşaretleri',
+  'N_NAVIGASYON': 'Plan Unsurları',
   'X_OPERASYON': 'Operasyon & Tesis'
 };
 
@@ -184,6 +188,11 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
         >
           Semboller
         </button>
+      </div>
+
+      {/* Compliance Checker */}
+      <div className="px-3 py-2 border-b border-surface-600">
+        <ComplianceChecker />
       </div>
 
       {/* Content */}

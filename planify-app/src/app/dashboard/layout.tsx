@@ -35,7 +35,7 @@ export default function DashboardLayout({
 
   const menu: MenuItem[] = [
     { href: '/dashboard', label: 'Denetim Merkezi', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { href: '/dashboard/archive', label: 'Tahliye Planı Arşivi', icon: <Archive className="w-4 h-4" />, child: true },
+    { href: '/dashboard/archive', label: 'Tahliye Planı Arşivi', icon: <Archive className="w-4 h-4" /> },
     { href: '/dashboard/profile', label: 'Profil / Firma Bilgileri', icon: <UserCircle className="w-4 h-4" /> },
     ...(!isPro
       ? [{ href: '/dashboard/upgrade', label: 'Abonelik', icon: <CreditCard className="w-4 h-4" />, highlight: true }]
@@ -83,7 +83,7 @@ export default function DashboardLayout({
                     : item.highlight
                       ? 'text-amber-500 hover:bg-amber-500/10 hover:text-amber-400'
                       : 'text-surface-300 hover:bg-surface-800 hover:text-surface-200'
-                } ${item.child ? 'ml-7 py-2 text-xs' : ''}`}
+                }`}
               >
                 {item.icon} {item.label}
               </Link>
@@ -92,17 +92,6 @@ export default function DashboardLayout({
         </nav>
 
         <div className="p-4 border-t border-surface-600">
-          {isPro && (
-            <div className="mb-3 rounded border border-emerald-500/30 bg-emerald-500/10 px-3 py-3 text-emerald-500">
-              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider">
-                <ShieldCheck className="w-4 h-4" />
-                Pro Aktif
-              </div>
-              <p className="mt-1 text-[11px] leading-5 text-emerald-400">
-                Abonelik yükseltme ekranı bu hesapta gizlenir.
-              </p>
-            </div>
-          )}
           <button 
             onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2.5 w-full rounded text-surface-400 hover:text-red-400 hover:bg-red-400/10 font-medium text-sm transition-colors"

@@ -1672,7 +1672,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
               }}
             >
               {/* Fine grid overlay on paper */}
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(15,23,42,.03)_1px,transparent_1px),linear-gradient(rgba(15,23,42,.03)_1px,transparent_1px)] bg-[length:20px_20px] pointer-events-none" />
+              <div className="template-grid-overlay absolute inset-0 bg-[linear-gradient(90deg,rgba(15,23,42,.03)_1px,transparent_1px),linear-gradient(rgba(15,23,42,.03)_1px,transparent_1px)] bg-[length:20px_20px] pointer-events-none" />
               <style>{`
                 [data-template-paper][data-export-mode="true"] section {
                   box-shadow: none !important;
@@ -1681,6 +1681,16 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                 }
                 [data-template-paper][data-export-mode="true"] button {
                   display: none !important;
+                }
+                [data-template-paper][data-export-bg-mode="transparent"] {
+                  background: transparent !important;
+                  box-shadow: none !important;
+                }
+                [data-template-paper][data-export-bg-mode="transparent"] .template-grid-overlay {
+                  display: none !important;
+                }
+                [data-template-paper][data-export-bg-mode="transparent"] .drawing-region-wrapper {
+                  background: transparent !important;
                 }
               `}</style>
 
@@ -2035,42 +2045,36 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                         {/* Body Content */}
                         <div className="flex-1 min-h-0 flex flex-col px-[3cqmin] pb-[3cqmin] overflow-hidden">
                           {region.type === 'approval' ? (
-                            <div className="flex-1 flex divide-x divide-slate-100 border-t border-slate-50 mt-1 pt-1">
-                               <div className="flex-1 flex flex-col justify-between py-1 pr-2">
-                                  <div className="space-y-2">
-                                     <div className="flex flex-col">
-                                        <span className="text-[7px] font-black text-slate-300 uppercase tracking-tighter">Hazırlayan / Author</span>
-                                        <input 
-                                          value={projectMetadata.author}
-                                          onChange={(e) => setProjectMetadata({ author: e.target.value.toUpperCase() })}
-                                          className="bg-transparent border-none outline-none font-black text-slate-700 uppercase"
-                                          style={{ fontSize: 'min(12px, 3.5cqw)' }}
-                                          placeholder="İSİM SOYİSİM"
-                                        />
-                                     </div>
-                                     <div className="flex flex-col">
-                                        <span className="text-[7px] font-black text-slate-300 uppercase tracking-tighter">Onay / Approval</span>
-                                        <div className="h-4 border-b border-dashed border-slate-200" />
-                                     </div>
-                                  </div>
-                                  <div className="text-[8px] font-black text-slate-400">© PLANIFY TECH SOLUTIONS</div>
-                               </div>
-                               <div className="w-[40%] flex flex-col divide-y divide-slate-100 pl-2 py-1">
-                                  <div className="flex-1 flex flex-col justify-center">
-                                     <span className="text-[7px] font-black text-slate-300 uppercase tracking-tighter">Tarih / Date</span>
-                                     <span className="font-black text-slate-600" style={{ fontSize: 'min(11px, 3cqw)' }}>{projectMetadata.date}</span>
-                                  </div>
-                                  <div className="flex-1 flex flex-col justify-center">
-                                     <span className="text-[7px] font-black text-slate-300 uppercase tracking-tighter">Revizyon / Rev.</span>
-                                     <input 
-                                          value={projectMetadata.revision}
-                                          onChange={(e) => setProjectMetadata({ revision: e.target.value.toUpperCase() })}
-                                          className="bg-transparent border-none outline-none font-black text-slate-600 uppercase"
-                                          style={{ fontSize: 'min(11px, 3cqw)' }}
-                                          placeholder="00"
-                                        />
-                                  </div>
-                               </div>
+                            <div className="flex-1 min-h-0 pt-[1.5cqmin] flex flex-col">
+                              <div className="flex-1 grid auto-cols-fr grid-flow-col gap-x-[2cqw] gap-y-[1.5cqh] content-start overflow-hidden divide-x divide-slate-200">
+                                {(content.body || '').split('\n').filter(l => l.trim() !== '').map((line, i, arr) => {
+                                  const parts = line.split(/:(.*)/);
+                                  const isLast = i === arr.length - 1;
+                                  
+                                  if (parts.length >= 2) {
+                                    return (
+                                      <div key={i} className={cn("flex flex-col justify-center px-[2cqw] py-[1cqh]", isLast && "bg-slate-50/50")}>
+                                        <span className="text-slate-400 font-black uppercase tracking-widest" style={{ fontSize: 'max(5px, min(1.8cqw, 6cqh))' }}>
+                                          {parts[0].trim()}
+                                        </span>
+                                        <div className="flex items-baseline gap-[1cqw] mt-[0.5cqh]">
+                                          <span className="text-slate-800 font-black truncate uppercase" style={{ fontSize: isLast ? 'max(10px, min(3cqw, 11cqh))' : 'max(8px, min(2.5cqw, 9cqh))' }}>
+                                            {parts[1].trim() || '—'}
+                                          </span>
+                                          {isLast && <span className="text-emerald-600 font-black uppercase tracking-tighter" style={{ fontSize: 'max(5px, min(1.5cqw, 5cqh))' }}>Güncel</span>}
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  return (
+                                    <div key={i} className="flex flex-col justify-center px-[2cqw] py-[1cqh]">
+                                      <span className="text-slate-800 font-black truncate uppercase" style={{ fontSize: 'max(8px, min(2.5cqw, 9cqh))' }}>
+                                        {line}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           ) : (
                             <>
@@ -2177,33 +2181,63 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                                   </div>
                                 </div>
                               ) : region.type === 'instruction' ? (
-                                <div className="flex-1 min-h-0 flex flex-col pt-[1cqh]">
-                                  {/* Fixed 112 Section */}
-                                  <div className="flex items-center gap-[4cqw] mb-[3cqmin] p-[3cqmin] bg-red-50 border border-red-100 rounded-xl">
-                                    <div className="w-[12cqmin] h-[12cqmin] flex-shrink-0 flex items-center justify-center bg-red-600 text-white rounded-lg font-black shadow-sm" style={{ fontSize: 'max(10px, 5cqmin)' }}>
-                                      112
-                                    </div>
-                                    <div className="flex flex-col">
-                                      <span className="font-black text-red-700 uppercase tracking-tighter" style={{ fontSize: 'max(12px, 4.5cqmin)' }}>ACİL DURUM TELEFONU</span>
-                                      <span className="font-bold text-red-600/70 uppercase tracking-widest" style={{ fontSize: 'max(7px, 2cqmin)' }}>EMERGENCY CALL</span>
-                                    </div>
-                                  </div>
-                                  {/* Additional Instructions */}
-                                  {content.body && (
-                                    <div className="flex-1 overflow-hidden relative flex flex-col justify-center">
-                                      <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.3]"
-                                        style={{
-                                          fontSize: content.bodySize ? `${content.bodySize}px` : `max(12px, min(3.8cqw, ${65 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`,
-                                          fontWeight: content.bodyWeight || 'bold',
-                                          letterSpacing: content.bodyLetterSpacing !== undefined ? `${content.bodyLetterSpacing}px` : undefined,
-                                          lineHeight: content.bodyLineHeight || ((content.body.split('\n').length || 1) > 6 ? 1.15 : 1.35),
-                                          color: content.bodyColor || undefined,
-                                        }}>
-                                        {content.body}
-                                      </p>
-                                    </div>
-                                  )}
+                                <div className="flex-1 min-h-0 flex flex-col pt-[1cqh] pb-[2cqh] gap-[1.5cqh] overflow-hidden">
+                                  {(content.body || '').split('\n').map((line, i, arr) => {
+                                    const validLineCount = arr.filter(l => l.trim() !== '').length || 1;
+                                    const computedBaseSize = content.bodySize ? `${content.bodySize}px` : `max(8px, min(3cqw, ${70 / validLineCount}cqh))`;
+                                    const computedSmallSize = content.bodySize ? `${content.bodySize - 1}px` : `max(7px, min(2.7cqw, ${65 / validLineCount}cqh))`;
+                                    
+                                    const trimmed = line.trim();
+                                    if (trimmed === '') return <div key={i} className="h-[0.5cqh]" />;
+                                    
+                                    const isFireInstruction = region.id?.toLowerCase().includes('fire');
+                                    const accentColor = tone === 'red' || isFireInstruction ? 'rose' : tone === 'green' ? 'emerald' : 'slate';
+                                    
+                                    const numberedMatch = trimmed.match(/^(\d+)\.\s*(.+)/);
+                                    if (numberedMatch) {
+                                      const [, num, text] = numberedMatch;
+                                      return (
+                                        <div key={i} className="flex items-start gap-[1.5cqw]">
+                                          <div className={cn("flex-shrink-0 flex items-center justify-center text-white mt-[0.3cqh] shadow-sm rounded-full",
+                                            accentColor === 'rose' ? "bg-rose-500" : accentColor === 'emerald' ? "bg-emerald-500" : "bg-slate-600"
+                                          )} style={{ width: 'max(14px, 3.5cqw)', height: 'max(14px, 3.5cqw)', fontSize: 'max(9px, 2.2cqw)', fontWeight: 900 }}>
+                                            {num}
+                                          </div>
+                                          <span className="font-bold text-slate-700 leading-[1.25] flex-1" style={{ fontSize: computedBaseSize }}>
+                                            {text}
+                                          </span>
+                                        </div>
+                                      );
+                                    }
+                                    
+                                    if (line.startsWith('   ') || line.startsWith('\t')) {
+                                      return (
+                                        <div key={i} className="ml-[5cqw] flex items-start gap-[1cqw]">
+                                          <span className={cn("leading-[1.25] font-bold", accentColor === 'rose' ? "text-rose-700" : accentColor === 'emerald' ? "text-emerald-700" : "text-slate-600")} style={{ fontSize: computedSmallSize }}>
+                                            {trimmed}
+                                          </span>
+                                        </div>
+                                      );
+                                    }
+                                    
+                                    const bulletMatch = trimmed.match(/^[•\-—►]\s*(.+)/);
+                                    if (bulletMatch) {
+                                      return (
+                                        <div key={i} className="flex items-start gap-[1cqw] ml-[1cqw]">
+                                          <span className={cn("mt-[0.2cqh]", accentColor === 'rose' ? "text-rose-400" : accentColor === 'emerald' ? "text-emerald-400" : "text-slate-400")} style={{ fontSize: 'max(8px, 1.5cqw)' }}>●</span>
+                                          <span className="font-bold text-slate-700 leading-[1.25] flex-1" style={{ fontSize: computedSmallSize }}>
+                                            {bulletMatch[1]}
+                                          </span>
+                                        </div>
+                                      );
+                                    }
 
+                                    return (
+                                      <p key={i} className="font-bold text-slate-700 leading-[1.25]" style={{ fontSize: computedBaseSize }}>
+                                        {trimmed}
+                                      </p>
+                                    );
+                                  })}
                                 </div>
                                 ) : region.type === 'assembly' && content.imageUrl ? null : region.type === 'assembly' ? (
                                   <div className="flex-1 min-h-0 flex flex-col justify-center gap-[2cqh] rounded-lg border border-dashed border-blue-200 bg-blue-50/40 p-[3cqmin]">
@@ -2290,13 +2324,14 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                     }}
                     onMouseMove={handleStageMouseMove}
                     onMouseUp={handleStageMouseUp}
+                    className="drawing-region-wrapper"
                     style={{
-                      backgroundColor: '#ffffff',
                       width: '100%',
                       height: '100%',
                       pointerEvents: (!focusedRegionId || focusedRegionId === 'drawing') ? 'auto' : 'none',
                       filter: isFocused ? 'none' : 'blur(20px)',
-                      transition: 'filter 0.3s ease-in-out'
+                      transition: 'filter 0.3s ease-in-out',
+                      backgroundColor: '#ffffff'
                     }}
                   >
                     <Layer clipX={0} clipY={0} clipWidth={stageWidth} clipHeight={stageHeight}>
@@ -2555,6 +2590,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                 onMouseDown={handleStageMouseDown}
                 onMouseMove={handleStageMouseMove}
                 onMouseUp={handleStageMouseUp}
+                className="drawing-region-wrapper"
                 style={{ backgroundColor: themeConfig.bg }}
               >
                 <Layer>

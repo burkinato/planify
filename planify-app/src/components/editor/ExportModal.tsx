@@ -10,6 +10,7 @@ import {
 import { useEditorStore, useShallow } from '@/store/useEditorStore';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { THEME_CONFIGS } from '@/types/editor';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ export function ExportModal({
   const [selectedLayers, setSelectedLayers] = useState<Set<string>>(new Set(layers.map(l => l.id)));
   const [isExporting, setIsExporting] = useState(false);
   const [quality, setQuality] = useState<'standard' | 'high' | 'ultra'>('high');
+  const [bgMode, setBgMode] = useState<'minimal' | 'current' | 'transparent'>('minimal');
 
   if (!isOpen) return null;
 
@@ -65,8 +67,13 @@ export function ExportModal({
   const handleExport = async () => {
     setIsExporting(true);
     // Capture inner zoom/pan before the try block so they're accessible in finally
-    const { innerZoom: savedInnerZoom, innerPan: savedInnerPan } = useEditorStore.getState();
+    const { innerZoom: savedInnerZoom, innerPan: savedInnerPan, editorTheme: savedEditorTheme } = useEditorStore.getState();
     try {
+      if (bgMode === 'minimal' || bgMode === 'transparent') {
+        // Temporarily force 'minimal' theme for clean export or transparent background
+        useEditorStore.getState().setEditorTheme('minimal');
+      }
+
       // 1. Store original visibility
       const originalVisibility = layers.map(l => ({ id: l.id, visible: l.visible }));
 
@@ -96,31 +103,33 @@ export function ExportModal({
           projectName || projectMetadata.name, 
           activeTemplateLayout, 
           isPro,
-          quality === 'ultra' ? 4 : quality === 'high' ? 3 : 2
+          quality === 'ultra' ? 4 : quality === 'high' ? 3 : 2,
+          bgMode === 'transparent' ? 'rgba(0,0,0,0)' : (bgMode === 'current' ? THEME_CONFIGS[savedEditorTheme].bg : '#ffffff'),
+          bgMode
         );
         await onExportComplete?.('pdf', fileName);
       } else if (selectedFormat === 'png') {
         if (activeTemplateLayout && containerRef.current) {
           const pixelRatio = quality === 'ultra' ? 4 : quality === 'high' ? 3 : 2;
-          const html2canvas = (await import('html2canvas')).default;
+          const { toPng } = await import('html-to-image');
           containerRef.current.dataset.exportMode = 'true';
-          let canvas: HTMLCanvasElement;
+          containerRef.current.dataset.exportBgMode = bgMode;
+          let dataUrl: string;
           try {
-            canvas = await html2canvas(containerRef.current, {
-              scale: pixelRatio,
-              useCORS: true,
-              logging: false,
-              backgroundColor: '#ffffff',
+            dataUrl = await toPng(containerRef.current, {
+              pixelRatio: pixelRatio,
+              backgroundColor: bgMode === 'transparent' ? 'rgba(0,0,0,0)' : (bgMode === 'current' ? THEME_CONFIGS[savedEditorTheme].bg : '#ffffff'),
             });
           } finally {
             if (containerRef.current) {
               delete containerRef.current.dataset.exportMode;
+              delete containerRef.current.dataset.exportBgMode;
             }
           }
           const fileName = `${projectName || projectMetadata.name}.png`;
           const link = document.createElement('a');
           link.download = fileName;
-          link.href = canvas.toDataURL('image/png', 1);
+          link.href = dataUrl;
           link.click();
           await onExportComplete?.('png', fileName);
         } else if (!stageRef.current) {
@@ -157,6 +166,7 @@ export function ExportModal({
       // Always restore inner zoom/pan to pre-export state
       useEditorStore.getState().setInnerZoom(savedInnerZoom);
       useEditorStore.getState().setInnerPan(savedInnerPan);
+      useEditorStore.getState().setEditorTheme(savedEditorTheme);
       setIsExporting(false);
     }
   };
@@ -256,6 +266,34 @@ export function ExportModal({
               {quality === 'ultra' ? '★ En yüksek vektörel hassasiyet ve keskinlik (Yavaş).' : 
                quality === 'high' ? '★ Profesyonel baskı için optimize edilmiş (Önerilen).' : 
                '★ Hızlı önizleme ve dijital paylaşım için.'}
+            </p>
+          </div>
+
+          {/* Background Mode */}
+          <div className="space-y-4">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+              <ImageIcon className="w-3.5 h-3.5" /> Arka Plan
+            </h3>
+            <div className="flex flex-col sm:flex-row gap-2">
+              {(['minimal', 'current', 'transparent'] as const).map(m => (
+                <button
+                  key={m}
+                  onClick={() => setBgMode(m)}
+                  className={cn(
+                    "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border",
+                    bgMode === m 
+                      ? "bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm"
+                      : "bg-white border-slate-100 text-slate-400 hover:border-slate-200 hover:text-slate-600"
+                  )}
+                >
+                  {m === 'minimal' ? 'Temiz (Beyaz)' : m === 'current' ? 'Mevcut Tema' : 'Şeffaf (PNG)'}
+                </button>
+              ))}
+            </div>
+            <p className="text-[9px] text-slate-400 font-bold uppercase leading-relaxed">
+              {bgMode === 'transparent' ? '★ Arka planı tamamen şeffaf yapar (PDF\'lerde beyaz çıkar).' : 
+               bgMode === 'minimal' ? '★ Her zaman minimal temiz beyaz arka planla çıktı alır.' : 
+               '★ Şu anki çalışma temanızı çıktıya yansıtır.'}
             </p>
           </div>
         </div>

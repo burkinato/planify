@@ -132,8 +132,157 @@ function ReadOnlyRegion({
 
   if (region.type === 'instruction' || region.type === 'emergency') {
     const isEmergency = region.type === 'emergency';
+    const isFireInstruction = region.id?.toLowerCase().includes('fire');
+    const accentColor = region.tone === 'red' || isFireInstruction ? 'rose' : region.tone === 'green' ? 'emerald' : 'slate';
+    
+    // Parse body into structured items
+    const lines = (body || 'Talimatlar buraya gelecek...').split('\n');
+    const validLineCount = lines.filter(l => l.trim() !== '').length || 1;
+    const computedBaseSize = bodySize || Math.max(5.5, Math.min(8.5, 95 / validLineCount));
+    
+    const renderLine = (line: string, i: number) => {
+      const trimmed = line.trim();
+      if (trimmed === '') return <div key={i} className="h-1.5" />;
+      
+      // Numbered items (e.g., "1. Something")
+      const numberedMatch = trimmed.match(/^(\d+)\.\s*(.+)/);
+      if (numberedMatch) {
+        const [, num, text] = numberedMatch;
+        return (
+          <div key={i} className="flex items-start gap-2 group/item">
+            <div 
+              className={cn(
+                "flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-white mt-[1px] shadow-sm",
+                accentColor === 'rose' ? "bg-rose-500" : accentColor === 'emerald' ? "bg-emerald-500" : "bg-slate-600"
+              )}
+              style={{ fontSize: 7, fontWeight: 900 }}
+            >
+              {num}
+            </div>
+            <span 
+              className="text-slate-800 leading-snug flex-1"
+              style={{ 
+                fontSize: computedBaseSize, 
+                fontWeight: bodyWeight || 600,
+                letterSpacing: bodyLetterSpacing !== undefined ? `${bodyLetterSpacing}px` : '-0.01em',
+                color: bodyColor || undefined,
+              }}
+            >
+              {text}
+            </span>
+          </div>
+        );
+      }
+      
+      // Sub-items with indent (e.g., "   Ç — something")
+      if (line.startsWith('   ') || line.startsWith('\t')) {
+        return (
+          <div key={i} className="ml-6 flex items-start gap-1.5">
+            <span 
+              className={cn(
+                "text-slate-600 leading-snug",
+                accentColor === 'rose' ? "text-rose-700" : accentColor === 'emerald' ? "text-emerald-700" : "text-slate-600"
+              )}
+              style={{ 
+                fontSize: computedBaseSize - 0.5, 
+                fontWeight: 700,
+                color: bodyColor || undefined,
+              }}
+            >
+              {trimmed}
+            </span>
+          </div>
+        );
+      }
+      
+      // Bullet items (e.g., "• Something" or "— Something")
+      const bulletMatch = trimmed.match(/^[•\-—►]\s*(.+)/);
+      if (bulletMatch) {
+        return (
+          <div key={i} className="flex items-start gap-1.5 ml-1">
+            <span className={cn(
+              "mt-[2px] text-[6px]",
+              accentColor === 'rose' ? "text-rose-400" : accentColor === 'emerald' ? "text-emerald-400" : "text-slate-400"
+            )}>●</span>
+            <span 
+              className="text-slate-700 leading-snug flex-1"
+              style={{ 
+                fontSize: computedBaseSize - 0.5, 
+                fontWeight: bodyWeight || 600,
+                color: bodyColor || undefined,
+              }}
+            >
+              {bulletMatch[1]}
+            </span>
+          </div>
+        );
+      }
+      
+      // Phone number lines (e.g., "112 — Something")
+      const phoneMatch = trimmed.match(/^(\d{3})\s*[—\-–]\s*(.+)/);
+      if (phoneMatch && isEmergency) {
+        const [, phoneNum, desc] = phoneMatch;
+        return (
+          <div key={i} className="flex items-center gap-2 py-[1px]">
+            <span 
+              className={cn(
+                "font-[1000] text-white rounded px-1 py-[1px] shadow-sm",
+                phoneNum === '112' ? "bg-rose-600" : phoneNum === '110' ? "bg-orange-500" : "bg-slate-600"
+              )}
+              style={{ fontSize: 7 }}
+            >
+              {phoneNum}
+            </span>
+            <span 
+              className="text-slate-700 leading-snug flex-1"
+              style={{ 
+                fontSize: computedBaseSize - 0.5, 
+                fontWeight: 700,
+                color: bodyColor || undefined,
+              }}
+            >
+              {desc}
+            </span>
+          </div>
+        );
+      }
+      
+      // Section headers (e.g., "Aramada bildirin:")
+      if (trimmed.endsWith(':')) {
+        return (
+          <div key={i} className="mt-1">
+            <span 
+              className={cn(
+                "uppercase tracking-wider font-[900]",
+                accentColor === 'rose' ? "text-rose-600" : accentColor === 'emerald' ? "text-emerald-600" : "text-slate-600"
+              )}
+              style={{ fontSize: 7 }}
+            >
+              {trimmed}
+            </span>
+          </div>
+        );
+      }
+      
+      // Regular text
+      return (
+        <p 
+          key={i} 
+          className="text-slate-700 leading-snug"
+          style={{ 
+            fontSize: computedBaseSize, 
+            fontWeight: bodyWeight || 600,
+            color: bodyColor || undefined,
+          }}
+        >
+          {trimmed}
+        </p>
+      );
+    };
+
     return (
       <div className="flex h-full w-full flex-col overflow-hidden bg-white shadow-inner">
+        {/* Title Bar */}
         <div className={cn(
           "flex shrink-0 items-center justify-between border-b px-3 py-1.5",
           region.tone === 'green' ? "bg-emerald-600 border-emerald-700/30" :
@@ -149,7 +298,6 @@ function ReadOnlyRegion({
                 fontWeight: titleWeight || 'black',
                 letterSpacing: titleLetterSpacing !== undefined ? `${titleLetterSpacing}px` : '0.15em',
                 lineHeight: titleLineHeight || 1.2,
-                marginBottom: gap !== undefined ? `${gap}px` : undefined,
                 color: titleColor || 'white'
               }}
             >
@@ -158,39 +306,20 @@ function ReadOnlyRegion({
           </div>
         </div>
         
+        {/* Content Body */}
         <div 
-          className="flex-1 p-2 flex flex-col overflow-y-auto scrollbar-hide"
-          style={{ gap: gap !== undefined ? `${gap/2}px` : '4px' }}
+          className="flex-1 px-2.5 pt-2 pb-6 flex flex-col overflow-hidden"
+          style={{ gap: gap !== undefined ? `${gap/2}px` : '3px' }}
         >
-           {isEmergency && (
-             <div className="bg-rose-50 border border-rose-100 rounded-lg p-2 flex items-center gap-3 shrink-0">
-               <div className="w-7 h-7 rounded-full bg-rose-600 flex items-center justify-center text-white font-[1000] text-[10px] shadow-lg ring-2 ring-rose-500/20">112</div>
-               <div className="flex flex-col -space-y-0.5">
-                 <div className="text-[9px] font-[1000] uppercase tracking-wider text-rose-700">ACİL DURUM TELEFONU</div>
-                 <div className="text-[7px] font-black uppercase tracking-[0.15em] text-rose-400">EMERGENCY CALL</div>
-               </div>
-             </div>
-           )}
-           <div 
-              className={cn("text-slate-800 tracking-tight px-1 flex flex-col", getFocusStyle('body'))}
-              style={{ 
-                fontSize: bodySize || parseInt(getDynamicFontSize(body || '', 10, 220)),
-                fontWeight: bodyWeight || 'semibold',
-                letterSpacing: bodyLetterSpacing !== undefined ? `${bodyLetterSpacing}px` : undefined,
-                lineHeight: bodyLineHeight || 1.5,
-                gap: gap !== undefined ? `${gap/4}px` : '4px',
-                color: bodyColor || undefined
-              }}
-            >
-              {(body || 'Talimatlar buraya gelecek...').split('\n').map((p, i) => (
-                <p key={i} className={cn(p.trim() === '' ? 'h-2' : '')}>{p}</p>
-              ))}
-            </div>
+          {lines.map((line, i) => renderLine(line, i))}
         </div>
 
+        {/* Bottom accent bar */}
         <div className={cn(
-          "h-1 w-full opacity-30",
-          isEmergency ? "bg-rose-600" : "bg-emerald-600"
+          "h-[3px] w-full shrink-0",
+          accentColor === 'rose' ? "bg-gradient-to-r from-rose-500 via-rose-400 to-rose-500" : 
+          accentColor === 'emerald' ? "bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500" :
+          "bg-gradient-to-r from-slate-400 via-slate-300 to-slate-400"
         )} />
       </div>
     );
@@ -301,32 +430,30 @@ function ReadOnlyRegion({
         </div>
 
         <div 
-          className="flex-1 grid grid-cols-5 divide-x divide-slate-200"
+          className="flex-1 grid auto-cols-fr grid-flow-col divide-x divide-slate-200"
           style={{ gap: gap !== undefined ? `${gap/4}px` : '0px' }}
         >
-          <div className="flex flex-col justify-center px-4 py-2">
-            <span className={cn("text-slate-400 uppercase tracking-widest", getFocusStyle('meta'))} style={{ fontSize: metaSize || 7, fontWeight: metaWeight || 'black', letterSpacing: metaLetterSpacing !== undefined ? `${metaLetterSpacing}px` : undefined, color: metaColor || undefined }}>Düzenleyen / Prepared By</span>
-            <span className={cn("text-slate-800 uppercase", getFocusStyle('body'))} style={{ fontSize: bodySize || 10, fontWeight: bodyWeight || 'black', letterSpacing: bodyLetterSpacing !== undefined ? `${bodyLetterSpacing}px` : undefined, color: bodyColor || undefined }}>{projectMetadata.author || 'İSİM SOYİSİM'}</span>
-          </div>
-          <div className="flex flex-col justify-center px-4 py-2">
-            <span className={cn("text-slate-400 uppercase tracking-widest", getFocusStyle('meta'))} style={{ fontSize: metaSize || 7, fontWeight: metaWeight || 'black', letterSpacing: metaLetterSpacing !== undefined ? `${metaLetterSpacing}px` : undefined, color: metaColor || undefined }}>Ölçek / Scale</span>
-            <span className={cn("text-slate-800", getFocusStyle('body'))} style={{ fontSize: bodySize || 10, fontWeight: bodyWeight || 'black', letterSpacing: bodyLetterSpacing !== undefined ? `${bodyLetterSpacing}px` : undefined, color: bodyColor || undefined }}>1:{projectMetadata.scale || '100'}</span>
-          </div>
-          <div className="flex flex-col justify-center px-4 py-2">
-            <span className={cn("text-slate-400 uppercase tracking-widest", getFocusStyle('meta'))} style={{ fontSize: metaSize || 7, fontWeight: metaWeight || 'black', letterSpacing: metaLetterSpacing !== undefined ? `${metaLetterSpacing}px` : undefined, color: metaColor || undefined }}>Onaylayan / Approved By</span>
-            <span className={cn("text-slate-800 uppercase", getFocusStyle('body'))} style={{ fontSize: bodySize || 10, fontWeight: bodyWeight || 'black', letterSpacing: bodyLetterSpacing !== undefined ? `${bodyLetterSpacing}px` : undefined, color: bodyColor || undefined }}>YÖNETİM KURULU</span>
-          </div>
-          <div className="flex flex-col justify-center px-4 py-2">
-            <span className={cn("text-slate-400 uppercase tracking-widest", getFocusStyle('meta'))} style={{ fontSize: metaSize || 7, fontWeight: metaWeight || 'black', letterSpacing: metaLetterSpacing !== undefined ? `${metaLetterSpacing}px` : undefined, color: metaColor || undefined }}>Tarih / Date</span>
-            <span className={cn("text-slate-800", getFocusStyle('body'))} style={{ fontSize: bodySize || 10, fontWeight: bodyWeight || 'black', letterSpacing: bodyLetterSpacing !== undefined ? `${bodyLetterSpacing}px` : undefined, color: bodyColor || undefined }}>{projectMetadata.date || '28.04.2026'}</span>
-          </div>
-          <div className="flex flex-col justify-center px-4 py-2 bg-slate-50/50">
-            <span className={cn("text-slate-400 uppercase tracking-widest", getFocusStyle('meta'))} style={{ fontSize: metaSize || 7, fontWeight: metaWeight || 'black', letterSpacing: metaLetterSpacing !== undefined ? `${metaLetterSpacing}px` : undefined }}>Revizyon / Revision</span>
-            <div className="flex items-baseline gap-1">
-              <span className={cn("text-slate-950", getFocusStyle('body'))} style={{ fontSize: (bodySize ? bodySize + 4 : 14), fontWeight: '1000' }}>{projectMetadata.revision || '00'}</span>
-              <span className="text-[8px] font-black text-emerald-600 uppercase tracking-tighter">Current</span>
-            </div>
-          </div>
+          {(body || '').split('\n').filter(l => l.trim() !== '').map((line, i, arr) => {
+            const parts = line.split(/:(.*)/);
+            const isLast = i === arr.length - 1;
+            
+            if (parts.length >= 2) {
+              return (
+                <div key={i} className={cn("flex flex-col justify-center px-3 py-2", isLast && "bg-slate-50/50")}>
+                  <span className={cn("text-slate-400 uppercase tracking-widest", getFocusStyle('meta'))} style={{ fontSize: metaSize || 7, fontWeight: metaWeight || 'black', letterSpacing: metaLetterSpacing !== undefined ? `${metaLetterSpacing}px` : undefined, color: metaColor || undefined }}>{parts[0].trim()}</span>
+                  <div className="flex items-baseline gap-1 mt-[1px]">
+                    <span className={cn("text-slate-800 uppercase truncate", getFocusStyle('body'))} style={{ fontSize: isLast ? (bodySize ? bodySize + 2 : 12) : (bodySize || 9), fontWeight: bodyWeight || 'black', letterSpacing: bodyLetterSpacing !== undefined ? `${bodyLetterSpacing}px` : undefined, color: bodyColor || undefined }}>{parts[1].trim() || '—'}</span>
+                    {isLast && <span className="text-[7px] font-black text-emerald-600 uppercase tracking-tighter ml-1">Current</span>}
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <div key={i} className="flex flex-col justify-center px-3 py-2">
+                <span className={cn("text-slate-800 uppercase truncate", getFocusStyle('body'))} style={{ fontSize: bodySize || 9, fontWeight: bodyWeight || 'black', color: bodyColor || undefined }}>{line}</span>
+              </div>
+            );
+          })}
         </div>
         
         <div className="px-4 py-1.5 bg-slate-100/50 border-t border-slate-100 flex justify-between items-center shrink-0">

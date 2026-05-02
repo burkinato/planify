@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { toJpeg } from 'html-to-image';
 import type { TemplateLayout } from '@/types/editor';
 
 type JsPdfWithGState = jsPDF & {
@@ -12,25 +12,25 @@ export async function exportToPDF(
   projectName: string = 'Tahliye-Plani',
   activeLayout?: TemplateLayout | null,
   isPro: boolean = false,
-  scale: number = 2
+  scale: number = 2,
+  backgroundColor: string = '#ffffff',
+  bgMode: string = 'minimal'
 ) {
   if (!containerRef.current) return;
 
   try {
     containerRef.current.dataset.exportMode = 'true';
-    const canvas = await html2canvas(containerRef.current, {
-      scale: scale, 
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff'
+    containerRef.current.dataset.exportBgMode = bgMode;
+    const imgData = await toJpeg(containerRef.current, {
+      quality: 0.8,
+      backgroundColor,
+      pixelRatio: scale
     });
 
     // Determine orientation and format
     const orientation = activeLayout?.orientation || 'landscape';
     const isA4 = activeLayout?.slug.includes('compact-a4');
     const format = isA4 ? 'a4' : 'a3';
-
-    const imgData = canvas.toDataURL('image/jpeg', 0.8);
 
     const pdf = new jsPDF({
       orientation: orientation as 'landscape' | 'portrait',
@@ -101,6 +101,7 @@ export async function exportToPDF(
   } finally {
     if (containerRef.current) {
       delete containerRef.current.dataset.exportMode;
+      delete containerRef.current.dataset.exportBgMode;
     }
   }
 }

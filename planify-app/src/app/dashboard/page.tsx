@@ -6,6 +6,7 @@ import { Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProjectCreationModal, type ProjectCreationDraft } from '@/components/dashboard/ProjectCreationModal';
 import { ProjectDossierGrid } from '@/components/dashboard/ProjectDossierGrid';
+import { DashboardMetrics } from '@/components/dashboard/DashboardMetrics';
 import { TemplateSelectorModal } from '@/components/editor/TemplateSelectorModal';
 import { analyzeProjectCompliance } from '@/lib/projects/compliance';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -177,18 +178,19 @@ function DashboardPortal() {
   return (
     <>
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-12 space-y-12 animate-in fade-in duration-1000">
-        {/* Top Search Area Only */}
-        <div className="flex justify-end">
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 group-focus-within:text-primary-500 transition-colors" />
-            <input
-              value={searchTerm}
-              onChange={(event) => handleSearchChange(event.target.value)}
-              placeholder="Dosya veya tesis ara..."
-              className="w-full sm:w-80 h-12 pl-12 pr-6 bg-surface-900 border border-surface-600 rounded text-xs font-medium text-surface-200 outline-none focus:bg-surface-800 focus:border-primary-500 transition-all shadow-sm"
-            />
+        {/* Welcome Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-4xl font-black text-surface-200 tracking-tight">Denetim Merkezi</h1>
+            <p className="mt-2 text-xs font-bold text-surface-500 uppercase tracking-[0.2em] flex items-center gap-2">
+              <span className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
+              {profile?.company || 'Planify'} İçin Aktif Denetim Dosyaları
+            </p>
           </div>
         </div>
+
+        {/* Metrics Row */}
+        {!isLoading && <DashboardMetrics projects={projects} />}
 
         {isLoading ? (
           <DashboardLoading />

@@ -231,7 +231,7 @@ export interface ToolOptions {
   select: Record<string, never>;
 }
 
-export type SymbolCategory = 'E_ACIL' | 'F_YANGIN' | 'E_SAGLIK' | 'W_TEHLIKE' | 'X_OPERASYON';
+export type SymbolCategory = 'E_ACIL' | 'F_YANGIN' | 'E_SAGLIK' | 'W_TEHLIKE' | 'P_YASAK' | 'M_ZORUNLU' | 'N_NAVIGASYON' | 'X_OPERASYON';
 
 export interface SymbolTemplate {
   id: string;
@@ -295,6 +295,33 @@ export const SYMBOLS: SymbolTemplate[] = [
   { id: 'W008', name: 'Kaygan Zemin', color: '#FFD700', shape: 'square', category: 'W_TEHLIKE' },
   { id: 'W009', name: 'Düşme Tehlikesi', color: '#FFD700', shape: 'square', category: 'W_TEHLIKE' },
   { id: 'W010', name: 'Kimyasal Depo', color: '#FFD700', shape: 'square', category: 'W_TEHLIKE' },
+  // P Serisi — Yasak İşaretleri (ISO 7010)
+  { id: 'P001', name: 'Sigara İçilmez', color: '#E81123', shape: 'circle', category: 'P_YASAK' },
+  { id: 'P002', name: 'Açık Alev Yasak', color: '#E81123', shape: 'circle', category: 'P_YASAK' },
+  { id: 'P003', name: 'Yaya Geçişi Yasak', color: '#E81123', shape: 'circle', category: 'P_YASAK' },
+  { id: 'P004', name: 'Su İle Söndürme Yasak', color: '#E81123', shape: 'circle', category: 'P_YASAK' },
+  { id: 'P005', name: 'İçme Suyu Değil', color: '#E81123', shape: 'circle', category: 'P_YASAK' },
+  { id: 'P006', name: 'Asansör Kullanma', color: '#E81123', shape: 'circle', category: 'P_YASAK' },
+  { id: 'P007', name: 'Forklift Geçişi Yasak', color: '#E81123', shape: 'circle', category: 'P_YASAK' },
+  { id: 'P008', name: 'Dokunma Yasak', color: '#E81123', shape: 'circle', category: 'P_YASAK' },
+  { id: 'P009', name: 'Cep Telefonu Yasak', color: '#E81123', shape: 'circle', category: 'P_YASAK' },
+  { id: 'P010', name: 'Giriş Yasak', color: '#E81123', shape: 'circle', category: 'P_YASAK' },
+  // M Serisi — Zorunluluk İşaretleri (ISO 7010)
+  { id: 'M001', name: 'Koruyucu Gözlük', color: '#0066CC', shape: 'circle', category: 'M_ZORUNLU' },
+  { id: 'M002', name: 'Baret Tak', color: '#0066CC', shape: 'circle', category: 'M_ZORUNLU' },
+  { id: 'M003', name: 'Kulaklık Tak', color: '#0066CC', shape: 'circle', category: 'M_ZORUNLU' },
+  { id: 'M004', name: 'Gaz Maskesi Tak', color: '#0066CC', shape: 'circle', category: 'M_ZORUNLU' },
+  { id: 'M005', name: 'Koruyucu Eldiven', color: '#0066CC', shape: 'circle', category: 'M_ZORUNLU' },
+  { id: 'M006', name: 'Koruyucu Ayakkabı', color: '#0066CC', shape: 'circle', category: 'M_ZORUNLU' },
+  { id: 'M007', name: 'Koruyucu Giysi', color: '#0066CC', shape: 'circle', category: 'M_ZORUNLU' },
+  { id: 'M008', name: 'Yüz Siperi', color: '#0066CC', shape: 'circle', category: 'M_ZORUNLU' },
+  // N Serisi — Navigasyon / Plan Unsurları
+  { id: 'N001', name: 'Kuzey Oku', color: '#1e293b', shape: 'none', category: 'N_NAVIGASYON' },
+  { id: 'N002', name: 'Ölçek Çubuğu', color: '#1e293b', shape: 'none', category: 'N_NAVIGASYON' },
+  { id: 'N003', name: 'Acil Çıkış Kapısı', color: '#008F4C', shape: 'square', category: 'N_NAVIGASYON' },
+  { id: 'N004', name: 'Engelli Rampa', color: '#0066CC', shape: 'square', category: 'N_NAVIGASYON' },
+  { id: 'N005', name: 'Merdiven Yönü', color: '#008F4C', shape: 'square', category: 'N_NAVIGASYON' },
+  // X Serisi — Operasyon & Tesis
   { id: 'X001', name: 'Acil Durum Kiti', color: '#00539C', shape: 'square', category: 'X_OPERASYON' },
   { id: 'X002', name: 'Deprem Kiti', color: '#00539C', shape: 'square', category: 'X_OPERASYON' },
   { id: 'X003', name: 'Kimyasal Müdahale', color: '#00539C', shape: 'square', category: 'X_OPERASYON' },

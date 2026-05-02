@@ -93,14 +93,16 @@ export function buildRegions(style: string): TemplateRegion[] {
   if (style === 'panoramic') return [
     r('header',          'header',      HEADER_TITLE,            2,   2, 96, 10, 'green'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',        2,  14, 74, 68, 'paper'),
-    r('legend',          'legend',      'Lejand',                78,  14, 20, 32, 'info'),
+    r('emergency',       'emergency',   '112 Acil Hattı',        78,  14, 20, 10, 'red'),
+    r('legend',          'legend',      'Lejand',                78,  26, 20, 20, 'info'),
     r('instructions',    'instruction', 'Talimatlar',            78,  48, 20, 22, 'green'),
     r('assembly',        'assembly',    'Toplanma Alanı',        78,  72, 20, 18, 'blue'),
     r('approval',        'approval',    'Onay ve Revizyon',       2,  82, 96, 16, 'neutral'),
   ];
   if (style === 'leftRail') return [
     r('header',          'header',      HEADER_TITLE,            3,   3, 94,  9, 'green'),
-    r('instructions',    'instruction', 'Acil Durum Talimatı',    3,  15, 21, 35, 'green'),
+    r('emergency',       'emergency',   '112 Acil Yardım',        3,  15, 21,  9, 'red'),
+    r('instructions',    'instruction', 'Acil Durum Talimatı',    3,  26, 21, 24, 'green'),
     r('fireInstruction', 'instruction', 'Yangın Talimatı',        3,  52, 21, 28, 'red'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',       27,  15, 68, 65, 'paper'),
     r('legend',          'legend',      'Lejand',                 3,  80, 42, 17, 'info'),
@@ -110,7 +112,8 @@ export function buildRegions(style: string): TemplateRegion[] {
   if (style === 'rightRail') return [
     r('header',          'header',      HEADER_TITLE,            3,   3, 94,  9, 'green'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',        3,  15, 68, 65, 'paper'),
-    r('legend',          'legend',      'Lejand',                74,  15, 23, 35, 'info'),
+    r('legend',          'legend',      'Lejand',                74,  15, 23, 25, 'info'),
+    r('emergency',       'emergency',   '112 Acil Yardım',       74,  42, 23,  8, 'red'),
     r('instructions',    'instruction', 'Acil Durum Talimatı',   74,  52, 23, 28, 'green'),
     r('assembly',        'assembly',    'Toplanma Alanı',         3,  80, 34, 17, 'blue'),
     r('approval',        'approval',    'Onay ve Revizyon',      40,  80, 57, 17, 'neutral'),
@@ -118,14 +121,16 @@ export function buildRegions(style: string): TemplateRegion[] {
   if (style === 'bottomBand') return [
     r('header',          'header',      HEADER_TITLE,            3,   3, 94, 10, 'green'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',        3,  16, 94, 58, 'paper'),
-    r('instructions',    'instruction', 'Acil Durum Talimatı',    3,  77, 30, 18, 'green'),
-    r('fireInstruction', 'instruction', 'Yangın Talimatı',       35,  77, 30, 20, 'red'),
+    r('instructions',    'instruction', 'Acil Durum Talimatı',    3,  77, 21, 20, 'green'),
+    r('fireInstruction', 'instruction', 'Yangın Talimatı',       26,  77, 21, 20, 'red'),
+    r('emergency',       'emergency',   '112 Acil',              49,  77, 16, 20, 'red'),
     r('legend',          'legend',      'Lejand',                67,  77, 16, 20, 'info'),
     r('approval',        'approval',    'Onay / Revizyon',       85,  77, 12, 20, 'neutral'),
   ];
   if (style === 'dualRails') return [
     r('header',          'header',      HEADER_TITLE,            3,   3, 94, 10, 'green'),
-    r('instructions',    'instruction', 'Acil Durum Talimatı',    3,  16, 18, 38, 'green'),
+    r('emergency',       'emergency',   '112 Acil Durum',         3,  16, 18,  9, 'red'),
+    r('instructions',    'instruction', 'Acil Durum Talimatı',    3,  27, 18, 27, 'green'),
     r('fireInstruction', 'instruction', 'Yangın Talimatı',       79,  16, 18, 38, 'red'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',       23,  16, 54, 62, 'paper'),
     r('legend',          'legend',      'Lejand',                 3,  57, 18, 38, 'info'),
@@ -134,7 +139,8 @@ export function buildRegions(style: string): TemplateRegion[] {
   ];
   return [
     r('header',          'header',      HEADER_TITLE,            3,   3, 94, 10, 'green'),
-    r('instructions',    'instruction', 'Acil Durum Talimatı',    3,  16, 19, 31, 'green'),
+    r('emergency',       'emergency',   '112 Acil Yardım',        3,  16, 19,  9, 'red'),
+    r('instructions',    'instruction', 'Acil Durum Talimatı',    3,  27, 19, 20, 'green'),
     r('fireInstruction', 'instruction', 'Yangın Talimatı',        3,  50, 19, 28, 'red'),
     r('drawing',         'drawing',     'Ana Çizim Alanı',       25,  16, 57, 62, 'paper'),
     r('legend',          'legend',      'Lejand',                84,  16, 13, 31, 'info'),
@@ -204,16 +210,16 @@ export function getDefaultTemplateState(): TemplateState {
     },
     instructions: {
       title: 'ACİL DURUM TALİMATI',
-      body: '1. Sakin kalın, paniğe kapılmayın.\n2. En yakın çıkışa yönelin.\n3. Toplanma alanına gidin.\n4. Asansör kullanmayın.',
+      body: '1. Sakin olun, paniğe kapılmayın.\n2. Acil durum alarmını duyduğunuzda bulunduğunuz alanı derhal terk edin.\n3. Planda gösterilen en yakın acil çıkışa doğru ilerleyin.\n4. Asansörleri kesinlikle kullanmayın, merdivenleri tercih edin.\n5. Kapıları açmadan önce elinizin tersiyle sıcaklık kontrolü yapın.\n6. Duman varsa eğilerek veya sürünerek ilerleyin.\n7. Engelli, yaşlı ve hamile çalışanlara yardımcı olun.\n8. Kişisel eşyalarınızı toplamak için geri dönmeyin.\n9. Tahliye güzergahını takip ederek toplanma alanına gidin.\n10. Toplanma alanında yoklama yapılana kadar ayrılmayın.\n11. Eksik kişi varsa acil durum ekibini bilgilendirin.\n12. İtfaiye / kurtarma ekipleri gelinceye kadar binaya girmeyin.',
     },
     emergency: {
-      title: '112 ACİL DURUM TELEFONU',
-      body: 'Yangın, sağlık, güvenlik veya tahliye acil durumlarında 112 aranmalıdır.',
+      title: 'ACİL YARDIM NUMARASI',
+      body: '112 — ACİL ÇAĞRI MERKEZİ\n(İtfaiye, Ambulans, Polis, Jandarma)\n182 — Doğalgaz Arıza\n186 — Elektrik Arıza\n\nAramada bildirin:\n• Olayın türünü (yangın, kaza vb.)\n• Tam adres ve konumu\n• Yaralı sayısını ve durumunu',
       meta: 'EMERGENCY CALL',
     },
     fireInstruction: {
       title: 'YANGIN TALİMATI',
-      body: '1. Yangın alarmını çalıştırın.\n2. Yetkilileri 110 ile bilgilendirin.\n3. En yakın yangın tüpünü kullanın.\n4. Dumana karşı alçakta kalın.\n5. Asansörü kesinlikle kullanmayın.',
+      body: '1. Yangını fark ettiğinizde önce yangın alarm butonuna basın.\n2. 112 numarasını arayarak itfaiyeyi bilgilendirin.\n3. Yangın küçükse ve güvenliyse en yakın söndürücü ile müdahale edin.\n4. Söndürücüyü kullanırken ÇSTB kuralını uygulayın:\n   Ç — Çek (pimi çekin)\n   S — Sık (tetiği sıkın)\n   T — Tut (hortumu hedefe tutun)\n   B — Bas (aleve doğru basın)\n5. Yangın kontrol altına alınamıyorsa derhal tahliye edin.\n6. Kapıları kapatın ancak KİLİTLEMEYİN.\n7. Duman birikiyorsa eğilerek ilerleyin (temiz hava altta kalır).\n8. Asansörleri kesinlikle kullanmayın.\n9. Giysileriniz tutuşursa DUR — YAT — YUVARLAN uygulayın.\n10. Tahliye sonrası toplanma alanında eksiksiz yoklama yapın.',
     },
     legend: {
       title: 'SEMBOLLER DİZİNİ',

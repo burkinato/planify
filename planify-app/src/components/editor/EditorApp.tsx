@@ -256,43 +256,91 @@ export default function EditorApp() {
 
   const exportImage = async (format: 'png' | 'jpeg' = 'png') => {
     validateCompliance();
-    useEditorStore.getState().setFocusedRegionId(null);
-    await waitForPaint();
-    const fileName = `planify-tahliye-plani.${format}`;
-    if (activeTemplateLayout && containerRef.current) {
-      const html2canvas = (await import('html2canvas')).default;
-      containerRef.current.dataset.exportMode = 'true';
-      let canvas: HTMLCanvasElement;
-      try {
-        canvas = await html2canvas(containerRef.current, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-        });
-      } finally {
-        if (containerRef.current) {
-          delete containerRef.current.dataset.exportMode;
+    const { editorTheme: savedEditorTheme } = useEditorStore.getState();
+    try {
+      useEditorStore.getState().setEditorTheme('minimal');
+      useEditorStore.getState().setFocusedRegionId(null);
+      await waitForPaint();
+      const fileName = `planify-tahliye-plani.${format}`;
+      if (activeTemplateLayout && containerRef.current) {
+        const { toCanvas } = await import('html-to-image');
+        containerRef.current.dataset.exportMode = 'true';
+        let canvas: HTMLCanvasElement;
+        try {
+          canvas = await toCanvas(containerRef.current, {
+            pixelRatio: 2,
+            backgroundColor: '#ffffff',
+          });
+        } finally {
+          if (containerRef.current) {
+            delete containerRef.current.dataset.exportMode;
+          }
         }
+
+        if (!isPro) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.save();
+            ctx.globalAlpha = 0.12;
+            ctx.font = 'bold 80px Arial';
+            ctx.fillStyle = '#666666';
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(-35 * Math.PI / 180);
+            ctx.textAlign = 'center';
+            ctx.fillText('PLANIFY DEMO', 0, -60);
+            ctx.fillText('PLANIFY DEMO', 0, 60);
+            ctx.restore();
+          }
+        }
+
+        const dataURL = canvas.toDataURL(format === 'jpeg' ? 'image/jpeg' : 'image/png', format === 'jpeg' ? 0.95 : 1);
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = dataURL;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        if (projectId) await recordProjectExport(projectId, format, fileName);
+        return;
       }
+
+      if (!stageRef.current) return;
+      const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+      const quality = format === 'jpeg' ? 0.95 : 1;
+      const dataURL = stageRef.current.toDataURL({ pixelRatio: 3, mimeType, quality });
 
       if (!isPro) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.save();
-          ctx.globalAlpha = 0.12;
-          ctx.font = 'bold 80px Arial';
-          ctx.fillStyle = '#666666';
-          ctx.translate(canvas.width / 2, canvas.height / 2);
-          ctx.rotate(-35 * Math.PI / 180);
-          ctx.textAlign = 'center';
-          ctx.fillText('PLANIFY DEMO', 0, -60);
-          ctx.fillText('PLANIFY DEMO', 0, 60);
-          ctx.restore();
-        }
+        const img = new Image();
+        img.onload = () => {
+          const watermarkCanvas = document.createElement('canvas');
+          watermarkCanvas.width = img.width;
+          watermarkCanvas.height = img.height;
+          const ctx = watermarkCanvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            ctx.save();
+            ctx.globalAlpha = 0.12;
+            ctx.font = 'bold 120px Arial';
+            ctx.fillStyle = '#666666';
+            ctx.translate(watermarkCanvas.width / 2, watermarkCanvas.height / 2);
+            ctx.rotate(-35 * Math.PI / 180);
+            ctx.textAlign = 'center';
+            ctx.fillText('PLANIFY DEMO', 0, -80);
+            ctx.fillText('PLANIFY DEMO', 0, 80);
+            ctx.restore();
+          }
+          const link = document.createElement('a');
+          link.download = fileName;
+          link.href = watermarkCanvas.toDataURL(mimeType, quality);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          if (projectId) void recordProjectExport(projectId, format, fileName);
+        };
+        img.src = dataURL;
+        return;
       }
 
-      const dataURL = canvas.toDataURL(format === 'jpeg' ? 'image/jpeg' : 'image/png', format === 'jpeg' ? 0.95 : 1);
       const link = document.createElement('a');
       link.download = fileName;
       link.href = dataURL;
@@ -300,64 +348,26 @@ export default function EditorApp() {
       link.click();
       document.body.removeChild(link);
       if (projectId) await recordProjectExport(projectId, format, fileName);
-      return;
+    } finally {
+      useEditorStore.getState().setEditorTheme(savedEditorTheme);
     }
-
-    if (!stageRef.current) return;
-    const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-    const quality = format === 'jpeg' ? 0.95 : 1;
-    const dataURL = stageRef.current.toDataURL({ pixelRatio: 3, mimeType, quality });
-
-    if (!isPro) {
-      const img = new Image();
-      img.onload = () => {
-        const watermarkCanvas = document.createElement('canvas');
-        watermarkCanvas.width = img.width;
-        watermarkCanvas.height = img.height;
-        const ctx = watermarkCanvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          ctx.save();
-          ctx.globalAlpha = 0.12;
-          ctx.font = 'bold 120px Arial';
-          ctx.fillStyle = '#666666';
-          ctx.translate(watermarkCanvas.width / 2, watermarkCanvas.height / 2);
-          ctx.rotate(-35 * Math.PI / 180);
-          ctx.textAlign = 'center';
-          ctx.fillText('PLANIFY DEMO', 0, -80);
-          ctx.fillText('PLANIFY DEMO', 0, 80);
-          ctx.restore();
-        }
-        const link = document.createElement('a');
-        link.download = fileName;
-        link.href = watermarkCanvas.toDataURL(mimeType, quality);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        if (projectId) void recordProjectExport(projectId, format, fileName);
-      };
-      img.src = dataURL;
-      return;
-    }
-
-    const link = document.createElement('a');
-    link.download = fileName;
-    link.href = dataURL;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    if (projectId) await recordProjectExport(projectId, format, fileName);
   };
 
   const exportPdf = async () => {
     validateCompliance();
-    useEditorStore.getState().setFocusedRegionId(null);
-    await waitForPaint();
-    const { exportToPDF } = await import('@/lib/editor/export');
-    const project = projects.find(p => p.id === projectId);
-    const fileName = `${(project?.title || 'Tahliye-Plani').replace(/\s+/g, '-')}.pdf`;
-    await exportToPDF(containerRef, project?.title || 'Tahliye-Plani', activeTemplateLayout, isPro);
-    if (projectId) await recordProjectExport(projectId, 'pdf', fileName);
+    const { editorTheme: savedEditorTheme } = useEditorStore.getState();
+    try {
+      useEditorStore.getState().setEditorTheme('minimal');
+      useEditorStore.getState().setFocusedRegionId(null);
+      await waitForPaint();
+      const { exportToPDF } = await import('@/lib/editor/export');
+      const project = projects.find(p => p.id === projectId);
+      const fileName = `${(project?.title || 'Tahliye-Plani').replace(/\s+/g, '-')}.pdf`;
+      await exportToPDF(containerRef, project?.title || 'Tahliye-Plani', activeTemplateLayout, isPro);
+      if (projectId) await recordProjectExport(projectId, 'pdf', fileName);
+    } finally {
+      useEditorStore.getState().setEditorTheme(savedEditorTheme);
+    }
   };
 
   useKeyboardShortcuts(() => exportImage());

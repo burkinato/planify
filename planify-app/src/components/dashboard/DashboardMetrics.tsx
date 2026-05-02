@@ -1,73 +1,70 @@
 'use client';
 
-import { AlertTriangle, Archive, ClipboardCheck, FileCheck2, Sparkles } from 'lucide-react';
-import type { ProjectExport } from '@/store/useProjectStore';
-import type { ProjectAudit } from '@/lib/projects/compliance';
-import { formatPortalDate } from '@/lib/projects/compliance';
-import { cn } from '@/lib/utils';
+import { FileText, ShieldCheck, Zap, BarChart3 } from 'lucide-react';
+import type { Project } from '@/store/useProjectStore';
 
 interface DashboardMetricsProps {
-  projectCount: number;
-  audits: ProjectAudit[];
-  exports: ProjectExport[];
+  projects: Project[];
 }
 
-export function DashboardMetrics({ projectCount, audits, exports }: DashboardMetricsProps) {
-  const readyCount = audits.filter((audit) => audit.status === 'ready' || audit.status === 'exported').length;
-  const missingCount = audits.reduce((count, audit) => count + audit.missing.length, 0);
-  const latestExport = exports[0]?.created_at;
+export function DashboardMetrics({ projects }: DashboardMetricsProps) {
+  const totalProjects = projects.length;
+  const avgCompliance = totalProjects > 0 
+    ? Math.round(projects.reduce((acc, p) => acc + (p.compliance_score || 0), 0) / totalProjects)
+    : 0;
+  const activeDrafts = projects.filter(p => p.audit_status === 'draft' || !p.audit_status).length;
+  const completedAudits = projects.filter(p => p.audit_status === 'exported' || p.audit_status === 'approved').length;
 
   const metrics = [
     {
       label: 'Toplam Dosya',
-      value: projectCount,
-      helper: 'Aktif tahliye planı',
-      icon: Archive,
-      color: 'bg-surface-800 text-surface-400',
+      value: totalProjects,
+      icon: <FileText className="w-5 h-5 text-primary-500" />,
+      color: 'blue',
+      description: 'Aktif denetim planları'
     },
     {
-      label: 'Denetime Hazır',
-      value: readyCount,
-      helper: 'Kontrolü tamamlanan',
-      icon: ClipboardCheck,
-      color: 'bg-emerald-500/10 text-emerald-400',
+      label: 'Ortalama Uyumluluk',
+      value: `${avgCompliance}%`,
+      icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />,
+      color: 'emerald',
+      description: 'ISO 23601 skoru'
     },
     {
-      label: 'Eksik Kontrol',
-      value: missingCount,
-      helper: 'Bekleyen ISO maddesi',
-      icon: AlertTriangle,
-      color: 'bg-amber-500/10 text-amber-400',
+      label: 'Taslak Aşaması',
+      value: activeDrafts,
+      icon: <Zap className="w-5 h-5 text-amber-500" />,
+      color: 'amber',
+      description: 'Düzenleme bekleyenler'
     },
     {
-      label: 'Son Çıktı',
-      value: latestExport ? formatPortalDate(latestExport) : '-',
-      helper: latestExport ? 'Arşiv kayıt tarihi' : 'Henüz kayıt yok',
-      icon: FileCheck2,
-      color: 'bg-blue-500/10 text-blue-400',
-    },
+      label: 'Tamamlanan',
+      value: completedAudits,
+      icon: <BarChart3 className="w-5 h-5 text-indigo-500" />,
+      color: 'indigo',
+      description: 'Dışa aktarılanlar'
+    }
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-      {metrics.map(({ label, value, helper, icon: Icon, color }) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {metrics.map((metric) => (
         <div 
-          key={label} 
-          className="relative overflow-hidden bg-surface-950 rounded-lg p-6 border border-surface-600 group hover:bg-surface-900 transition-all duration-300"
+          key={metric.label}
+          className="bg-surface-900 border border-surface-600 rounded-2xl p-6 shadow-sm hover:border-surface-500 transition-all group"
         >
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-400">{label}</p>
-              <p className="text-2xl font-medium text-surface-200 tracking-tight">{value}</p>
+          <div className="flex items-center justify-between">
+            <div className={`p-3 rounded-xl bg-surface-950 border border-surface-600 group-hover:scale-110 transition-transform duration-500`}>
+              {metric.icon}
             </div>
-            <div className={cn("w-12 h-12 rounded flex items-center justify-center transition-transform duration-300 group-hover:scale-110", color)}>
-              <Icon className="w-6 h-6" />
+            <div className="text-right">
+              <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest">{metric.label}</p>
+              <h4 className="text-2xl font-black text-surface-200 mt-1">{metric.value}</h4>
             </div>
           </div>
-          <div className="mt-6 flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-surface-600 group-hover:bg-primary-500 transition-colors" />
-            <p className="text-[10px] font-bold text-surface-400 uppercase tracking-widest">{helper}</p>
-          </div>
+          <p className="text-[10px] font-bold text-surface-500 uppercase tracking-widest mt-4">
+            {metric.description}
+          </p>
         </div>
       ))}
     </div>
