@@ -320,13 +320,19 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
 
       {/* Bottom CTA */}
       <div className="p-4 border-t border-surface-600 bg-surface-950">
-        <button 
+<button
           onClick={handleSavePlan}
           disabled={isSaving}
-          className="w-full bg-primary-500 text-white py-2.5 rounded hover:bg-primary-600 font-medium text-xs uppercase tracking-widest shadow transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
+          className="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white py-3.5 rounded-xl hover:from-primary-600 hover:to-primary-700 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-primary-500/30 transition-all flex items-center justify-center gap-2.5 disabled:opacity-60 disabled:pointer-events-none"
         >
-          {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {isSaving ? 'Kaydediliyor...' : 'Planı Kaydet / Yayınla'}
+          {isSaving ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <>
+              <Save className="w-4 h-4" />
+              <span>Planı Kaydet</span>
+            </>
+          )}
         </button>
       </div>
     </aside>

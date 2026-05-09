@@ -289,22 +289,6 @@ export default function EditorApp() {
           }
         }
 
-        if (!isPro) {
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.save();
-            ctx.globalAlpha = 0.12;
-            ctx.font = 'bold 80px Arial';
-            ctx.fillStyle = '#666666';
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.rotate(-35 * Math.PI / 180);
-            ctx.textAlign = 'center';
-            ctx.fillText('PLANIFY DEMO', 0, -60);
-            ctx.fillText('PLANIFY DEMO', 0, 60);
-            ctx.restore();
-          }
-        }
-
         const dataURL = canvas.toDataURL(format === 'jpeg' ? 'image/jpeg' : 'image/png', format === 'jpeg' ? 0.95 : 1);
         const link = document.createElement('a');
         link.download = fileName;
@@ -321,23 +305,13 @@ export default function EditorApp() {
       const quality = format === 'jpeg' ? 0.95 : 1;
       const dataURL = stageRef.current.toDataURL({ pixelRatio: 3, mimeType, quality });
 
-const link = document.createElement('a');
-      link.download = fileName;
-      link.href = dataURL;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      if (projectId) void recordProjectExport(projectId, format, fileName);
-      return;
-      }
-
       const link = document.createElement('a');
       link.download = fileName;
       link.href = dataURL;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      if (projectId) await recordProjectExport(projectId, format, fileName);
+      if (projectId) void recordProjectExport(projectId, format, fileName);
     } finally {
       useEditorStore.getState().setEditorTheme(savedEditorTheme);
     }

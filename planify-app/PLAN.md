@@ -26,7 +26,7 @@ Sag panelde `Denetim Modulleri` bulunur. Kullanici karti tutup kagida birakir, s
 Hazir modul seti:
 
 - `Header`: logo, isyeri/proje adi, kat, revizyon, tarih
-- `DrawingArea`: Konva cizim alani, grid, watermark/export uyumu
+- `DrawingArea`: Konva cizim alani, grid, export uyumu
 - `EmergencyCall`: 112 ve yerel acil numaralar
 - `EvacuationInstructions`: tahliye talimati
 - `FireInstructions`: yangin talimati
@@ -96,7 +96,7 @@ Testler:
 - Sablon modulu: ekle, tasi, resize, sil, geri al/ileri al
 - Compliance: eksikler dogru uyari versin, tamamlaninca skor yukselsin
 - Mobile/tablet: sag panel drawer olarak calissin, kagit tasmasin
-- PDF/PNG: A3 yatay/dikey oranlari, watermark/pro ayrimi ve metin okunabilirligi dogrulansin
+- PDF/PNG: A3 yatay/dikey oranlari ve metin okunabilirligi dogrulansin
 
 ## Varsayimlar
 
