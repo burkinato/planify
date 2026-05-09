@@ -7,7 +7,7 @@ import {
 import { useEditorStore } from '@/store/useEditorStore';
 import { useProjectStore } from '@/store/useProjectStore';
 import { cn } from '@/lib/utils';
-import { FALLBACK_TEMPLATE_LAYOUTS, normalizePagePreset, normalizeTemplateLayout } from '@/lib/editor/templateLayouts';
+import { FALLBACK_TEMPLATE_LAYOUTS, getTemplateModules, modulesToRegions, normalizePagePreset, normalizeTemplateLayout } from '@/lib/editor/templateLayouts';
 import type { PagePreset, TemplateLayout, TemplateRegion } from '@/types/editor';
 
 interface TemplateSelectorModalProps {
@@ -30,6 +30,11 @@ const CATEGORY_META: Record<string, { label: string; Icon: React.ElementType; co
   KAMU: { label: 'Kamu / Mevzuat', Icon: Building2, color: 'text-slate-400' },
   GENEL: { label: 'Genel Kullanım', Icon: LayoutTemplate, color: 'text-surface-400' },
   PREMIUM: { label: 'Premium Paket', Icon: Sparkles, color: 'text-primary-500' },
+  DENETIM: { label: 'Denetim Odakli', Icon: ShieldCheck, color: 'text-emerald-400' },
+  ENDUSTRI: { label: 'Endustriyel Tesis', Icon: Wrench, color: 'text-amber-400' },
+  ZİYARETCI: { label: 'Ziyaretci Alanlari', Icon: ArrowRight, color: 'text-cyan-400' },
+  ZIYARETCI: { label: 'Ziyaretci Alanlari', Icon: ArrowRight, color: 'text-cyan-400' },
+  SAGLIK: { label: 'Saglik / Erisilebilirlik', Icon: Info, color: 'text-cyan-300' },
 };
 
 const PRESETS: { id: PagePreset; label: string; sub: string; Icon: React.ElementType }[] = [
@@ -37,8 +42,16 @@ const PRESETS: { id: PagePreset; label: string; sub: string; Icon: React.Element
   { id: 'Portrait', label: 'Dikey Görünüm', sub: 'Portrait', Icon: Smartphone },
 ];
 
+const mergeTemplateSources = (dbLayouts: TemplateLayout[]) => {
+  const merged = new Map<string, TemplateLayout>();
+  [...FALLBACK_TEMPLATE_LAYOUTS, ...dbLayouts].forEach((layout) => {
+    if (!merged.has(layout.slug)) merged.set(layout.slug, layout);
+  });
+  return Array.from(merged.values());
+};
+
 function TemplateThumbnail({ layout, isLarge = false }: { layout: TemplateLayout; isLarge?: boolean }) {
-  const regions = layout.layout_json.regions || [];
+  const regions = modulesToRegions(getTemplateModules(layout));
 
   const toneStyle = (region: TemplateRegion): React.CSSProperties => {
     const map: Record<string, { bg: string; border: string }> = {
@@ -129,7 +142,7 @@ export function TemplateSelectorModal({
   }, [fetchTemplateLayouts]);
 
   const layouts = useMemo(() => {
-    const raw = (templateLayouts && templateLayouts.length > 0) ? templateLayouts : FALLBACK_TEMPLATE_LAYOUTS;
+    const raw = mergeTemplateSources(templateLayouts || []);
     return raw.map(l => ({
       ...normalizeTemplateLayout(l),
       normalizedPreset: normalizePagePreset(l.page_preset).toLowerCase()

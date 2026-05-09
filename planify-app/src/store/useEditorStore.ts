@@ -15,6 +15,8 @@ import type {
   ProjectTemplate,
   PagePreset,
   TemplateLayout,
+  TemplateModuleInstance,
+  TemplateModuleType,
   TemplateState,
   TemplateRegionState,
   ProjectMetadata,
@@ -33,9 +35,17 @@ import {
   sanitizeEditorElements,
   sanitizeLayers,
   sanitizeScaleConfig,
+  sanitizeTemplateModules,
   sanitizeTemplateState,
 } from '@/lib/editor/sanitizeEditorState';
-import { normalizePagePreset, normalizeTemplateLayout } from '@/lib/editor/templateLayouts';
+import {
+  clampTemplateModule,
+  createTemplateModuleInstance,
+  getModuleDefinition,
+  getTemplateModules,
+  normalizePagePreset,
+  normalizeTemplateLayout,
+} from '@/lib/editor/templateLayouts';
 
 // Samet (P1 Fix): Debounce utility for localStorage writes
 let saveElementsTimer: ReturnType<typeof setTimeout> | null = null;
@@ -63,6 +73,7 @@ const debouncedSaveLayers = (layers: LayerDef[]) => {
 interface HistorySnapshot {
   elements: EditorElement[];
   layers: LayerDef[];
+  templateModules?: TemplateModuleInstance[];
 }
 
 interface EditorState {
@@ -83,6 +94,8 @@ interface EditorState {
   templateLayoutId: string | null;
   activeTemplateLayout: TemplateLayout | null;
   pagePreset: PagePreset;
+  templateModules: TemplateModuleInstance[];
+  selectedTemplateModuleId: string | null;
   templateState: TemplateState;
   focusedRegionId: string | null;
   projectMetadata: ProjectMetadata;
@@ -112,6 +125,11 @@ interface EditorState {
   setProjectTemplate: (template: ProjectTemplate) => void;
   setTemplateLayout: (layout: TemplateLayout | null) => void;
   setPagePreset: (preset: PagePreset) => void;
+  setTemplateModules: (modules: TemplateModuleInstance[]) => void;
+  addTemplateModule: (type: TemplateModuleType, placement?: Partial<Pick<TemplateModuleInstance, 'x' | 'y' | 'w' | 'h'>>) => void;
+  updateTemplateModule: (id: string, updates: Partial<TemplateModuleInstance>) => void;
+  removeTemplateModule: (id: string) => void;
+  setSelectedTemplateModuleId: (id: string | null) => void;
   setTemplateState: (state: TemplateState) => void;
   updateTemplateRegion: (regionId: string, updates: TemplateRegionState) => void;
   setProjectMetadata: (metadata: Partial<ProjectMetadata>) => void;
@@ -177,6 +195,8 @@ const getInitialState = () => {
       templateLayoutId: null as string | null,
       activeTemplateLayout: null as TemplateLayout | null,
       pagePreset: 'Landscape' as PagePreset,
+      templateModules: [] as TemplateModuleInstance[],
+      selectedTemplateModuleId: null as string | null,
       templateState: {} as TemplateState,
       projectMetadata: { name: 'PROJE DOSYASI', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00', floor: '', scale: '100' },
       innerZoom: 1,
@@ -201,6 +221,8 @@ const getInitialState = () => {
     templateLayoutId: localStorage.getItem('planify-template-layout-id'),
     activeTemplateLayout: null as TemplateLayout | null,
     pagePreset: normalizePagePreset(localStorage.getItem('planify-preset')),
+    templateModules: sanitizeTemplateModules(JSON.parse(localStorage.getItem('planify-template-modules') || '[]')),
+    selectedTemplateModuleId: null as string | null,
     templateState: sanitizeTemplateState(JSON.parse(localStorage.getItem('planify-template-state') || '{}')),
     projectMetadata: JSON.parse(localStorage.getItem('planify-project-metadata') || JSON.stringify({ name: 'PROJE DOSYASI', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00', floor: '', scale: '100' })),
     innerZoom: parseFloat(localStorage.getItem('planify-inner-zoom') || '1') || 1,
@@ -218,6 +240,21 @@ const saveElements = (elements: EditorElement[]) => {
 
 const saveLayers = (layers: LayerDef[]) => {
   debouncedSaveLayers(layers);
+};
+
+const saveTemplateModules = (modules: TemplateModuleInstance[]) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('planify-template-modules', JSON.stringify(modules));
+  }
+};
+
+const createUniqueModuleId = (baseId: string, modules: TemplateModuleInstance[]) => {
+  const existingIds = new Set(modules.map((module) => module.id));
+  if (!existingIds.has(baseId)) return baseId;
+
+  let index = 2;
+  while (existingIds.has(`${baseId}-${index}`)) index += 1;
+  return `${baseId}-${index}`;
 };
 
 export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, get) => {
@@ -263,6 +300,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     setSelectedIds: (selectedIds) => set((state) => ({
       selectedIds,
       focusedRegionId: selectedIds.length > 0 ? null : state.focusedRegionId,
+      selectedTemplateModuleId: selectedIds.length > 0 ? null : state.selectedTemplateModuleId,
     })),
     setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(5, zoom)) }),
     setPan: (panUpdate) => set((state) => ({ 
@@ -298,21 +336,34 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
 
     setTemplateLayout: (layout) => {
       const normalizedLayout = layout ? normalizeTemplateLayout(layout) : null;
+      const current = get();
+      const keepExistingModules = Boolean(
+        normalizedLayout &&
+        current.templateModules.length > 0 &&
+        (current.templateLayoutId === normalizedLayout.id || current.projectTemplate === normalizedLayout.slug)
+      );
+      const templateModules = normalizedLayout
+        ? (keepExistingModules ? current.templateModules : getTemplateModules(normalizedLayout))
+        : [];
       set({
         activeTemplateLayout: normalizedLayout,
         templateLayoutId: normalizedLayout?.id || null,
         projectTemplate: normalizedLayout?.slug || 'blank',
         pagePreset: normalizedLayout?.page_preset || get().pagePreset,
+        templateModules,
         focusedRegionId: null,
+        selectedTemplateModuleId: null,
       });
       if (typeof window !== 'undefined') {
         if (normalizedLayout) {
           localStorage.setItem('planify-template-layout-id', normalizedLayout.id);
           localStorage.setItem('planify-template', normalizedLayout.slug);
           localStorage.setItem('planify-preset', normalizedLayout.page_preset);
+          saveTemplateModules(templateModules);
         } else {
           localStorage.removeItem('planify-template-layout-id');
           localStorage.setItem('planify-template', 'blank');
+          localStorage.removeItem('planify-template-modules');
         }
       }
     },
@@ -324,6 +375,105 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         localStorage.setItem('planify-preset', pagePreset);
       }
     },
+
+    setTemplateModules: (modules) => {
+      const templateModules = modules.map(clampTemplateModule).sort((left, right) => left.zIndex - right.zIndex);
+      set({ templateModules });
+      saveTemplateModules(templateModules);
+    },
+
+    addTemplateModule: (type, placement = {}) => {
+      const { elements, layers, past, templateModules, templateState } = get();
+
+      if (type === 'DrawingArea' && templateModules.some((module) => module.type === 'DrawingArea')) {
+        const existing = templateModules.find((module) => module.type === 'DrawingArea');
+        set({
+          focusedRegionId: existing?.id ?? 'drawing',
+          selectedTemplateModuleId: existing?.id ?? 'drawing',
+          selectedIds: [],
+        });
+        toast.info('Cizim alani tek instance olarak tutulur.');
+        return;
+      }
+
+      const base = createTemplateModuleInstance(type, placement);
+      const maxZIndex = templateModules.reduce((max, module) => Math.max(max, module.zIndex), 20);
+      const newModule = clampTemplateModule({
+        ...base,
+        id: createUniqueModuleId(base.id, templateModules),
+        zIndex: type === 'DrawingArea' ? 10 : maxZIndex + 1,
+      });
+      const definition = getModuleDefinition(type);
+      const nextModules = [...templateModules, newModule].sort((left, right) => left.zIndex - right.zIndex);
+      const nextTemplateState = {
+        ...templateState,
+        [newModule.id]: {
+          ...definition.defaultState,
+          ...(templateState[newModule.id] || {}),
+        },
+      };
+
+      set({
+        past: [...past, { elements, layers, templateModules }].slice(-20),
+        templateModules: nextModules,
+        templateState: nextTemplateState,
+        focusedRegionId: newModule.id,
+        selectedTemplateModuleId: newModule.id,
+        selectedIds: [],
+        future: [],
+        canUndo: true,
+        canRedo: false,
+      });
+      saveTemplateModules(nextModules);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('planify-template-state', JSON.stringify(nextTemplateState));
+      }
+    },
+
+    updateTemplateModule: (id, updates) => {
+      const { elements, layers, past, templateModules } = get();
+      const nextModules = templateModules
+        .map((module) => (module.id === id ? clampTemplateModule({ ...module, ...updates }) : module))
+        .sort((left, right) => left.zIndex - right.zIndex);
+
+      set({
+        past: [...past, { elements, layers, templateModules }].slice(-20),
+        templateModules: nextModules,
+        future: [],
+        canUndo: true,
+        canRedo: false,
+      });
+      saveTemplateModules(nextModules);
+    },
+
+    removeTemplateModule: (id) => {
+      const { elements, layers, past, templateModules, selectedTemplateModuleId, focusedRegionId } = get();
+      const target = templateModules.find((module) => module.id === id);
+      if (!target) return;
+
+      if (target.type === 'DrawingArea') {
+        toast.warning(elements.length > 0 ? 'CAD icerigi varken cizim alani silinemez.' : 'Cizim alani sablonun zorunlu modulu olarak tutulur.');
+        return;
+      }
+
+      const nextModules = templateModules.filter((module) => module.id !== id);
+      set({
+        past: [...past, { elements, layers, templateModules }].slice(-20),
+        templateModules: nextModules,
+        selectedTemplateModuleId: selectedTemplateModuleId === id ? null : selectedTemplateModuleId,
+        focusedRegionId: focusedRegionId === id ? null : focusedRegionId,
+        future: [],
+        canUndo: true,
+        canRedo: false,
+      });
+      saveTemplateModules(nextModules);
+    },
+
+    setSelectedTemplateModuleId: (selectedTemplateModuleId) => set({
+      selectedTemplateModuleId,
+      focusedRegionId: selectedTemplateModuleId,
+      selectedIds: [],
+    }),
 
     setTemplateState: (templateState) => {
       set({ templateState });
@@ -356,6 +506,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
 
     setFocusedRegionId: (focusedRegionId) => set((state) => ({
       focusedRegionId,
+      selectedTemplateModuleId: focusedRegionId,
       selectedIds: focusedRegionId ? [] : state.selectedIds,
     })),
 
@@ -548,6 +699,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
             layers: data.layers,
             projectTemplate: data.projectTemplate || get().projectTemplate,
             templateLayoutId: data.templateLayoutId,
+            templateModules: data.templateModules,
             templateState: data.templateState,
             projectMetadata: data.projectMetadata || { name: 'PROJE DOSYASI', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00' },
             pagePreset: data.pagePreset,
@@ -555,6 +707,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
             innerPan: data.innerPan || { x: 0, y: 0 },
             activeLayerId: data.layers[0]?.id || DEFAULT_LAYER.id,
             focusedRegionId: null,
+            selectedTemplateModuleId: null,
             past: [],
             future: [],
             canUndo: false,
@@ -567,6 +720,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
             if (data.templateLayoutId) localStorage.setItem('planify-template-layout-id', data.templateLayoutId);
             else localStorage.removeItem('planify-template-layout-id');
             if (data.templateState) localStorage.setItem('planify-template-state', JSON.stringify(data.templateState));
+            saveTemplateModules(data.templateModules);
             if (data.projectMetadata) localStorage.setItem('planify-project-metadata', JSON.stringify(data.projectMetadata));
             if (data.pagePreset) localStorage.setItem('planify-preset', data.pagePreset);
             saveLayers(data.layers);
@@ -597,37 +751,43 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     },
 
     undo: () => {
-      const { past, elements, future, layers } = get();
+      const { past, elements, future, layers, templateModules } = get();
       if (past.length === 0) return;
       const previous = past[past.length - 1];
       const newPast = past.slice(0, past.length - 1);
+      const restoredTemplateModules = previous.templateModules ?? templateModules;
       set({
         past: newPast,
         elements: previous.elements,
         layers: previous.layers,
-        future: [{ elements, layers }, ...future],
+        templateModules: restoredTemplateModules,
+        future: [{ elements, layers, templateModules }, ...future],
         canUndo: newPast.length > 0,
         canRedo: true,
       });
       saveElements(previous.elements);
       saveLayers(previous.layers);
+      saveTemplateModules(restoredTemplateModules);
     },
 
     redo: () => {
-      const { past, elements, future, layers } = get();
+      const { past, elements, future, layers, templateModules } = get();
       if (future.length === 0) return;
       const next = future[0];
       const newFuture = future.slice(1);
+      const restoredTemplateModules = next.templateModules ?? templateModules;
       set({
-        past: [...past, { elements, layers }],
+        past: [...past, { elements, layers, templateModules }],
         elements: next.elements,
         layers: next.layers,
+        templateModules: restoredTemplateModules,
         future: newFuture,
         canUndo: true,
         canRedo: newFuture.length > 0,
       });
       saveElements(next.elements);
       saveLayers(next.layers);
+      saveTemplateModules(restoredTemplateModules);
     },
     setAdvancedType: (advancedType) => set({ advancedType }),
   };

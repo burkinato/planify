@@ -27,11 +27,13 @@ export function ComplianceChecker() {
   const {
     elements,
     activeTemplateLayout,
+    templateModules,
     projectMetadata,
     templateState,
   } = useEditorStore(useShallow(s => ({
     elements: s.elements,
     activeTemplateLayout: s.activeTemplateLayout,
+    templateModules: s.templateModules,
     projectMetadata: s.projectMetadata,
     templateState: s.templateState,
   })));
@@ -50,6 +52,16 @@ export function ComplianceChecker() {
     const hasCompass = symbolTypes.has('N001');
     const hasScaleBar = symbolTypes.has('N002');
     const hasTemplate = !!activeTemplateLayout;
+    const moduleTypes = new Set(templateModules.map((module) => module.type));
+    const hasDrawingArea = moduleTypes.has('DrawingArea');
+    const hasApprovalModule = moduleTypes.has('ApprovalRevision');
+    const hasLegendModule = moduleTypes.has('Legend');
+    const hasAssemblyModule = moduleTypes.has('AssemblyMap');
+    const hasEmergencyModule = moduleTypes.has('EmergencyCall');
+    const hasTeamModule = moduleTypes.has('EmergencyTeams');
+    const hasHazardModule = moduleTypes.has('HazardUtilities');
+    const hasAccessibilityModule = moduleTypes.has('AccessibilityRefuge');
+    const hasFireEquipmentModule = moduleTypes.has('FireEquipmentInventory');
     const hasAuthor = !!(projectMetadata.author && projectMetadata.author.trim());
     const hasDate = !!(projectMetadata.date && projectMetadata.date.trim());
     const hasFloor = !!(projectMetadata.floor && projectMetadata.floor.trim());
@@ -62,6 +74,14 @@ export function ComplianceChecker() {
     const hasEmergencyInfo = !!(emergencyData?.body && emergencyData.body.trim());
 
     return [
+      {
+        id: 'drawing-area-module',
+        label: 'Çizim Alanı Modülü',
+        description: hasDrawingArea ? 'Kağıtta aktif çizim alanı mevcut.' : 'Şablonda en az bir çizim alanı bulunmalı.',
+        status: hasDrawingArea ? 'pass' : 'fail',
+        icon: FileText,
+        standard: 'ISO 23601 §5.1',
+      },
       {
         id: 'evacuation-route',
         label: 'Tahliye Yolları',
@@ -89,16 +109,16 @@ export function ComplianceChecker() {
       {
         id: 'assembly-point',
         label: 'Toplanma Alanı',
-        description: hasAssemblySymbol ? 'Toplanma noktası işaretlenmiş.' : 'Toplanma alanı sembolü eklenmeli (E007).',
-        status: hasAssemblySymbol ? 'pass' : 'fail',
+        description: hasAssemblySymbol || hasAssemblyModule ? 'Toplanma alanı modülü veya sembolü mevcut.' : 'Toplanma alanı sembolü/modülü eklenmeli.',
+        status: hasAssemblySymbol || hasAssemblyModule ? 'pass' : 'fail',
         icon: MapPinned,
         standard: 'ISO 7010 E007',
       },
       {
         id: 'fire-extinguisher',
         label: 'Yangın Söndürücü',
-        description: hasFireExtinguisher ? 'Yangın söndürme ekipmanı işaretlenmiş.' : 'En az bir yangın söndürücü konumu belirtilmeli.',
-        status: hasFireExtinguisher ? 'pass' : 'warn',
+        description: hasFireExtinguisher || hasFireEquipmentModule ? 'Yangın söndürme ekipmanı işaretlenmiş veya listelenmiş.' : 'Yangın söndürme ekipmanı konumu/listesi belirtilmeli.',
+        status: hasFireExtinguisher || hasFireEquipmentModule ? 'pass' : 'warn',
         icon: Flame,
         standard: 'ISO 7010 F001',
       },
@@ -143,6 +163,22 @@ export function ComplianceChecker() {
         standard: 'ISO 23601',
       },
       {
+        id: 'legend-module',
+        label: 'Lejand Modülü',
+        description: hasLegendModule ? 'Lejand modülü kağıtta mevcut.' : 'Sembol ve rota açıklamaları için lejand modülü eklenmeli.',
+        status: hasLegendModule ? 'pass' : 'warn',
+        icon: FileText,
+        standard: 'ISO 7010',
+      },
+      {
+        id: 'approval-module',
+        label: 'Onay / Revizyon Modülü',
+        description: hasApprovalModule ? 'Onay ve revizyon alanı mevcut.' : 'Hazırlayan, kontrol, tarih ve revizyon alanı eklenmeli.',
+        status: hasApprovalModule ? 'pass' : 'fail',
+        icon: Calendar,
+        standard: 'TR Yönetmelik Md.12',
+      },
+      {
         id: 'project-name',
         label: 'İşyeri/Proje Adı',
         description: hasName ? 'İşyeri adı girilmiş.' : 'İşyeri unvanı girilmeli.',
@@ -177,21 +213,37 @@ export function ComplianceChecker() {
       {
         id: 'emergency-phone',
         label: 'Acil İletişim Bilgileri',
-        description: hasEmergencyInfo ? 'Acil durum iletişim bilgileri mevcut.' : '112 acil durum ve yerel iletişim numaraları eklenmeli.',
-        status: hasEmergencyInfo ? 'pass' : 'warn',
+        description: hasEmergencyInfo || hasEmergencyModule ? 'Acil durum iletişim bilgileri mevcut.' : '112 acil durum ve yerel iletişim numaraları eklenmeli.',
+        status: hasEmergencyInfo || hasEmergencyModule ? 'pass' : 'warn',
         icon: Phone,
         standard: 'TR Yönetmelik Md.12',
       },
       {
         id: 'team-info',
         label: 'Acil Durum Ekibi',
-        description: hasTeamInfo ? 'Ekip sorumlulukları belirlenmiş.' : 'Tahliye, yangın, ilk yardım sorumluları girilmeli.',
-        status: hasTeamInfo ? 'pass' : 'warn',
+        description: hasTeamInfo || hasTeamModule ? 'Ekip sorumlulukları için modül mevcut.' : 'Tahliye, yangın, ilk yardım sorumluları girilmeli.',
+        status: hasTeamInfo || hasTeamModule ? 'pass' : 'warn',
         icon: Users,
         standard: 'TR Yönetmelik Md.11',
       },
+      {
+        id: 'hazard-utilities',
+        label: 'Risk / Kesme Noktaları',
+        description: hasHazardModule ? 'Gaz, elektrik veya özel risk bilgisi için modül mevcut.' : 'Elektrik/gaz kesme noktaları ve özel risk alanları belirtilmeli.',
+        status: hasHazardModule ? 'pass' : 'warn',
+        icon: AlertTriangle,
+        standard: 'OSHA EAP / TR Yönetmelik',
+      },
+      {
+        id: 'accessibility-refuge',
+        label: 'Erişilebilir Tahliye',
+        description: hasAccessibilityModule ? 'Erişilebilir çıkış/refakat bilgisi için modül mevcut.' : 'Engelli, yaşlı, gebe refakat ve erişilebilir çıkış bilgisi eklenmeli.',
+        status: hasAccessibilityModule ? 'pass' : 'warn',
+        icon: Accessibility,
+        standard: 'OSHA Floorplan Demo',
+      },
     ];
-  }, [elements, activeTemplateLayout, projectMetadata, templateState]);
+  }, [elements, activeTemplateLayout, templateModules, projectMetadata, templateState]);
 
   const passCount = checks.filter(c => c.status === 'pass').length;
   const warnCount = checks.filter(c => c.status === 'warn').length;

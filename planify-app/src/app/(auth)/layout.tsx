@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { Logo } from '@/components/shared/Logo';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const FEATURES = [
   { icon: '🛡️', text: 'ISO 7010 & Türkiye mevzuatına %100 uyumlu' },
   { icon: '⚡', text: 'Sürükle-bırak ile dakikalar içinde plan çizimi' },

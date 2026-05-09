@@ -10,6 +10,7 @@ import { EditorCanvas } from './EditorCanvas';
 import { EditorErrorBoundary } from './EditorErrorBoundary';
 import { TemplateSelectorModal } from './TemplateSelectorModal';
 import { ExportModal } from './ExportModal';
+import { TemplateModulePanel } from './TemplateModulePanel';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
@@ -18,6 +19,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'sonner';
 import { FALLBACK_TEMPLATE_LAYOUTS } from '@/lib/editor/templateLayouts';
 import { analyzeProjectCompliance } from '@/lib/projects/compliance';
+import type { TemplateModuleInstance } from '@/types/editor';
 
 type PersistedCanvasData = {
   elements?: typeof useEditorStore.getState extends () => infer State
@@ -32,6 +34,15 @@ type PersistedCanvasData = {
     : never;
   innerZoom?: number;
   innerPan?: { x: number; y: number };
+  templateModules?: TemplateModuleInstance[];
+};
+
+const mergeTemplateSources = (dbLayouts: typeof FALLBACK_TEMPLATE_LAYOUTS) => {
+  const merged = new Map<string, (typeof FALLBACK_TEMPLATE_LAYOUTS)[number]>();
+  [...FALLBACK_TEMPLATE_LAYOUTS, ...dbLayouts].forEach((layout) => {
+    if (!merged.has(layout.slug)) merged.set(layout.slug, layout);
+  });
+  return Array.from(merged.values());
 };
 
 const waitForPaint = () =>
@@ -61,7 +72,7 @@ export default function EditorApp() {
   const {
     loadProject, templateLayoutId, projectTemplate, setTemplateLayout,
     elements, layers, activeTemplateLayout, scaleConfig, pagePreset, templateState,
-    innerZoom, innerPan, setProjectId
+    templateModules, innerZoom, innerPan, setProjectId
   } = useEditorStore();
 
   useEffect(() => {
@@ -97,7 +108,7 @@ export default function EditorApp() {
               : {};
 
           if (!proj.canvas_data && templateSlug) {
-            const sourceLayouts = templateLayouts.length > 0 ? templateLayouts : FALLBACK_TEMPLATE_LAYOUTS;
+            const sourceLayouts = mergeTemplateSources(templateLayouts);
             const targetLayout = sourceLayouts.find(l => l.slug === templateSlug);
 
             loadProject(JSON.stringify({
@@ -140,7 +151,7 @@ export default function EditorApp() {
   }, [projectId, projects, loadProject, templateSlug, templateLayouts]);
 
   useEffect(() => {
-    const sourceLayouts = templateLayouts.length > 0 ? templateLayouts : FALLBACK_TEMPLATE_LAYOUTS;
+    const sourceLayouts = mergeTemplateSources(templateLayouts);
     const layout = sourceLayouts.find((tpl) => tpl.id === templateLayoutId || tpl.slug === projectTemplate);
     if (layout) setTemplateLayout(layout);
   }, [templateLayouts, templateLayoutId, projectTemplate, setTemplateLayout]);
@@ -159,6 +170,7 @@ export default function EditorApp() {
           templateLayoutId,
           pagePreset,
           templateState,
+          templateModules,
           innerZoom,
           innerPan
         };
@@ -232,7 +244,7 @@ export default function EditorApp() {
     }, 5000);
 
     return () => clearTimeout(timeoutId);
-  }, [elements, layers, templateLayoutId, pagePreset, templateState, scaleConfig, projectId, updateProject, projectTemplate, templateLayouts, innerZoom, innerPan, projects]);
+  }, [elements, layers, templateLayoutId, pagePreset, templateState, templateModules, scaleConfig, projectId, updateProject, projectTemplate, templateLayouts, innerZoom, innerPan, projects]);
 
   const validateCompliance = () => {
     const missing: string[] = [];
@@ -309,36 +321,14 @@ export default function EditorApp() {
       const quality = format === 'jpeg' ? 0.95 : 1;
       const dataURL = stageRef.current.toDataURL({ pixelRatio: 3, mimeType, quality });
 
-      if (!isPro) {
-        const img = new Image();
-        img.onload = () => {
-          const watermarkCanvas = document.createElement('canvas');
-          watermarkCanvas.width = img.width;
-          watermarkCanvas.height = img.height;
-          const ctx = watermarkCanvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0);
-            ctx.save();
-            ctx.globalAlpha = 0.12;
-            ctx.font = 'bold 120px Arial';
-            ctx.fillStyle = '#666666';
-            ctx.translate(watermarkCanvas.width / 2, watermarkCanvas.height / 2);
-            ctx.rotate(-35 * Math.PI / 180);
-            ctx.textAlign = 'center';
-            ctx.fillText('PLANIFY DEMO', 0, -80);
-            ctx.fillText('PLANIFY DEMO', 0, 80);
-            ctx.restore();
-          }
-          const link = document.createElement('a');
-          link.download = fileName;
-          link.href = watermarkCanvas.toDataURL(mimeType, quality);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          if (projectId) void recordProjectExport(projectId, format, fileName);
-        };
-        img.src = dataURL;
-        return;
+const link = document.createElement('a');
+      link.download = fileName;
+      link.href = dataURL;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      if (projectId) void recordProjectExport(projectId, format, fileName);
+      return;
       }
 
       const link = document.createElement('a');
@@ -443,6 +433,12 @@ export default function EditorApp() {
             stageRef={stageRef}
             setContainerNode={handleContainerNode}
           />
+          {!isPreview && (
+            <TemplateModulePanel
+              mobileMenu={mobileMenu}
+              setMobileMenu={setMobileMenu}
+            />
+          )}
 
         </div>
 

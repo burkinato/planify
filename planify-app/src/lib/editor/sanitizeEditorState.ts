@@ -7,8 +7,10 @@ import type {
   TemplateRegionState,
   TemplateState,
   ProjectMetadata,
+  TemplateModuleInstance,
+  TemplateModuleType,
 } from '@/types/editor';
-import { normalizePagePreset } from '@/lib/editor/templateLayouts';
+import { createTemplateModuleInstance, normalizePagePreset } from '@/lib/editor/templateLayouts';
 
 const DEFAULT_LAYER_ID = 'default';
 
@@ -63,6 +65,23 @@ const VALID_TEXT_ALIGN = new Set<NonNullable<EditorElement['textAlign']>>([
 
 const VALID_SCALE_UNITS = new Set<ScaleConfig['unit']>(['mm', 'cm', 'm']);
 
+const VALID_TEMPLATE_MODULE_TYPES = new Set<TemplateModuleType>([
+  'Header',
+  'DrawingArea',
+  'EmergencyCall',
+  'EvacuationInstructions',
+  'FireInstructions',
+  'Legend',
+  'AssemblyMap',
+  'ApprovalRevision',
+  'EmergencyTeams',
+  'HazardUtilities',
+  'AccessibilityRefuge',
+  'FireEquipmentInventory',
+  'QrDocumentInfo',
+  'Notes',
+]);
+
 type UnknownRecord = Record<string, unknown>;
 
 export interface DebugEditorStatePayload {
@@ -72,6 +91,7 @@ export interface DebugEditorStatePayload {
   projectTemplate: ProjectTemplate;
   templateLayoutId: string | null;
   pagePreset: PagePreset;
+  templateModules: TemplateModuleInstance[];
   templateState: TemplateState;
   projectMetadata: ProjectMetadata;
   innerZoom: number;
@@ -165,6 +185,40 @@ export function sanitizeTemplateState(value: unknown): TemplateState {
       .filter(([key]) => typeof key === 'string' && key.length > 0)
       .map(([key, regionValue]) => [key, sanitizeTemplateRegionState(regionValue)])
   );
+}
+
+export function sanitizeTemplateModules(value: unknown): TemplateModuleInstance[] {
+  if (!Array.isArray(value)) return [];
+
+  const modules = value
+    .filter(isRecord)
+    .map((entry): TemplateModuleInstance | null => {
+      const type = asEnumValue(entry.type, VALID_TEMPLATE_MODULE_TYPES);
+      if (!type) return null;
+
+      return createTemplateModuleInstance(type, {
+        id: asString(entry.id) || undefined,
+        label: asString(entry.label) || undefined,
+        tone: asNullableString(entry.tone) as TemplateModuleInstance['tone'],
+        x: asFiniteNumber(entry.x, 0),
+        y: asFiniteNumber(entry.y, 0),
+        w: asFiniteNumber(entry.w, 20),
+        h: asFiniteNumber(entry.h, 12),
+        zIndex: asFiniteNumber(entry.zIndex, 20),
+        locked: entry.locked === true,
+        movable: entry.movable !== false,
+        resizable: entry.resizable !== false,
+        rendererVariant: asString(entry.rendererVariant) || undefined,
+        requirement: asNullableString(entry.requirement) as TemplateModuleInstance['requirement'],
+      });
+    })
+    .filter((module): module is TemplateModuleInstance => module !== null);
+
+  if (modules.length > 0 && !modules.some((module) => module.type === 'DrawingArea')) {
+    modules.unshift(createTemplateModuleInstance('DrawingArea'));
+  }
+
+  return modules;
 }
 
 export function sanitizeProjectMetadata(value: unknown): ProjectMetadata {
@@ -322,6 +376,7 @@ export function sanitizeDebugEditorStatePayload(value: unknown): DebugEditorStat
     projectTemplate: asString(raw.projectTemplate, 'blank'),
     templateLayoutId: asNullableString(raw.templateLayoutId),
     pagePreset: normalizePagePreset(raw.pagePreset),
+    templateModules: sanitizeTemplateModules(raw.templateModules),
     templateState: sanitizeTemplateState(raw.templateState),
     projectMetadata: sanitizeProjectMetadata(raw.projectMetadata),
     innerZoom: asPositiveNumber(raw.innerZoom, 1) ?? 1,

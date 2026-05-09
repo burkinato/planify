@@ -9,7 +9,7 @@ const FREE_FEATURES = [
   'Sınırsız proje oluşturma',
   'ISO 7010 temel sembol kütüphanesi',
   'Bulut depolama',
-  'PDF çıktısı (filigranlı)',
+  'PDF çıktısı',
 ];
 
 const PRO_FEATURES = [

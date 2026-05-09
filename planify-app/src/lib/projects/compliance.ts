@@ -23,6 +23,9 @@ type CanvasData = {
     symbolType?: string;
     routeType?: string;
   }>;
+  templateModules?: Array<{
+    type?: string;
+  }>;
   templateLayoutId?: string | null;
   projectTemplate?: string | null;
 };
@@ -36,11 +39,20 @@ function getCanvasData(project: Pick<Project, 'canvas_data'>): CanvasData {
 export function analyzeProjectCompliance(project: Pick<Project, 'canvas_data' | 'template_layout_id' | 'page_preset' | 'last_exported_at'>): ProjectAudit {
   const canvasData = getCanvasData(project);
   const elements = Array.isArray(canvasData.elements) ? canvasData.elements : [];
+  const templateModules = Array.isArray(canvasData.templateModules) ? canvasData.templateModules : [];
+  const moduleTypes = new Set(templateModules.map((module) => module.type).filter(Boolean));
   const hasContent = elements.length > 0;
   const hasHere = elements.some((el) => el.type === 'symbol' && ['E004', 'here'].includes(el.symbolType || ''));
   const hasEvacuationRoute = elements.some((el) => el.type === 'route' && el.routeType === 'evacuation');
-  const hasAssembly = elements.some((el) => el.type === 'symbol' && ['E007', 'assembly'].includes(el.symbolType || ''));
-  const hasFireEquipment = elements.some((el) => el.type === 'symbol' && (el.symbolType || '').startsWith('F'));
+  const hasAssembly = elements.some((el) => el.type === 'symbol' && ['E007', 'assembly'].includes(el.symbolType || '')) || moduleTypes.has('AssemblyMap');
+  const hasFireEquipment = elements.some((el) => el.type === 'symbol' && (el.symbolType || '').startsWith('F')) || moduleTypes.has('FireEquipmentInventory');
+  const hasDrawingArea = moduleTypes.has('DrawingArea');
+  const hasLegend = moduleTypes.has('Legend');
+  const hasApproval = moduleTypes.has('ApprovalRevision');
+  const hasEmergency = moduleTypes.has('EmergencyCall');
+  const hasTeam = moduleTypes.has('EmergencyTeams');
+  const hasHazard = moduleTypes.has('HazardUtilities');
+  const hasAccessibility = moduleTypes.has('AccessibilityRefuge');
   const hasTemplate = Boolean(
     project.template_layout_id ||
     canvasData.templateLayoutId ||
@@ -53,6 +65,13 @@ export function analyzeProjectCompliance(project: Pick<Project, 'canvas_data' | 
     { id: 'assembly', label: 'Toplanma noktası', passed: hasAssembly },
     { id: 'fire', label: 'Yangın ekipmanı sembolü', passed: hasFireEquipment },
     { id: 'template', label: 'Antet / şablon bilgisi', passed: hasTemplate },
+    { id: 'drawing-area', label: 'Çizim alanı modülü', passed: hasDrawingArea },
+    { id: 'legend', label: 'Lejand modülü', passed: hasLegend },
+    { id: 'approval', label: 'Onay / revizyon modülü', passed: hasApproval },
+    { id: 'emergency', label: 'Acil iletişim modülü', passed: hasEmergency },
+    { id: 'team', label: 'Acil durum ekibi modülü', passed: hasTeam },
+    { id: 'hazard', label: 'Risk / kesme noktaları modülü', passed: hasHazard },
+    { id: 'accessibility', label: 'Erişilebilir tahliye modülü', passed: hasAccessibility },
   ];
   const missing = checks.filter((check) => !check.passed).map((check) => check.label);
   const score = hasContent

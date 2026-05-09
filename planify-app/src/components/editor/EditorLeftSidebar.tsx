@@ -79,6 +79,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
         projectTemplate,
         templateLayoutId,
         pagePreset,
+        templateModules,
         templateState,
       } = useEditorStore.getState();
 
@@ -88,7 +89,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
         return;
       }
       
-      const canvas_data = { elements, layers, projectTemplate, templateLayoutId, pagePreset, templateState };
+      const canvas_data = { elements, layers, projectTemplate, templateLayoutId, pagePreset, templateModules, templateState };
       
       await updateProject(projectId, { 
         canvas_data,
@@ -331,4 +332,3 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
     </aside>
   );
 }
-

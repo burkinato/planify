@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { ChunkLoadRecovery } from "@/components/providers/ChunkLoadRecovery";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -47,6 +48,7 @@ export default function RootLayout({
     <html lang="tr" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="antialiased font-sans bg-white dark:bg-[#1e1e1e] text-slate-900 dark:text-[#cccccc]" suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <ChunkLoadRecovery />
           <AuthProvider>
             {children}
           </AuthProvider>

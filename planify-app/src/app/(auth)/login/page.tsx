@@ -30,6 +30,8 @@ const LinkedInIcon = () => (
   </svg>
 );
 
+const AUTH_VIEW_VERSION = '2026-05-09-1914';
+
 function getRedirectPath() {
   if (typeof window === 'undefined') {
     return '/dashboard';
@@ -129,7 +131,7 @@ export default function LoginPage() {
   const isDisabled = loading || oauthLoading !== null;
 
   return (
-    <div className="w-full space-y-4 lg:space-y-6 font-sans">
+    <div className="w-full space-y-4 lg:space-y-6 font-sans" data-auth-view={AUTH_VIEW_VERSION}>
       <div className="text-center md:text-left">
         <h1 className="text-2xl lg:text-3xl font-medium text-surface-100 tracking-tight">Hoş Geldiniz</h1>
         <p className="text-surface-400 mt-1 lg:mt-2 font-medium text-sm">Hesabınıza giriş yapın ve çizime devam edin.</p>

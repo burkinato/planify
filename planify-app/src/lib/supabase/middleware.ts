@@ -110,6 +110,11 @@ export async function updateSession(request: NextRequest) {
         NextResponse.redirect(new URL(getSafeRedirectPath(request.nextUrl.searchParams.get('next')), request.url))
       )
     }
+
+    if (AUTH_ENTRY_PATHS.has(pathname) || pathname === '/reset-password') {
+      return withNoStoreHeaders(supabaseResponse)
+    }
+
     return supabaseResponse
   }
 

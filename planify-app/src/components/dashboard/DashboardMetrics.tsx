@@ -13,7 +13,7 @@ export function DashboardMetrics({ projects }: DashboardMetricsProps) {
     ? Math.round(projects.reduce((acc, p) => acc + (p.compliance_score || 0), 0) / totalProjects)
     : 0;
   const activeDrafts = projects.filter(p => p.audit_status === 'draft' || !p.audit_status).length;
-  const completedAudits = projects.filter(p => p.audit_status === 'exported' || p.audit_status === 'approved').length;
+  const completedAudits = projects.filter(p => p.audit_status === 'exported').length;
 
   const metrics = [
     {

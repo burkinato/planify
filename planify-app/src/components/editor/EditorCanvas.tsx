@@ -10,7 +10,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { SYMBOLS, SNAP_DISTANCE, GRID_SIZE, THEME_CONFIGS, type EditorElement, type EditorTheme, type WallToolOptions, type DoorToolOptions, type WindowToolOptions, type StairsToolOptions, type ElevatorToolOptions, type ColumnToolOptions, type TextToolOptions } from '@/types/editor';
 import { ImageUp, Layers, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { mergeTemplateState } from '@/lib/editor/templateLayouts';
+import { getTemplateModules, mergeTemplateState, modulesToRegions } from '@/lib/editor/templateLayouts';
 import { getTemplateRegionAssetUrl, uploadTemplateRegionAsset } from '@/lib/editor/templateAssets';
 import { ISO_SYMBOLS } from '@/lib/editor/isoSymbols';
 import { sanitizeDebugEditorStatePayload } from '@/lib/editor/sanitizeEditorState';
@@ -209,7 +209,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   const {
     elements, layers, tool, toolOptions, zoom, pan, gridVisible, selectedIds, customSymbols,
     addElement, updateElement, updateElementsBatch, removeElements, setSelectedIds, scaleConfig, setScaleConfig, setTool,
-    editorTheme, setZoom, setPan, activeTemplateLayout, projectTemplate, templateLayoutId, templateState, focusedRegionId, setFocusedRegionId, updateTemplateRegion,
+    editorTheme, setZoom, setPan, activeTemplateLayout, projectTemplate, templateLayoutId, templateModules, selectedTemplateModuleId, templateState, focusedRegionId, setFocusedRegionId, setSelectedTemplateModuleId, addTemplateModule, updateTemplateModule, updateTemplateRegion,
     innerZoom, innerPan, setInnerZoom, setInnerPan, projectMetadata, setProjectMetadata
   } = useEditorStore(useShallow((s) => ({
     elements: s.elements,
@@ -235,9 +235,14 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     activeTemplateLayout: s.activeTemplateLayout,
     projectTemplate: s.projectTemplate,
     templateLayoutId: s.templateLayoutId,
+    templateModules: s.templateModules,
+    selectedTemplateModuleId: s.selectedTemplateModuleId,
     templateState: s.templateState,
     focusedRegionId: s.focusedRegionId,
     setFocusedRegionId: s.setFocusedRegionId,
+    setSelectedTemplateModuleId: s.setSelectedTemplateModuleId,
+    addTemplateModule: s.addTemplateModule,
+    updateTemplateModule: s.updateTemplateModule,
     updateTemplateRegion: s.updateTemplateRegion,
     innerZoom: s.innerZoom,
     innerPan: s.innerPan,
@@ -339,8 +344,12 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   const page = activeTemplateLayout?.layout_json.page;
   const paperWidth = activeTemplateLayout && page ? page.width : 2000;
   const paperHeight = activeTemplateLayout && page ? page.height : 2000;
-  
-  const drawingRegion = activeTemplateLayout?.layout_json.regions.find(r => r.type === 'drawing');
+  const activeTemplateModules = useMemo(() => {
+    if (!activeTemplateLayout) return [];
+    return templateModules.length > 0 ? templateModules : getTemplateModules(activeTemplateLayout);
+  }, [activeTemplateLayout, templateModules]);
+  const paperRegions = useMemo(() => modulesToRegions(activeTemplateModules), [activeTemplateModules]);
+  const drawingRegion = paperRegions.find(r => r.type === 'drawing');
   // Subtract 12px (6px inset per side) to match the container CSS `calc(...% - 12px)`
   // This ensures 1 Konva unit = 1 CSS pixel, eliminating coordinate distortion in editor and exports.
   const REGION_INSET = 12;
@@ -433,7 +442,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
       // ── If focused on drawing region, let Konva handleWheel take over ─────
       // (don't zoom outer canvas when user is drawing)
       const overDrawing = !!(target as HTMLElement).closest('.drawing-region-wrapper');
-      const drawingFocused = useEditorStore.getState().focusedRegionId === 'drawing';
+      const drawingFocused = useEditorStore.getState().focusedRegionId === drawingRegion?.id;
       if (overDrawing && drawingFocused) {
         // Konva's onWheel will handle this — just block outer canvas zoom
         e.preventDefault();
@@ -457,7 +466,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
 
     const onMouseDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest('.drawing-region-wrapper') && useEditorStore.getState().focusedRegionId === 'drawing') {
+      if (target.closest('.drawing-region-wrapper') && useEditorStore.getState().focusedRegionId === drawingRegion?.id) {
         return;
       }
 
@@ -496,7 +505,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
-  }, [zoom, pan, tool, setZoom, setPan]);
+  }, [zoom, pan, tool, setZoom, setPan, drawingRegion?.id]);
 
   const snapToGrid = (val: number) => Math.round(val / GRID_SIZE) * GRID_SIZE;
 
@@ -882,7 +891,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   // When focused on the drawing region, apply inner zoom anchored to mouse position.
   const handleWheel = (e: CanvasWheelEvent) => {
     e.evt.preventDefault();
-    const drawingFocused = focusedRegionId === 'drawing';
+    const drawingFocused = focusedRegionId === drawingRegion?.id;
     if (!drawingFocused) return;
 
     const scaleBy = 1.10;
@@ -1381,6 +1390,91 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     setContainerNode(node);
   };
 
+  const getPaperDropPlacement = (
+    event: React.DragEvent<HTMLDivElement>,
+    offset: { x: number; y: number } = { x: 0, y: 0 }
+  ) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100 - offset.x;
+    const y = ((event.clientY - rect.top) / rect.height) * 100 - offset.y;
+    return {
+      x: Math.max(0, Math.min(92, x)),
+      y: Math.max(0, Math.min(92, y)),
+    };
+  };
+
+  const handlePaperDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    if (
+      event.dataTransfer.types.includes('application/planify-module') ||
+      event.dataTransfer.types.includes('application/planify-existing-module')
+    ) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = event.dataTransfer.types.includes('application/planify-existing-module') ? 'move' : 'copy';
+    }
+  };
+
+  const handlePaperDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    const moduleType = event.dataTransfer.getData('application/planify-module');
+    const existingModuleId = event.dataTransfer.getData('application/planify-existing-module');
+    if (!moduleType && !existingModuleId) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    let offset = { x: 0, y: 0 };
+    try {
+      const rawOffset = event.dataTransfer.getData('application/planify-module-offset');
+      if (rawOffset) offset = JSON.parse(rawOffset) as { x: number; y: number };
+    } catch {
+      offset = { x: 0, y: 0 };
+    }
+
+    const placement = getPaperDropPlacement(event, offset);
+    if (existingModuleId) {
+      updateTemplateModule(existingModuleId, placement);
+      setSelectedTemplateModuleId(existingModuleId);
+      return;
+    }
+
+    addTemplateModule(moduleType as Parameters<typeof addTemplateModule>[0], placement);
+  };
+
+  const handleModuleResizePointerDown = (
+    event: React.PointerEvent<HTMLDivElement>,
+    regionId: string
+  ) => {
+    const templateModule = activeTemplateModules.find((entry) => entry.id === regionId);
+    const paperNode = stageHostRef.current;
+    if (!templateModule || !paperNode || templateModule.resizable === false || isPreview) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedTemplateModuleId(regionId);
+
+    const paperRect = paperNode.getBoundingClientRect();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startW = templateModule.w;
+    const startH = templateModule.h;
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const deltaW = ((moveEvent.clientX - startX) / paperRect.width) * 100;
+      const deltaH = ((moveEvent.clientY - startY) / paperRect.height) * 100;
+      updateTemplateModule(regionId, {
+        w: startW + deltaW,
+        h: startH + deltaH,
+      });
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  };
+
   // Auto-center and fit paper when template is applied
   useEffect(() => {
     const host = infiniteHostRef.current;
@@ -1421,6 +1515,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
         projectTemplate,
         templateLayoutId,
         pagePreset: activeTemplateLayout?.page_preset,
+        templateModules,
         templateState,
         selectedIds,
         invalidChildren: debugWindow.__konvaInvalidChildren ?? [],
@@ -1454,6 +1549,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     scaleConfig,
     selectedIds,
     templateLayoutId,
+    templateModules,
     templateState,
   ]);
 
@@ -1660,6 +1756,8 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
             <div
               ref={setCanvasHostRef}
               data-template-paper="true"
+              onDragOver={handlePaperDragOver}
+              onDrop={handlePaperDrop}
               style={{
                 position: 'relative',
                 width: paperWidth,
@@ -1680,6 +1778,10 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                   --tw-ring-shadow: 0 0 #0000 !important;
                 }
                 [data-template-paper][data-export-mode="true"] button {
+                  display: none !important;
+                }
+                [data-template-paper][data-export-mode="true"] .template-module-resize-handle,
+                [data-template-paper][data-export-mode="true"] .template-module-edit-badge {
                   display: none !important;
                 }
                 [data-template-paper][data-export-bg-mode="transparent"] {
@@ -1706,10 +1808,12 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
               )}
 
               {/* Non-drawing regions (header, instruction, etc.) */}
-              {activeTemplateLayout.layout_json.regions.filter((region) => region.type !== 'drawing').map((region) => {
+              {paperRegions.filter((region) => region.type !== 'drawing').map((region) => {
                 const content = mergedTemplateState[region.id] || {};
-                const focused = focusedRegionId === region.id;
+                const selectedTemplateModule = selectedTemplateModuleId === region.id;
+                const focused = focusedRegionId === region.id || selectedTemplateModule;
                 const dimmed = !!focusedRegionId && !focused;
+                const moduleInstance = activeTemplateModules.find((module) => module.id === region.id);
                 const regionIdNormalized = (region.id || '').toLowerCase();
                 const regionLabelNormalized = (region.label || '').toLocaleLowerCase('tr-TR');
                 const isHeader = (
@@ -1735,10 +1839,26 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                 return (
                   <section
                     key={region.id}
+                    draggable={!isPreview && moduleInstance?.movable !== false}
+                    onDragStart={(event) => {
+                      if (isPreview || moduleInstance?.movable === false) return;
+                      const paperRect = stageHostRef.current?.getBoundingClientRect();
+                      const sectionRect = event.currentTarget.getBoundingClientRect();
+                      const offset = paperRect
+                        ? {
+                            x: ((event.clientX - sectionRect.left) / paperRect.width) * 100,
+                            y: ((event.clientY - sectionRect.top) / paperRect.height) * 100,
+                          }
+                        : { x: 0, y: 0 };
+                      event.dataTransfer.setData('application/planify-existing-module', region.id);
+                      event.dataTransfer.setData('application/planify-module-offset', JSON.stringify(offset));
+                      event.dataTransfer.effectAllowed = 'move';
+                    }}
                     onClick={(event) => {
                       event.stopPropagation();
                       if (selectedIds.length > 0) setSelectedIds([]);
-                      if (!focused) setFocusedRegionId(region.id);
+                      setFocusedRegionId(region.id);
+                      setSelectedTemplateModuleId(region.id);
                     }}
                     className={cn(
                       "absolute border box-border transition-all duration-300",
@@ -1748,6 +1868,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                       focused && (isHeader
                         ? "z-30 shadow-[0_16px_36px_rgba(5,150,105,0.22)] ring-4 ring-emerald-500/35 border-emerald-500"
                         : "z-30 shadow-[0_16px_36px_rgba(8,145,178,0.22)] ring-4 ring-cyan-500/30 border-cyan-500"),
+                      selectedTemplateModule && "outline outline-2 outline-offset-2 outline-cyan-400/80",
                       dimmed && "pointer-events-none opacity-25 grayscale",
                       !focused && "cursor-pointer hover:shadow-lg hover:border-cyan-400",
                       "data-[export-mode=true]:shadow-none data-[export-mode=true]:ring-0"
@@ -1761,6 +1882,20 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                       background: isHeader ? ISO_HEADER_GREEN : undefined,
                     }}
                   >
+                    {!isPreview && selectedTemplateModule && (
+                      <>
+                        <div className="template-module-edit-badge absolute right-2 top-2 z-50 rounded-full bg-slate-950/90 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-cyan-200 shadow-lg">
+                          Modul
+                        </div>
+                        {moduleInstance?.resizable !== false && (
+                          <div
+                            onPointerDown={(event) => handleModuleResizePointerDown(event, region.id)}
+                            className="template-module-resize-handle absolute bottom-1 right-1 z-50 h-4 w-4 cursor-nwse-resize rounded-sm border border-cyan-200 bg-cyan-500 shadow-lg"
+                            title="Modulu yeniden boyutlandir"
+                          />
+                        )}
+                      </>
+                    )}
                     {false && focused ? (
                       <div
                         className={cn(
@@ -2297,13 +2432,14 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                   onClick={(event) => {
                     event.stopPropagation();
                     if (selectedIds.length > 0) setSelectedIds([]);
-                    if (focusedRegionId !== 'drawing') setFocusedRegionId('drawing');
+                    if (focusedRegionId !== drawingRegion.id) setFocusedRegionId(drawingRegion.id);
+                    setSelectedTemplateModuleId(drawingRegion.id);
                   }}
                   className={cn(
                     "drawing-region-wrapper absolute z-20 overflow-hidden bg-transparent transition-all duration-300 rounded-[12px]",
                     !focusedRegionId ? "border border-slate-300 hover:shadow-lg hover:border-cyan-400 cursor-pointer" : "",
-                    focusedRegionId === 'drawing' ? "z-30 scale-[1.015] shadow-[0_20px_50px_rgba(8,145,178,0.3)] ring-4 ring-cyan-500/30 border-2 border-cyan-500" : "border-2 border-transparent",
-                    focusedRegionId && focusedRegionId !== 'drawing' ? "pointer-events-none opacity-25 grayscale" : ""
+                    focusedRegionId === drawingRegion.id ? "z-30 scale-[1.015] shadow-[0_20px_50px_rgba(8,145,178,0.3)] ring-4 ring-cyan-500/30 border-2 border-cyan-500" : "border-2 border-transparent",
+                    focusedRegionId && focusedRegionId !== drawingRegion.id ? "pointer-events-none opacity-25 grayscale" : ""
                   )}
                   style={{
                     left: `calc(${drawingRegion.x}% + 6px)`, top: `calc(${drawingRegion.y}% + 6px)`,
@@ -2316,8 +2452,9 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                     height={stageHeight}
                     onWheel={handleWheel}
                     onMouseDown={(e) => {
-                      if (activeTemplateLayout && focusedRegionId !== 'drawing') {
-                        setFocusedRegionId('drawing');
+                      if (activeTemplateLayout && focusedRegionId !== drawingRegion.id) {
+                        setFocusedRegionId(drawingRegion.id);
+                        setSelectedTemplateModuleId(drawingRegion.id);
                         if (selectedIds.length > 0) setSelectedIds([]);
                       }
                       handleStageMouseDown(e);
@@ -2328,7 +2465,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                     style={{
                       width: '100%',
                       height: '100%',
-                      pointerEvents: (!focusedRegionId || focusedRegionId === 'drawing') ? 'auto' : 'none',
+                      pointerEvents: (!focusedRegionId || focusedRegionId === drawingRegion.id) ? 'auto' : 'none',
                       filter: isFocused ? 'none' : 'blur(20px)',
                       transition: 'filter 0.3s ease-in-out',
                       backgroundColor: '#ffffff'

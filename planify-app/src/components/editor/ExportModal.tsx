@@ -331,14 +331,7 @@ export function ExportModal({
           </div>
 
           <div className="mt-8 space-y-3">
-            {!isPro && (
-              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-[9px] text-amber-700 font-bold uppercase leading-tight">
-                   Ücretsiz sürümde çıktı üzerinde küçük bir filigran yer alacaktır.
-                </p>
-              </div>
-            )}
+            
             
             <button
               onClick={handleExport}

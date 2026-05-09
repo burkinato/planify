@@ -38,6 +38,59 @@ export interface TemplateRegion {
   tone?: 'green' | 'red' | 'blue' | 'info' | 'neutral' | 'paper';
 }
 
+export type TemplateModuleType =
+  | 'Header'
+  | 'DrawingArea'
+  | 'EmergencyCall'
+  | 'EvacuationInstructions'
+  | 'FireInstructions'
+  | 'Legend'
+  | 'AssemblyMap'
+  | 'ApprovalRevision'
+  | 'EmergencyTeams'
+  | 'HazardUtilities'
+  | 'AccessibilityRefuge'
+  | 'FireEquipmentInventory'
+  | 'QrDocumentInfo'
+  | 'Notes';
+
+export type TemplateModuleRequirement = 'required' | 'recommended' | 'optional';
+
+export interface TemplateModuleGeometry {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface TemplateModuleDefinition {
+  id: string;
+  type: TemplateModuleType;
+  label: string;
+  description: string;
+  tone?: TemplateRegion['tone'];
+  requirement: TemplateModuleRequirement;
+  defaultRegion: TemplateModuleGeometry;
+  minW: number;
+  minH: number;
+  rendererVariant: string;
+  auditTags: string[];
+  defaultState: TemplateRegionState;
+}
+
+export interface TemplateModuleInstance extends TemplateModuleGeometry {
+  id: string;
+  type: TemplateModuleType;
+  label: string;
+  tone?: TemplateRegion['tone'];
+  zIndex: number;
+  locked?: boolean;
+  movable?: boolean;
+  resizable?: boolean;
+  rendererVariant?: string;
+  requirement?: TemplateModuleRequirement;
+}
+
 export interface TemplateLayoutJson {
   id: string;
   style: string;
@@ -48,6 +101,8 @@ export interface TemplateLayoutJson {
     height: number;
     orientation: 'landscape' | 'portrait';
   };
+  version?: 1 | 2;
+  modules?: TemplateModuleInstance[];
   regions: TemplateRegion[];
 }
 

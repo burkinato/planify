@@ -63,26 +63,7 @@ export async function exportToPDF(
     pdf.setLineWidth(0.1);
     pdf.rect(margin, margin, pdfWidth - (margin * 2), pdfHeight - (margin * 2));
 
-    if (!isPro) {
-      // Watermark for free users - diagonal text
-      pdf.saveGraphicsState();
-      const pdfWithGState = pdf as JsPdfWithGState;
-      pdfWithGState.setGState(new pdfWithGState.GState({ opacity: 0.12 }));
-      pdf.setFontSize(72);
-      pdf.setTextColor(100, 100, 100);
-      
-      // Draw multiple watermark lines for full coverage
-      const centerX = pdfWidth / 2;
-      const centerY = pdfHeight / 2;
-      pdf.text('PLANIFY DEMO', centerX, centerY - 40, { angle: 35, align: 'center' });
-      pdf.text('PLANIFY DEMO', centerX, centerY + 40, { angle: 35, align: 'center' });
-      pdf.restoreGraphicsState();
-
-      // Free user footer
-      pdf.setFontSize(8);
-      pdf.setTextColor(120, 120, 120);
-      pdf.text('Filigransız çıktı için: planify.com.tr/upgrade — Planify Pro', margin + 2, pdfHeight - 2);
-    } else {
+    if (isPro) {
       // Pro user - subtle credit only
       pdf.setFontSize(7);
       pdf.setTextColor(180, 180, 180);
