@@ -530,3 +530,36 @@ html {
 .mobile-menu-enter {
   animation: slide-down-menu 0.25s ease-out forwards;
 }
+
+/* Template Paper Export Mode */
+[data-template-paper] section {
+  transition: box-shadow 0.2s, outline 0.2s, --tw-ring-shadow 0.2s;
+}
+
+[data-template-paper][data-export-mode="true"] section {
+  box-shadow: none !important;
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+}
+
+[data-template-paper][data-export-mode="true"] button {
+  display: none !important;
+}
+
+[data-template-paper][data-export-mode="true"] .template-module-resize-handle,
+[data-template-paper][data-export-mode="true"] .template-module-edit-badge {
+  display: none !important;
+}
+
+[data-template-paper][data-export-bg-mode="transparent"] {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+[data-template-paper][data-export-bg-mode="transparent"] .template-grid-overlay {
+  display: none !important;
+}
+
+[data-template-paper][data-export-bg-mode="transparent"] .drawing-region-wrapper {
+  background: transparent !important;
+}

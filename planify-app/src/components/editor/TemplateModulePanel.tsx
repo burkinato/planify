@@ -1,6 +1,6 @@
 'use client';
 
-import { Blocks, ClipboardCheck, GripVertical, Move3D, Trash2, X } from 'lucide-react';
+import { Blocks, ClipboardCheck, GripVertical, Move3D, Trash2, X, ChevronRight } from 'lucide-react';
 import { MODULE_DEFINITIONS } from '@/lib/editor/templateLayouts';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/store/useEditorStore';
@@ -15,12 +15,6 @@ const REQUIREMENT_LABELS: Record<TemplateModuleRequirement, string> = {
   required: 'Zorunlu',
   recommended: 'Onerilen',
   optional: 'Opsiyonel',
-};
-
-const REQUIREMENT_CLASSES: Record<TemplateModuleRequirement, string> = {
-  required: 'border-emerald-400/35 text-emerald-200 bg-emerald-500/10',
-  recommended: 'border-cyan-400/35 text-cyan-200 bg-cyan-500/10',
-  optional: 'border-slate-500 text-slate-300 bg-slate-700/30',
 };
 
 const MODULE_TYPE_LABELS: Record<TemplateModuleType, string> = {
@@ -60,147 +54,127 @@ export function TemplateModulePanel({ mobileMenu, setMobileMenu }: TemplateModul
   const selectedModule = templateModules.find((module) => module.id === selectedTemplateModuleId) ?? null;
   const selectedState = selectedModule ? templateState[selectedModule.id] || {} : {};
 
+  const handleAddModule = (type: TemplateModuleType) => {
+    addTemplateModule(type, { x: 5, y: 70, w: 90, h: 20 });
+  };
+
   return (
     <aside className={cn(
       'fixed md:static inset-y-0 right-0 w-80 bg-slate-950 border-l border-slate-700/80 flex flex-col z-30 md:z-10 shadow-2xl transition-transform duration-300 overflow-hidden',
       mobileMenu === 'properties' ? 'translate-x-0' : 'translate-x-full md:translate-x-0'
     )}>
-      <div className="p-4 border-b border-slate-700 bg-slate-950">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 text-slate-100">
-              <Blocks className="w-4 h-4 text-cyan-400" />
-              <h2 className="text-xs font-black uppercase tracking-[0.18em]">Denetim Modulleri</h2>
-            </div>
-            <p className="mt-1 text-[10px] leading-relaxed text-slate-400">
-              Karti kagida surukle, sonra secip olcu ve icerigini duzenle.
-            </p>
+      <div className="p-3 border-b border-slate-700 bg-slate-950 shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Blocks className="w-4 h-4 text-cyan-400" />
+            <h2 className="text-[11px] font-black uppercase tracking-[0.15em]">Moduller</h2>
           </div>
           <button
             onClick={() => setMobileMenu(null)}
-            className="md:hidden p-2 text-slate-400 hover:text-slate-100"
+            className="md:hidden p-1.5 text-slate-400 hover:text-slate-100"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <section className="p-3 border-b border-slate-800">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Hazir Bloklar</span>
-            <span className="text-[9px] text-slate-500">{MODULE_DEFINITIONS.length} modul</span>
-          </div>
-          <div className="space-y-2">
-            {MODULE_DEFINITIONS.map((definition) => {
-              const alreadyExists = definition.type === 'DrawingArea' && templateModules.some((module) => module.type === 'DrawingArea');
-
-              return (
-                <button
-                  key={definition.id}
-                  draggable={!alreadyExists}
-                  onDragStart={(event) => {
-                    event.dataTransfer.setData('application/planify-module', definition.type);
-                    event.dataTransfer.effectAllowed = 'copy';
-                  }}
-                  onClick={() => !alreadyExists && addTemplateModule(definition.type)}
-                  disabled={alreadyExists}
-                  className={cn(
-                    'w-full text-left rounded-xl border p-3 transition-all group',
-                    alreadyExists
-                      ? 'border-slate-800 bg-slate-900/40 opacity-55 cursor-not-allowed'
-                      : 'border-slate-700 bg-slate-900/80 hover:border-cyan-500/60 hover:bg-slate-900'
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-200 group-hover:border-cyan-300/70">
-                      <GripVertical className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-100">
-                          {definition.label}
-                        </span>
-                        <span className={cn(
-                          'shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-wider',
-                          REQUIREMENT_CLASSES[definition.requirement]
-                        )}>
-                          {REQUIREMENT_LABELS[definition.requirement]}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-[10px] leading-relaxed text-slate-400">
-                        {definition.description}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {definition.auditTags.slice(0, 3).map((tag) => (
-                          <span key={tag} className="rounded bg-slate-800 px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-slate-400">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="p-3">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ClipboardCheck className="w-4 h-4 text-emerald-400" />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Secili Modul</span>
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        {templateModules.length > 0 && (
+          <section className="p-3 border-b border-slate-800">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Kagitta</span>
+              <span className="text-[9px] text-slate-600">{templateModules.length} modul</span>
             </div>
-            {selectedModule && (
-              <span className="rounded bg-slate-800 px-2 py-1 text-[9px] font-bold uppercase text-slate-300">
+            <div className="space-y-1.5">
+              {templateModules.map((module) => {
+                const isSelected = module.id === selectedTemplateModuleId;
+                const state = templateState[module.id] || {};
+                return (
+                  <button
+                    key={module.id}
+                    onClick={() => setSelectedTemplateModuleId(module.id)}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('application/planify-existing-module', module.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    className={cn(
+                      'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all text-left group',
+                      isSelected
+                        ? 'bg-cyan-500/15 border border-cyan-500/40 text-cyan-200'
+                        : 'bg-slate-900/60 border border-transparent hover:bg-slate-800/80 text-slate-300'
+                    )}
+                  >
+                    <GripVertical className={cn("w-3.5 h-3.5 shrink-0", isSelected ? "text-cyan-400" : "text-slate-600 group-hover:text-slate-400")} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-bold truncate">
+                        {state.title || MODULE_TYPE_LABELS[module.type]}
+                      </div>
+                      <div className="text-[8px] text-slate-500 uppercase tracking-wider">
+                        {MODULE_TYPE_LABELS[module.type]}
+                      </div>
+                    </div>
+                    {module.type !== 'DrawingArea' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeTemplateModule(module.id);
+                        }}
+                        className="p-1 rounded hover:bg-red-500/20 text-slate-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {selectedModule && (
+          <section className="p-3">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1.5 h-4 rounded-full bg-cyan-400" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">Duzenle</span>
+              <span className="ml-auto text-[9px] bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-bold">
                 {MODULE_TYPE_LABELS[selectedModule.type]}
               </span>
-            )}
-          </div>
-
-          {!selectedModule ? (
-            <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-4 text-center">
-              <Move3D className="mx-auto mb-3 h-6 w-6 text-slate-500" />
-              <p className="text-xs font-bold text-slate-300">Kagittaki bir modulu sec.</p>
-              <p className="mt-1 text-[10px] leading-relaxed text-slate-500">
-                Secim sonrasi baslik, metin, konum ve boyut ayarlari burada gorunur.
-              </p>
             </div>
-          ) : (
-            <div className="space-y-3 rounded-xl border border-slate-700 bg-slate-900/70 p-3">
+
+            <div className="space-y-2.5 rounded-xl border border-slate-700/60 bg-slate-900/40 p-3">
               <label className="block">
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Baslik</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Baslik</span>
                 <input
                   value={selectedState.title || ''}
                   onChange={(event) => updateTemplateRegion(selectedModule.id, { title: event.target.value })}
-                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-500"
+                  className="mt-0.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-500"
                 />
               </label>
 
               <label className="block">
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Icerik</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Icerik</span>
                 <textarea
                   value={selectedState.body || ''}
-                  rows={6}
+                  rows={4}
                   onChange={(event) => updateTemplateRegion(selectedModule.id, { body: event.target.value })}
-                  className="mt-1 w-full resize-none rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs leading-relaxed text-slate-100 outline-none focus:border-cyan-500"
+                  className="mt-0.5 w-full resize-none rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-[10px] leading-relaxed text-slate-100 outline-none focus:border-cyan-500"
                 />
               </label>
 
               <label className="block">
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Meta / Alt bilgi</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Alt bilgi</span>
                 <input
                   value={selectedState.meta || ''}
                   onChange={(event) => updateTemplateRegion(selectedModule.id, { meta: event.target.value })}
-                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-500"
+                  className="mt-0.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-[10px] text-slate-100 outline-none focus:border-cyan-500"
                 />
               </label>
 
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-1.5 pt-1">
                 {(['x', 'y', 'w', 'h'] as const).map((key) => (
                   <label key={key} className="block">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{key}</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">{key}</span>
                     <input
                       type="number"
                       value={Math.round(selectedModule[key] * 10) / 10}
@@ -210,30 +184,60 @@ export function TemplateModulePanel({ mobileMenu, setMobileMenu }: TemplateModul
                         const value = clampInput(Number(event.target.value), key === 'w' || key === 'h' ? 4 : 0, 100);
                         updateTemplateModule(selectedModule.id, { [key]: value });
                       }}
-                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-xs text-slate-100 outline-none focus:border-cyan-500"
+                      className="mt-0.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-1.5 py-1.5 text-[10px] text-slate-100 outline-none focus:border-cyan-500"
                     />
                   </label>
                 ))}
               </div>
 
-              <div className="flex gap-2 pt-1">
+              <div className="flex gap-1.5 pt-2 border-t border-slate-800">
                 <button
                   onClick={() => setSelectedTemplateModuleId(null)}
-                  className="flex-1 rounded-lg border border-slate-700 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:border-slate-500 hover:bg-slate-800"
+                  className="flex-1 rounded-lg border border-slate-700 px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 hover:bg-slate-800"
                 >
-                  Secimi Kapat
+                  Kapat
                 </button>
-                <button
-                  onClick={() => removeTemplateModule(selectedModule.id)}
-                  disabled={selectedModule.type === 'DrawingArea'}
-                  className="rounded-lg border border-red-500/30 px-3 py-2 text-red-300 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-40"
-                  title={selectedModule.type === 'DrawingArea' ? 'Cizim alani zorunlu moduldur' : 'Modulu sil'}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                {selectedModule.type !== 'DrawingArea' && (
+                  <button
+                    onClick={() => removeTemplateModule(selectedModule.id)}
+                    className="rounded-lg border border-red-500/30 px-2 py-1.5 text-red-400 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
             </div>
-          )}
+          </section>
+        )}
+
+        <section className="p-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Ekle</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {MODULE_DEFINITIONS.map((definition) => {
+              const alreadyExists = definition.type === 'DrawingArea' && templateModules.some((module) => module.type === 'DrawingArea');
+
+              return (
+                <button
+                  key={definition.id}
+                  onClick={() => !alreadyExists && handleAddModule(definition.type)}
+                  disabled={alreadyExists}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-2 rounded-lg border text-left transition-all',
+                    alreadyExists
+                      ? 'border-slate-800/50 bg-slate-900/30 opacity-40 cursor-not-allowed'
+                      : 'border-slate-700 bg-slate-900/60 hover:border-cyan-500/50 hover:bg-slate-800'
+                  )}
+                >
+                  <ChevronRight className={cn("w-3 h-3 shrink-0", alreadyExists ? "text-slate-600" : "text-cyan-500/60")} />
+                  <span className={cn("text-[10px] font-bold truncate", alreadyExists ? "text-slate-500" : "text-slate-200")}>
+                    {definition.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </section>
       </div>
     </aside>

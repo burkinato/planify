@@ -323,7 +323,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
 <button
           onClick={handleSavePlan}
           disabled={isSaving}
-          className="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white py-3.5 rounded-xl hover:from-primary-600 hover:to-primary-700 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-primary-500/30 transition-all flex items-center justify-center gap-2.5 disabled:opacity-60 disabled:pointer-events-none"
+          className="w-full bg-primary-500 hover:bg-primary-600 text-white py-3.5 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-lg transition-all flex items-center justify-center gap-2.5 disabled:opacity-60 disabled:pointer-events-none"
         >
           {isSaving ? (
             <Loader2 className="w-4 h-4 animate-spin" />

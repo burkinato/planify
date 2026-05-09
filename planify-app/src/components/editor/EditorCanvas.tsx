@@ -209,7 +209,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   const {
     elements, layers, tool, toolOptions, zoom, pan, gridVisible, selectedIds, customSymbols,
     addElement, updateElement, updateElementsBatch, removeElements, setSelectedIds, scaleConfig, setScaleConfig, setTool,
-    editorTheme, setZoom, setPan, activeTemplateLayout, projectTemplate, templateLayoutId, templateModules, selectedTemplateModuleId, templateState, focusedRegionId, setFocusedRegionId, setSelectedTemplateModuleId, addTemplateModule, updateTemplateModule, updateTemplateRegion,
+    editorTheme, setZoom, setPan, activeTemplateLayout, projectTemplate, templateLayoutId, templateModules, selectedTemplateModuleId, templateState, focusedRegionId, setFocusedRegionId, setSelectedTemplateModuleId, addTemplateModule, updateTemplateModule, updateTemplateRegion, removeTemplateModule,
     innerZoom, innerPan, setInnerZoom, setInnerPan, projectMetadata, setProjectMetadata
   } = useEditorStore(useShallow((s) => ({
     elements: s.elements,
@@ -250,6 +250,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     setInnerPan: s.setInnerPan,
     projectMetadata: s.projectMetadata,
     setProjectMetadata: s.setProjectMetadata,
+    removeTemplateModule: s.removeTemplateModule,
   })));
 
   const themeConfig = THEME_CONFIGS[editorTheme];
@@ -403,13 +404,37 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     if (!host) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+      const target = e.target as HTMLElement;
+      const tagName = target.tagName;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) return;
+
+      if (e.code === 'Space') {
         if (!isSpacePressedRef.current) {
           isSpacePressedRef.current = true;
           if (host) host.style.cursor = 'grab';
         }
-        // Only prevent default if it's not in an input
         e.preventDefault();
+        return;
+      }
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        if (selectedIds.length > 0) {
+          removeElements(selectedIds);
+          setSelectedIds([]);
+        } else if (selectedTemplateModuleId && selectedTemplateModuleId !== 'drawing') {
+          const module = templateModules.find(m => m.id === selectedTemplateModuleId);
+          if (module && module.type !== 'DrawingArea') {
+            removeTemplateModule(selectedTemplateModuleId);
+          }
+        }
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        setSelectedIds([]);
+        setSelectedTemplateModuleId(null);
+        return;
       }
     };
 
@@ -1767,34 +1792,11 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                 borderRadius: 3,
                 overflow: 'hidden',
                 fontSize: `${Math.max(14, paperWidth * 0.0125)}px`,
+                touchAction: 'none',
               }}
             >
               {/* Fine grid overlay on paper */}
               <div className="template-grid-overlay absolute inset-0 bg-[linear-gradient(90deg,rgba(15,23,42,.03)_1px,transparent_1px),linear-gradient(rgba(15,23,42,.03)_1px,transparent_1px)] bg-[length:20px_20px] pointer-events-none" />
-              <style>{`
-                [data-template-paper][data-export-mode="true"] section {
-                  box-shadow: none !important;
-                  outline: none !important;
-                  --tw-ring-shadow: 0 0 #0000 !important;
-                }
-                [data-template-paper][data-export-mode="true"] button {
-                  display: none !important;
-                }
-                [data-template-paper][data-export-mode="true"] .template-module-resize-handle,
-                [data-template-paper][data-export-mode="true"] .template-module-edit-badge {
-                  display: none !important;
-                }
-                [data-template-paper][data-export-bg-mode="transparent"] {
-                  background: transparent !important;
-                  box-shadow: none !important;
-                }
-                [data-template-paper][data-export-bg-mode="transparent"] .template-grid-overlay {
-                  display: none !important;
-                }
-                [data-template-paper][data-export-bg-mode="transparent"] .drawing-region-wrapper {
-                  background: transparent !important;
-                }
-              `}</style>
 
               {/* "Geri Gel" button when a region is focused */}
               {focusedRegionId && (
@@ -1861,7 +1863,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                       setSelectedTemplateModuleId(region.id);
                     }}
                     className={cn(
-                      "absolute border box-border transition-all duration-300",
+                      "absolute border box-border",
                       "overflow-hidden",
                       isHeader ? "border-none" : "rounded-[12px]",
                       !isHeader && toneClass,
@@ -2436,7 +2438,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                     setSelectedTemplateModuleId(drawingRegion.id);
                   }}
                   className={cn(
-                    "drawing-region-wrapper absolute z-20 overflow-hidden bg-transparent transition-all duration-300 rounded-[12px]",
+                    "drawing-region-wrapper absolute z-20 overflow-hidden bg-transparent rounded-[12px]",
                     !focusedRegionId ? "border border-slate-300 hover:shadow-lg hover:border-cyan-400 cursor-pointer" : "",
                     focusedRegionId === drawingRegion.id ? "z-30 scale-[1.015] shadow-[0_20px_50px_rgba(8,145,178,0.3)] ring-4 ring-cyan-500/30 border-2 border-cyan-500" : "border-2 border-transparent",
                     focusedRegionId && focusedRegionId !== drawingRegion.id ? "pointer-events-none opacity-25 grayscale" : ""
