@@ -14,8 +14,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { useProAccess } from '@/hooks/useProAccess';
 import { ComplianceChecker } from './ComplianceChecker';
+import { TRANSLATIONS } from '@/lib/editor/translations';
 
-const CATEGORY_NAMES: Record<SymbolCategory, string> = {
+const CATEGORY_NAMES_TR: Record<SymbolCategory, string> = {
   'E_ACIL': 'Acil Çıkış & Tahliye',
   'F_YANGIN': 'Yangın Güvenliği',
   'E_SAGLIK': 'İlk Yardım & Sağlık',
@@ -24,6 +25,17 @@ const CATEGORY_NAMES: Record<SymbolCategory, string> = {
   'M_ZORUNLU': 'Zorunluluk İşaretleri',
   'N_NAVIGASYON': 'Plan Unsurları',
   'X_OPERASYON': 'Operasyon & Tesis'
+};
+
+const CATEGORY_NAMES_EN: Record<SymbolCategory, string> = {
+  'E_ACIL': 'Emergency & Evacuation',
+  'F_YANGIN': 'Fire Safety',
+  'E_SAGLIK': 'First Aid & Health',
+  'W_TEHLIKE': 'Danger & Warning',
+  'P_YASAK': 'Prohibitory Signs',
+  'M_ZORUNLU': 'Mandatory Signs',
+  'N_NAVIGASYON': 'Plan Elements',
+  'X_OPERASYON': 'Operation & Facility'
 };
 
 interface EditorLeftSidebarProps {
@@ -64,7 +76,9 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
   const [activeTab, setActiveTab] = useState<'tools' | 'library'>('tools');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const { tool, setTool, selectedSymbol, setSelectedSymbol, clearAll, customSymbols, addCustomSymbol, addElement, focusedRegionId } = useEditorStore();
+  const { tool, setTool, selectedSymbol, setSelectedSymbol, clearAll, customSymbols, addCustomSymbol, addElement, focusedRegionId, language } = useEditorStore();
+  const t = TRANSLATIONS[language || 'tr'];
+  const CATEGORY_NAMES = language === 'en' ? CATEGORY_NAMES_EN : CATEGORY_NAMES_TR;
   const { updateProject } = useProjectStore();
   const { isPro } = useProAccess();
 
@@ -132,7 +146,9 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
   };
 
   return (
-    <aside className={cn(
+    <aside 
+      id="editor-sidebar"
+      className={cn(
       "fixed md:static inset-y-0 left-0 bg-surface-900 border-surface-600 border-r flex flex-col z-30 md:z-10 shadow-2xl transition-all duration-300 overflow-hidden",
       mobileMenu === 'tools' ? "translate-x-0" : "-translate-x-full md:translate-x-0",
       focusedRegionId && focusedRegionId !== 'drawing' ? "w-0 border-r-0 opacity-0 pointer-events-none" : "w-56 opacity-100"
@@ -176,7 +192,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
               : "text-surface-400 hover:text-surface-300"
           )}
         >
-          Araçlar
+          {t.ui.tools}
         </button>
         <button
           onClick={() => setActiveTab('library')}
@@ -187,7 +203,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
               : "text-surface-400 hover:text-surface-300"
           )}
         >
-          Semboller
+          {t.ui.symbols}
         </button>
       </div>
 
@@ -202,31 +218,31 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
           <>
             <section>
               <label className="text-[9px] uppercase font-black text-surface-400 tracking-[0.15em] block mb-3 px-1">
-                Mimari Çizim
+                {language === 'en' ? 'Architectural' : 'Mimari Çizim'}
               </label>
               <div className="grid grid-cols-2 gap-1.5">
-                <ToolButton active={tool === 'select'} onClick={() => setTool('select')} icon={MousePointer2} label="Seçim" />
-                <ToolButton active={tool === 'wall'} onClick={() => setTool('wall')} icon={PenTool} label="Duvar" />
-                <ToolButton active={tool === 'door'} onClick={() => setTool('door')} icon={DoorIcon} label="Kapı" />
-                <ToolButton active={tool === 'window'} onClick={() => setTool('window')} icon={Scaling} label="Pencere" />
+                <ToolButton active={tool === 'select'} onClick={() => setTool('select')} icon={MousePointer2} label={language === 'en' ? 'Select' : 'Seçim'} />
+                <ToolButton active={tool === 'wall'} onClick={() => setTool('wall')} icon={PenTool} label={language === 'en' ? 'Wall' : 'Duvar'} />
+                <ToolButton active={tool === 'door'} onClick={() => setTool('door')} icon={DoorIcon} label={language === 'en' ? 'Door' : 'Kapı'} />
+                <ToolButton active={tool === 'window'} onClick={() => setTool('window')} icon={Scaling} label={language === 'en' ? 'Window' : 'Pencere'} />
                 <ToolButton
                   active={tool === 'stairs'}
                   onClick={() => setTool('stairs')}
-                  icon={MoveUp} label="Merdiven"
+                  icon={MoveUp} label={language === 'en' ? 'Stairs' : 'Merdiven'}
                 />
-                <ToolButton active={tool === 'elevator'} onClick={() => setTool('elevator')} icon={Box} label="Asansör" />
-                <ToolButton active={tool === 'column'} onClick={() => setTool('column')} icon={Box} label="Kolon" />
-                <ToolButton active={tool === 'text'} onClick={() => setTool('text')} icon={Type} label="Metin" />
+                <ToolButton active={tool === 'elevator'} onClick={() => setTool('elevator')} icon={Box} label={language === 'en' ? 'Elevator' : 'Asansör'} />
+                <ToolButton active={tool === 'column'} onClick={() => setTool('column')} icon={Box} label={language === 'en' ? 'Column' : 'Kolon'} />
+                <ToolButton active={tool === 'text'} onClick={() => setTool('text')} icon={Type} label={language === 'en' ? 'Text' : 'Metin'} />
               </div>
             </section>
 
             <section>
               <label className="text-[9px] uppercase font-black text-surface-400 tracking-[0.15em] block mb-3 px-1">
-                Tahliye Yolları
+                {language === 'en' ? 'Evacuation Routes' : 'Tahliye Yolları'}
               </label>
               <div className="grid grid-cols-2 gap-1.5">
-                <ToolButton active={tool === 'evacuation-route'} onClick={() => setTool('evacuation-route')} icon={ArrowRight} label="Tahliye" variant="green" />
-                <ToolButton active={tool === 'rescue-route'} onClick={() => setTool('rescue-route')} icon={ArrowRight} label="Kurtarma" variant="red" />
+                <ToolButton active={tool === 'evacuation-route'} onClick={() => setTool('evacuation-route')} icon={ArrowRight} label={language === 'en' ? 'Evacuation' : 'Tahliye'} variant="green" />
+                <ToolButton active={tool === 'rescue-route'} onClick={() => setTool('rescue-route')} icon={ArrowRight} label={language === 'en' ? 'Rescue' : 'Kurtarma'} variant="red" />
               </div>
             </section>
 
@@ -236,7 +252,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
                 className="w-full flex items-center justify-center gap-3 p-3 text-[10px] uppercase tracking-widest font-bold text-surface-400 hover:text-safety-red hover:bg-safety-red/10 rounded transition-all border border-surface-600 hover:border-safety-red/30"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Tuvali Temizle</span>
+                <span>{language === 'en' ? 'Clear Canvas' : 'Tuvali Temizle'}</span>
               </button>
             </section>
           </>
@@ -273,7 +289,9 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
                             selectedSymbol === sym.id && tool === 'symbol' ? "" : "opacity-80 group-hover:opacity-100"
                           )} 
                         />
-                        <span className="text-[8px] font-bold text-center uppercase tracking-tight leading-tight line-clamp-1">{sym.name}</span>
+                        <span className="text-[8px] font-bold text-center uppercase tracking-tight leading-tight line-clamp-1">
+                          {language === 'en' ? (sym.nameEn || sym.name) : sym.name}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -310,7 +328,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
             <div className="mt-4 pt-4 border-t border-surface-600">
               <label className="w-full flex items-center justify-center gap-2 py-3 px-2 bg-surface-950 border-surface-600 hover:bg-surface-800 border border-dashed text-surface-300 hover:text-surface-200 rounded text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-colors">
                 <Upload className="w-4 h-4" />
-                <span>Yeni Sembol Ekle</span>
+                <span>{language === 'en' ? 'Add New Symbol' : 'Yeni Sembol Ekle'}</span>
                 <input type="file" accept="image/svg+xml,image/png,image/jpeg" className="hidden" onChange={handleFileUpload} />
               </label>
             </div>
@@ -330,7 +348,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
           ) : (
             <>
               <Save className="w-4 h-4" />
-              <span>Planı Kaydet</span>
+              <span>{isSaving ? '...' : (language === 'en' ? 'Save Plan' : 'Planı Kaydet')}</span>
             </>
           )}
         </button>

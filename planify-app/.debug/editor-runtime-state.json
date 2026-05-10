@@ -1,5 +1,38 @@
 {
-  "elements": [],
+  "elements": [
+    {
+      "id": "3cee0f5a-2db5-4c08-863e-193824df9dc0",
+      "type": "symbol",
+      "layerId": "default",
+      "x": 67,
+      "y": 94,
+      "symbolType": "exit"
+    },
+    {
+      "id": "0fcff5cd-bd16-4d51-85ba-d64a71de1830",
+      "type": "symbol",
+      "layerId": "default",
+      "x": 81,
+      "y": 256,
+      "symbolType": "exit"
+    },
+    {
+      "id": "39c12261-aeee-4399-b50c-e32530208c9d",
+      "type": "wall",
+      "layerId": "default",
+      "x": 0,
+      "y": 0,
+      "points": [
+        200,
+        450,
+        471.5,
+        450
+      ],
+      "color": "#1e293b",
+      "thickness": 12,
+      "wallStyle": "hatch"
+    }
+  ],
   "layers": [
     {
       "id": "default",
@@ -13,14 +46,155 @@
     "unit": "m",
     "pixelsPerMeter": 50
   },
-  "projectTemplate": "wide-legend-a3-landscape",
-  "templateLayoutId": "53c70e0f-2b72-4a1b-8575-0c461af284b3",
+  "projectTemplate": "industrial-plant-a3-landscape",
+  "templateLayoutId": "fallback-v2-2-0",
   "pagePreset": "Landscape",
-  "templateState": {},
+  "templateModules": [
+    {
+      "id": "drawing",
+      "type": "DrawingArea",
+      "label": "Çizim Alanı",
+      "tone": "paper",
+      "x": 22,
+      "y": 13,
+      "w": 50,
+      "h": 67,
+      "zIndex": 10,
+      "locked": true,
+      "movable": false,
+      "resizable": true,
+      "rendererVariant": "cad-grid",
+      "requirement": "required"
+    },
+    {
+      "id": "header",
+      "type": "Header",
+      "label": "Başlık / Kimlik",
+      "tone": "green",
+      "x": 2,
+      "y": 2,
+      "w": 96,
+      "h": 9,
+      "zIndex": 20,
+      "locked": false,
+      "movable": true,
+      "resizable": true,
+      "rendererVariant": "official-title",
+      "requirement": "required"
+    },
+    {
+      "id": "equipment",
+      "type": "FireEquipmentInventory",
+      "label": "Yangın Ekipmanı",
+      "tone": "red",
+      "x": 2,
+      "y": 45,
+      "w": 18,
+      "h": 16,
+      "zIndex": 23,
+      "locked": false,
+      "movable": true,
+      "resizable": true,
+      "rendererVariant": "equipment-list",
+      "requirement": "recommended"
+    },
+    {
+      "id": "fireInstruction",
+      "type": "FireInstructions",
+      "label": "Yangın Talimatı",
+      "tone": "red",
+      "x": 2,
+      "y": 64,
+      "w": 18,
+      "h": 16,
+      "zIndex": 24,
+      "locked": false,
+      "movable": true,
+      "resizable": true,
+      "rendererVariant": "numbered-red",
+      "requirement": "recommended"
+    },
+    {
+      "id": "legend",
+      "type": "Legend",
+      "label": "Lejand / Semboller",
+      "tone": "info",
+      "x": 74,
+      "y": 13,
+      "w": 24,
+      "h": 18,
+      "zIndex": 25,
+      "locked": false,
+      "movable": true,
+      "resizable": true,
+      "rendererVariant": "symbol-index",
+      "requirement": "required"
+    },
+    {
+      "id": "assembly",
+      "type": "AssemblyMap",
+      "label": "Toplanma / Vaziyet",
+      "tone": "blue",
+      "x": 74,
+      "y": 33,
+      "w": 24,
+      "h": 18,
+      "zIndex": 26,
+      "locked": false,
+      "movable": true,
+      "resizable": true,
+      "rendererVariant": "assembly-card",
+      "requirement": "required"
+    },
+    {
+      "id": "team",
+      "type": "EmergencyTeams",
+      "label": "Acil Durum Ekipleri",
+      "tone": "neutral",
+      "x": 74,
+      "y": 53,
+      "w": 24,
+      "h": 13,
+      "zIndex": 27,
+      "locked": false,
+      "movable": true,
+      "resizable": true,
+      "rendererVariant": "team-strip",
+      "requirement": "recommended"
+    },
+    {
+      "id": "approval",
+      "type": "ApprovalRevision",
+      "label": "Onay / Revizyon",
+      "tone": "neutral",
+      "x": 22,
+      "y": 83,
+      "w": 76,
+      "h": 14,
+      "zIndex": 28,
+      "locked": false,
+      "movable": true,
+      "resizable": true,
+      "rendererVariant": "signature-grid",
+      "requirement": "required"
+    }
+  ],
+  "templateState": {
+    "emergency": {
+      "title": "ACIL YARDIM NUMARASI",
+      "body": "112 - ACIL CAGRI MERKEZI\nItfaiye, Ambulans, Polis, Jandarma\n\nAramada bildirin:\n- Olayin turu\n- Tam adres ve konum\n- Yarali sayisi ve durum",
+      "meta": "EMERGENCY CALL"
+    },
+    "emergency-2": {
+      "title": "ACIL YARDIM NUMARASI",
+      "body": "112 - ACIL CAGRI MERKEZI\nItfaiye, Ambulans, Polis, Jandarma\n\nAramada bildirin:\n- Olayin turu\n- Tam adres ve konum\n- Yarali sayisi ve durum",
+      "meta": "EMERGENCY CALL"
+    }
+  },
   "projectMetadata": {
     "name": "PROJE DOSYASI",
     "author": "",
-    "date": "02.05.2026",
+    "date": "10.05.2026",
     "revision": "00",
     "floor": "",
     "scale": "100"
@@ -33,6 +207,6 @@
   "selectedIds": [],
   "invalidChildren": [],
   "invalidChildrenText": null,
-  "location": "http://localhost:3000/editor?id=f0052201-64f0-456e-95e5-a7af80851daa",
-  "capturedAt": "2026-05-02T12:36:37.576Z"
+  "location": "http://localhost:3000/editor?id=6c88ef5c-c45e-493c-b618-34d1bb5707ad",
+  "capturedAt": "2026-05-10T15:24:05.501Z"
 }

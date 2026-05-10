@@ -4,18 +4,26 @@ import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import '@/lib/editor/konva-init';
 
+import { Sparkles } from 'lucide-react';
+
 const EditorApp = dynamic(() => import('@/components/editor/EditorApp'), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-screen bg-surface-950">
-      <div className="flex flex-col items-center gap-4 animate-fade-in">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-emerald to-accent-emerald-dark flex items-center justify-center">
-          <svg className="w-7 h-7 text-white animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-            <circle cx="12" cy="10" r="3" />
-          </svg>
+    <div className="absolute inset-0 z-[9999] flex flex-col items-center justify-center bg-[#050b16]">
+      <div className="relative w-24 h-24 mb-8">
+        <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin"></div>
+        <div className="absolute inset-4 rounded-full border-4 border-cyan-500/20 border-b-cyan-500 animate-spin-slow"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Sparkles className="w-8 h-8 text-emerald-400 animate-pulse" />
         </div>
-        <div className="text-sm font-bold text-surface-400 tracking-widest uppercase">Planify Yükleniyor...</div>
+      </div>
+      <div className="flex flex-col items-center gap-2">
+        <div className="text-white font-black uppercase tracking-[0.2em] text-sm flex items-center gap-2">
+          Planify <span className="text-emerald-400">Editor</span>
+        </div>
+        <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest animate-pulse">
+          Çalışma Alanı Hazırlanıyor...
+        </div>
       </div>
     </div>
   ),

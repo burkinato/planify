@@ -1,0 +1,78 @@
+﻿
+> planify-app@0.1.0 lint
+> eslint
+
+
+C:\Users\pixor\Desktop\planify\planify-app\src\app\api\payments\create-checkout\route.ts
+  3:10  warning  'createClient' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\pixor\Desktop\planify\planify-app\src\app\api\payments\webhook\route.ts
+  2:10  warning  'createClient' is defined but never used         @typescript-eslint/no-unused-vars
+  3:34  warning  'generateMerchantOid' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\pixor\Desktop\planify\planify-app\src\app\dashboard\layout.tsx
+  5:70  warning  'ShieldCheck' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\pixor\Desktop\planify\planify-app\src\app\dashboard\page.tsx
+  5:19  warning  'Search' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\pixor\Desktop\planify\planify-app\src\components\dashboard\AuditActionPanel.tsx
+  4:49  warning  'ShieldCheck' is defined but never used  @typescript-eslint/no-unused-vars
+  7:10  warning  'cn' is defined but never used           @typescript-eslint/no-unused-vars
+
+C:\Users\pixor\Desktop\planify\planify-app\src\components\dashboard\PortalSidePanel.tsx
+  4:22  warning  'BadgeCheck' is defined but never used  @typescript-eslint/no-unused-vars
+  4:89  warning  'Settings' is defined but never used    @typescript-eslint/no-unused-vars
+  4:99  warning  'LogOut' is defined but never used      @typescript-eslint/no-unused-vars
+
+C:\Users\pixor\Desktop\planify\planify-app\src\components\dashboard\ProjectCreationModal.tsx
+  3:22  warning  'Building2' is defined but never used    @typescript-eslint/no-unused-vars
+  3:56  warning  'ShieldCheck' is defined but never used  @typescript-eslint/no-unused-vars
+  4:10  warning  'cn' is defined but never used           @typescript-eslint/no-unused-vars
+
+C:\Users\pixor\Desktop\planify\planify-app\src\components\dashboard\ProjectDossierGrid.tsx
+   5:24  warning  'Download' is defined but never used      @typescript-eslint/no-unused-vars
+   5:41  warning  'ExternalLink' is defined but never used  @typescript-eslint/no-unused-vars
+  48:3   warning  'isCreating' is defined but never used    @typescript-eslint/no-unused-vars
+
+C:\Users\pixor\Desktop\planify\planify-app\src\components\editor\EditorApp.tsx
+   5:8   warning  'Link' is defined but never used                           @typescript-eslint/no-unused-vars
+   6:10  warning  'Sparkles' is defined but never used                       @typescript-eslint/no-unused-vars
+   6:20  warning  'X' is defined but never used                              @typescript-eslint/no-unused-vars
+  59:10  warning  'showUpgradeBanner' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  59:29  warning  'setShowUpgradeBanner' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\pixor\Desktop\planify\planify-app\src\components\editor\EditorCanvas.tsx
+  426:11  error    Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable                                                                                                                                                         @next/next/no-assign-module-variable
+  533:6   warning  React Hook useEffect has missing dependencies: 'removeElements', 'removeTemplateModule', 'selectedIds', 'selectedTemplateModuleId', 'setSelectedIds', 'setSelectedTemplateModuleId', and 'templateModules'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\pixor\Desktop\planify\planify-app\src\components\editor\EditorLeftSidebar.tsx
+  67:103  warning  'addElement' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\pixor\Desktop\planify\planify-app\src\components\editor\ExportModal.tsx
+   8:16  warning  'AlertCircle' is defined but never used  @typescript-eslint/no-unused-vars
+  14:10  warning  'exportToPDF' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\pixor\Desktop\planify\planify-app\src\components\editor\TemplateModulePanel.tsx
+   3:18  warning  'ClipboardCheck' is defined but never used               @typescript-eslint/no-unused-vars
+   3:48  warning  'Move3D' is defined but never used                       @typescript-eslint/no-unused-vars
+  14:7   warning  'REQUIREMENT_LABELS' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\pixor\Desktop\planify\planify-app\src\components\editor\TemplateSelectorModal.tsx
+    4:3   warning  'Lock' is defined but never used            @typescript-eslint/no-unused-vars
+    4:50  warning  'Filter' is defined but never used          @typescript-eslint/no-unused-vars
+    5:15  warning  'AlertCircle' is defined but never used     @typescript-eslint/no-unused-vars
+  132:9   warning  'isPro' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\pixor\Desktop\planify\planify-app\src\store\useEditorStore.ts
+  24:3  warning  'WallToolOptions' is defined but never used      @typescript-eslint/no-unused-vars
+  25:3  warning  'DoorToolOptions' is defined but never used      @typescript-eslint/no-unused-vars
+  26:3  warning  'WindowToolOptions' is defined but never used    @typescript-eslint/no-unused-vars
+  27:3  warning  'StairsToolOptions' is defined but never used    @typescript-eslint/no-unused-vars
+  28:3  warning  'ElevatorToolOptions' is defined but never used  @typescript-eslint/no-unused-vars
+  29:3  warning  'ColumnToolOptions' is defined but never used    @typescript-eslint/no-unused-vars
+  30:3  warning  'TextToolOptions' is defined but never used      @typescript-eslint/no-unused-vars
+  31:3  warning  'RouteToolOptions' is defined but never used     @typescript-eslint/no-unused-vars
+
+Ô£û 41 problems (1 error, 40 warnings)
+

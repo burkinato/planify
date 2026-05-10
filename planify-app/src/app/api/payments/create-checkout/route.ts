@@ -14,12 +14,12 @@ import { createPayTRToken, generateMerchantOid } from '@/lib/paytr';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { planSlug, userId, userEmail, userName } = body;
+    const { packageId, userId, userEmail, userName } = body;
 
     // 1. Validate required fields
-    if (!planSlug || !userId || !userEmail) {
+    if (!packageId || !userId || !userEmail) {
       return NextResponse.json(
-        { error: 'Missing required fields: planSlug, userId, userEmail' },
+        { error: 'Missing required fields: packageId, userId, userEmail' },
         { status: 400 }
       );
     }
@@ -51,17 +51,17 @@ export async function POST(request: Request) {
 
     const supabaseAdmin = createSupabaseJS(supabaseUrl, supabaseServiceKey);
 
-    const { data: plan, error: planError } = await supabaseAdmin
-      .from('plans')
-      .select('id, name, price_try, price_usd')
-      .eq('slug', planSlug)
+    const { data: pkg, error: pkgError } = await supabaseAdmin
+      .from('credit_packages')
+      .select('id, name, price_try, credits')
+      .eq('id', packageId)
       .eq('is_active', true)
       .single();
 
-    if (planError || !plan) {
-      console.error('Plan not found:', planSlug, planError);
+    if (pkgError || !pkg) {
+      console.error('Package not found:', packageId, pkgError);
       return NextResponse.json(
-        { error: 'Invalid plan selected' },
+        { error: 'Invalid package selected' },
         { status: 400 }
       );
     }
@@ -74,10 +74,10 @@ export async function POST(request: Request) {
       .from('payment_history')
       .insert({
         user_id: userId,
-        plan_id: plan.id,
+        plan_id: pkg.id, // Reusing plan_id column for credit package id
         merchant_oid: merchantOid,
-        provider_transaction_id: merchantOid, // Also store in standard column
-        amount: plan.price_try,
+        provider_transaction_id: merchantOid, 
+        amount: pkg.price_try,
         currency: 'TRY',
         status: 'pending',
       });
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     }
 
     // 6. Create PayTR token
-    const priceInKurus = Math.round(plan.price_try * 100); // Convert TRY to kurus
+    const priceInKurus = Math.round(pkg.price_try * 100); // Convert TRY to kurus
     const paytrResponse = await createPayTRToken({
       merchantId,
       merchantKey,
@@ -127,8 +127,8 @@ export async function POST(request: Request) {
       token: paytrResponse.token,
       merchantOid,
       plan: {
-        name: plan.name,
-        price: plan.price_try,
+        name: pkg.name,
+        price: pkg.price_try,
       },
     });
 

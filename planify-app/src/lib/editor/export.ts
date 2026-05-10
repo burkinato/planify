@@ -63,7 +63,36 @@ export async function exportToPDF(
     pdf.setLineWidth(0.1);
     pdf.rect(margin, margin, pdfWidth - (margin * 2), pdfHeight - (margin * 2));
 
-    if (isPro) {
+    if (!isPro) {
+      // FREE USER — Diagonal watermark overlay
+      const pdfEx = pdf as JsPdfWithGState;
+      const gState = new pdfEx.GState({ opacity: 0.12 });
+      pdfEx.setGState(gState);
+      pdf.setFontSize(48);
+      pdf.setTextColor(100, 100, 100);
+
+      // Repeat watermark text diagonally across the page
+      const watermarkText = 'planify.com.tr';
+      const angle = -35;
+      const spacingX = 120;
+      const spacingY = 80;
+      for (let wy = -spacingY; wy < pdfHeight + spacingY; wy += spacingY) {
+        for (let wx = -spacingX; wx < pdfWidth + spacingX; wx += spacingX) {
+          pdf.text(watermarkText, wx, wy, { angle });
+        }
+      }
+
+      // Reset opacity
+      const fullOpacity = new pdfEx.GState({ opacity: 1 });
+      pdfEx.setGState(fullOpacity);
+
+      // Bottom banner for free users
+      pdf.setFillColor(30, 30, 30);
+      pdf.rect(0, pdfHeight - 10, pdfWidth, 10, 'F');
+      pdf.setFontSize(9);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('Bu çıktı Planify ücretsiz sürümü ile oluşturulmuştur. Filigransız çıktı için: planify.com.tr', pdfWidth / 2, pdfHeight - 4, { align: 'center' });
+    } else {
       // Pro user - subtle credit only
       pdf.setFontSize(7);
       pdf.setTextColor(180, 180, 180);

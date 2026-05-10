@@ -101,6 +101,7 @@ interface EditorState {
   projectMetadata: ProjectMetadata;
   innerZoom: number;
   innerPan: { x: number; y: number };
+  moduleSnapLines: Array<{ axis: 'x' | 'y'; pos: number }>;
   canUndo: boolean;
   canRedo: boolean;
   past: HistorySnapshot[];
@@ -109,6 +110,11 @@ interface EditorState {
   projectId: string | null;
   toolOptions: ToolOptions;
   recentTools: EditorTool[];
+  language: 'tr' | 'en';
+  onboardingVisible: boolean;
+  hasCompletedOnboarding: boolean;
+  tourVisible: boolean;
+  tourStep: number;
 
   // Actions
   setProjectId: (id: string | null) => void;
@@ -134,6 +140,7 @@ interface EditorState {
   updateTemplateRegion: (regionId: string, updates: TemplateRegionState) => void;
   setProjectMetadata: (metadata: Partial<ProjectMetadata>) => void;
   setFocusedRegionId: (id: string | null) => void;
+  setModuleSnapLines: (lines: Array<{ axis: 'x' | 'y'; pos: number }>) => void;
   setActiveLayer: (id: string) => void;
   toggleLayerVisibility: (id: string) => void;
   toggleLayerLock: (id: string) => void;
@@ -155,6 +162,11 @@ interface EditorState {
   setAdvancedType: (type: 'title' | 'body' | 'meta' | 'content' | null) => void;
   updateToolOptions: (tool: EditorTool, options: Partial<Record<string, unknown>>) => void;
   updateRecentTools: (tool: EditorTool) => void;
+  setLanguage: (lang: 'tr' | 'en') => void;
+  setOnboardingVisible: (visible: boolean) => void;
+  completeOnboarding: () => void;
+  setTourVisible: (visible: boolean) => void;
+  setTourStep: (step: number) => void;
 }
 
 const DEFAULT_LAYER: LayerDef = {
@@ -201,9 +213,15 @@ const getInitialState = () => {
       projectMetadata: { name: 'PROJE DOSYASI', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00', floor: '', scale: '100' },
       innerZoom: 1,
       innerPan: { x: 0, y: 0 },
+      moduleSnapLines: [],
       projectId: null as string | null,
       toolOptions: getDefaultToolOptions(),
       recentTools: [] as EditorTool[],
+      language: 'tr' as const,
+      onboardingVisible: false,
+      hasCompletedOnboarding: false,
+      tourVisible: false,
+      tourStep: 0,
     };
   }
 
@@ -227,24 +245,39 @@ const getInitialState = () => {
     projectMetadata: JSON.parse(localStorage.getItem('planify-project-metadata') || JSON.stringify({ name: 'PROJE DOSYASI', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00', floor: '', scale: '100' })),
     innerZoom: parseFloat(localStorage.getItem('planify-inner-zoom') || '1') || 1,
     innerPan: JSON.parse(localStorage.getItem('planify-inner-pan') || '{"x":0,"y":0}'),
+    moduleSnapLines: [],
     projectId: null as string | null,
     toolOptions: getDefaultToolOptions(),
     recentTools: [] as EditorTool[],
+    language: (localStorage.getItem('planify-language') as 'tr' | 'en') || 'tr',
+    onboardingVisible: false,
+    hasCompletedOnboarding: localStorage.getItem('planify-onboarding-done') === 'true',
+    tourVisible: false,
+    tourStep: 0,
   };
 };
 
-// Samet (P1 Fix): Now using debounced versions to prevent excessive localStorage writes
-const saveElements = (elements: EditorElement[]) => {
-  debouncedSaveElements(elements);
+// Persistence helpers
+const saveElements = (elements: EditorElement[], projectId: string | null) => {
+  if (typeof window === 'undefined') return;
+  const key = projectId ? `planify-elements-${projectId}` : 'planify-elements';
+  
+  if (saveElementsTimer) clearTimeout(saveElementsTimer);
+  saveElementsTimer = setTimeout(() => {
+    localStorage.setItem(key, JSON.stringify(elements));
+  }, DEBOUNCE_DELAY);
 };
 
-const saveLayers = (layers: LayerDef[]) => {
-  debouncedSaveLayers(layers);
+const saveLayers = (layers: LayerDef[], projectId: string | null) => {
+  if (typeof window === 'undefined') return;
+  const key = projectId ? `planify-layers-${projectId}` : 'planify-layers';
+  localStorage.setItem(key, JSON.stringify(layers));
 };
 
-const saveTemplateModules = (modules: TemplateModuleInstance[]) => {
+const saveTemplateModules = (modules: TemplateModuleInstance[], projectId: string | null) => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('planify-template-modules', JSON.stringify(modules));
+    const key = projectId ? `planify-template-modules-${projectId}` : 'planify-template-modules';
+    localStorage.setItem(key, JSON.stringify(modules));
   }
 };
 
@@ -277,6 +310,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     future: [],
     advancedType: null,
     projectId: null,
+    language: 'tr',
 
     setProjectId: (projectId) => set({ projectId }),
     setTool: (tool) => set((state) => {
@@ -359,7 +393,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
           localStorage.setItem('planify-template-layout-id', normalizedLayout.id);
           localStorage.setItem('planify-template', normalizedLayout.slug);
           localStorage.setItem('planify-preset', normalizedLayout.page_preset);
-          saveTemplateModules(templateModules);
+      saveTemplateModules(templateModules, get().projectId);
         } else {
           localStorage.removeItem('planify-template-layout-id');
           localStorage.setItem('planify-template', 'blank');
@@ -379,7 +413,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     setTemplateModules: (modules) => {
       const templateModules = modules.map(clampTemplateModule).sort((left, right) => left.zIndex - right.zIndex);
       set({ templateModules });
-      saveTemplateModules(templateModules);
+      saveTemplateModules(templateModules, get().projectId);
     },
 
     addTemplateModule: (type, placement = {}) => {
@@ -424,7 +458,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         canUndo: true,
         canRedo: false,
       });
-      saveTemplateModules(nextModules);
+      saveTemplateModules(nextModules, get().projectId);
       if (typeof window !== 'undefined') {
         localStorage.setItem('planify-template-state', JSON.stringify(nextTemplateState));
       }
@@ -443,12 +477,18 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         canUndo: true,
         canRedo: false,
       });
-      saveTemplateModules(nextModules);
+      saveTemplateModules(nextModules, get().projectId);
     },
 
     removeTemplateModule: (id) => {
-      const { elements, layers, past, templateModules, selectedTemplateModuleId, focusedRegionId } = get();
-      const target = templateModules.find((module) => module.id === id);
+      const { elements, layers, past, templateModules, selectedTemplateModuleId, focusedRegionId, activeTemplateLayout } = get();
+      
+      let currentModules = templateModules;
+      if (currentModules.length === 0 && activeTemplateLayout) {
+         currentModules = getTemplateModules(activeTemplateLayout);
+      }
+
+      const target = currentModules.find((module) => module.id === id);
       if (!target) return;
 
       if (target.type === 'DrawingArea') {
@@ -456,9 +496,9 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         return;
       }
 
-      const nextModules = templateModules.filter((module) => module.id !== id);
+      const nextModules = currentModules.filter((module) => module.id !== id);
       set({
-        past: [...past, { elements, layers, templateModules }].slice(-20),
+        past: [...past, { elements, layers, templateModules: currentModules }].slice(-20),
         templateModules: nextModules,
         selectedTemplateModuleId: selectedTemplateModuleId === id ? null : selectedTemplateModuleId,
         focusedRegionId: focusedRegionId === id ? null : focusedRegionId,
@@ -466,7 +506,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         canUndo: true,
         canRedo: false,
       });
-      saveTemplateModules(nextModules);
+      saveTemplateModules(nextModules, get().projectId);
     },
 
     setSelectedTemplateModuleId: (selectedTemplateModuleId) => set({
@@ -510,6 +550,8 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       selectedIds: focusedRegionId ? [] : state.selectedIds,
     })),
 
+    setModuleSnapLines: (moduleSnapLines) => set({ moduleSnapLines }),
+
     setActiveLayer: (activeLayerId) => set({ activeLayerId }),
 
     toggleLayerVisibility: (id) => {
@@ -517,7 +559,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       const newLayers = layers.map((l) => (l.id === id ? { ...l, visible: !l.visible } : l));
       const newPast = [...past, { elements, layers }].slice(-20);
       set({ past: newPast, layers: newLayers, canUndo: true });
-      saveLayers(newLayers);
+      saveLayers(newLayers, get().projectId);
     },
 
     toggleLayerLock: (id) => {
@@ -525,7 +567,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       const newLayers = layers.map((l) => (l.id === id ? { ...l, locked: !l.locked } : l));
       const newPast = [...past, { elements, layers }].slice(-20);
       set({ past: newPast, layers: newLayers, canUndo: true });
-      saveLayers(newLayers);
+      saveLayers(newLayers, get().projectId);
     },
 
     addLayer: (name) => {
@@ -534,7 +576,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       const newLayers = [...layers, newLayer];
       const newPast = [...past, { elements, layers }].slice(-20);
       set({ past: newPast, layers: newLayers, activeLayerId: newLayer.id, canUndo: true });
-      saveLayers(newLayers);
+      saveLayers(newLayers, get().projectId);
     },
 
     removeLayer: (id) => {
@@ -549,8 +591,8 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         activeLayerId: activeLayerId === id ? 'default' : activeLayerId,
         canUndo: true,
       });
-      saveLayers(newLayers);
-      saveElements(newElements);
+      saveLayers(newLayers, get().projectId);
+      saveElements(newElements, get().projectId);
     },
 
     renameLayer: (id, name) => {
@@ -558,7 +600,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       const newLayers = layers.map((l) => (l.id === id ? { ...l, name } : l));
       const newPast = [...past, { elements, layers }].slice(-20);
       set({ past: newPast, layers: newLayers, canUndo: true });
-      saveLayers(newLayers);
+      saveLayers(newLayers, get().projectId);
     },
 
     addCustomSymbol: (symbol) => {
@@ -580,7 +622,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       const newElements = [...elements, newEl];
       const newPast = [...past, { elements, layers }].slice(-20);
       set({ past: newPast, elements: newElements, future: [], canUndo: true, canRedo: false });
-      saveElements(newElements);
+      saveElements(newElements, get().projectId);
     },
 
     updateElement: (id, updates) => {
@@ -593,7 +635,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         const newElements = Array.from(elementMap.values());
         const newPast = [...past, { elements, layers }].slice(-20);
         set({ past: newPast, elements: newElements, future: [], canUndo: true, canRedo: false });
-        saveElements(newElements);
+        saveElements(newElements, get().projectId);
       }
     },
 
@@ -607,7 +649,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       });
       const newPast = [...past, { elements, layers }].slice(-20);
       set({ past: newPast, elements: newElements, future: [], canUndo: true, canRedo: false });
-      saveElements(newElements);
+      saveElements(newElements, get().projectId);
     },
 
     removeElements: (ids) => {
@@ -622,7 +664,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         canUndo: true,
         canRedo: false,
       });
-      saveElements(newElements);
+      saveElements(newElements, get().projectId);
     },
 
     duplicateElements: (ids) => {
@@ -647,7 +689,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         canUndo: true,
         canRedo: false,
       });
-      saveElements(newElements);
+      saveElements(newElements, get().projectId);
     },
 
     copySelection: () => {
@@ -685,7 +727,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         canUndo: true,
         canRedo: false,
       });
-      saveElements(newElements);
+      saveElements(newElements, get().projectId);
     },
 
     loadProject: (json) => {
@@ -713,17 +755,17 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
             canUndo: false,
             canRedo: false,
           });
-          saveElements(data.elements);
+          saveElements(data.elements, get().projectId);
           if (typeof window !== 'undefined') {
             localStorage.setItem('planify-scale', JSON.stringify(data.scaleConfig));
             if (data.projectTemplate) localStorage.setItem('planify-template', data.projectTemplate);
             if (data.templateLayoutId) localStorage.setItem('planify-template-layout-id', data.templateLayoutId);
             else localStorage.removeItem('planify-template-layout-id');
             if (data.templateState) localStorage.setItem('planify-template-state', JSON.stringify(data.templateState));
-            saveTemplateModules(data.templateModules);
+            saveTemplateModules(data.templateModules, get().projectId);
             if (data.projectMetadata) localStorage.setItem('planify-project-metadata', JSON.stringify(data.projectMetadata));
             if (data.pagePreset) localStorage.setItem('planify-preset', data.pagePreset);
-            saveLayers(data.layers);
+            saveLayers(data.layers, get().projectId);
           }
           toast.success('Proje başarıyla yüklendi');
         } else {
@@ -765,9 +807,9 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         canUndo: newPast.length > 0,
         canRedo: true,
       });
-      saveElements(previous.elements);
-      saveLayers(previous.layers);
-      saveTemplateModules(restoredTemplateModules);
+      saveElements(previous.elements, get().projectId);
+      saveLayers(previous.layers, get().projectId);
+      saveTemplateModules(restoredTemplateModules, get().projectId);
     },
 
     redo: () => {
@@ -785,10 +827,23 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         canUndo: true,
         canRedo: newFuture.length > 0,
       });
-      saveElements(next.elements);
-      saveLayers(next.layers);
-      saveTemplateModules(restoredTemplateModules);
+      saveElements(next.elements, get().projectId);
+      saveLayers(next.layers, get().projectId);
+      saveTemplateModules(restoredTemplateModules, get().projectId);
     },
     setAdvancedType: (advancedType) => set({ advancedType }),
+    setLanguage: (language) => {
+      set({ language });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('planify-language', language);
+      }
+    },
+    setOnboardingVisible: (visible) => set({ onboardingVisible: visible }),
+    completeOnboarding: () => {
+      localStorage.setItem('planify-onboarding-done', 'true');
+      set({ hasCompletedOnboarding: true, onboardingVisible: false, tourVisible: true });
+    },
+    setTourVisible: (tourVisible) => set({ tourVisible }),
+    setTourStep: (tourStep) => set({ tourStep }),
   };
 }));

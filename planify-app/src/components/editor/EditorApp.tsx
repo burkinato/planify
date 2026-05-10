@@ -11,6 +11,8 @@ import { EditorErrorBoundary } from './EditorErrorBoundary';
 import { TemplateSelectorModal } from './TemplateSelectorModal';
 import { ExportModal } from './ExportModal';
 import { TemplateModulePanel } from './TemplateModulePanel';
+import { OnboardingWizard } from './onboarding/OnboardingWizard';
+import { EditorTour } from './onboarding/EditorTour';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
@@ -59,7 +61,10 @@ export default function EditorApp() {
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(true);
   const stageRef = useRef<Konva.Stage | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const hasLoadedProjectRef = useRef(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [hasLoadedProject, setHasLoadedProject] = useState(false);
+  const [showPreloader, setShowPreloader] = useState(true);
+  const [preloaderOpacity, setPreloaderOpacity] = useState(1);
   const lastSavedSnapshotRef = useRef<string | null>(null);
   const handleContainerNode = useCallback((node: HTMLDivElement | null) => {
     containerRef.current = node;
@@ -68,16 +73,21 @@ export default function EditorApp() {
   const searchParams = useSearchParams();
   const projectId = searchParams.get('id');
   const templateSlug = searchParams.get('template');
-  const { projects, fetchProjects, templateLayouts, fetchTemplateLayouts, updateProject, recordProjectExport } = useProjectStore();
+  const { projects, fetchProjects, templateLayouts, fetchTemplateLayouts, updateProject, recordProjectExport, isLoading: isProjectsLoading } = useProjectStore();
   const {
     loadProject, templateLayoutId, projectTemplate, setTemplateLayout,
     elements, layers, activeTemplateLayout, scaleConfig, pagePreset, templateState,
-    templateModules, innerZoom, innerPan, setProjectId
+    templateModules, innerZoom, innerPan, setProjectId,
+    hasCompletedOnboarding, setOnboardingVisible
   } = useEditorStore();
 
   useEffect(() => {
     setProjectId(projectId);
-  }, [projectId, setProjectId]);
+    // Show onboarding if not completed
+    if (!hasCompletedOnboarding) {
+      setOnboardingVisible(true);
+    }
+  }, [projectId, setProjectId, hasCompletedOnboarding, setOnboardingVisible]);
   const { profile, user, isLoading } = useAuthStore();
   const isPro = profile?.subscription_tier === 'pro';
   const router = useRouter();
@@ -101,7 +111,7 @@ export default function EditorApp() {
     if (projectId && projects.length > 0) {
       const proj = projects.find(p => p.id === projectId);
       if (proj) {
-        if (!hasLoadedProjectRef.current) {
+        if (!hasLoadedProject) {
           const canvasData: PersistedCanvasData =
             typeof proj.canvas_data === 'object' && proj.canvas_data
               ? proj.canvas_data as PersistedCanvasData
@@ -144,11 +154,11 @@ export default function EditorApp() {
             page_preset: proj.page_preset ?? null,
             template_state: proj.template_state ?? null,
           });
-          hasLoadedProjectRef.current = true;
+          setHasLoadedProject(true);
         }
       }
     }
-  }, [projectId, projects, loadProject, templateSlug, templateLayouts]);
+  }, [projectId, projects, loadProject, templateSlug, templateLayouts, hasLoadedProject]);
 
   useEffect(() => {
     const sourceLayouts = mergeTemplateSources(templateLayouts);
@@ -160,7 +170,7 @@ export default function EditorApp() {
     if (!projectId) return;
 
     const timeoutId = setTimeout(async () => {
-      if (!hasLoadedProjectRef.current) return;
+      if (!hasLoadedProject) return;
 
       try {
         const canvas_data = {
@@ -174,9 +184,12 @@ export default function EditorApp() {
           innerZoom,
           innerPan
         };
+        
+        const scale_config = scaleConfig;
+        
         const snapshot = JSON.stringify({
           canvas_data,
-          scale_config: scaleConfig,
+          scale_config,
           template_layout_id: templateLayoutId ?? null,
           page_preset: pagePreset,
           template_state: templateState,
@@ -184,14 +197,18 @@ export default function EditorApp() {
 
         if (snapshot === lastSavedSnapshotRef.current) return;
 
-        let thumbnail_url = null;
-        if (stageRef.current) {
+        let thumbnail_url = undefined;
+        // Only generate thumbnail every 30 seconds or if it's the first save
+        const now = Date.now();
+        const lastThumbnailTime = (window as any)._lastThumbnailTime || 0;
+        if (now - lastThumbnailTime > 30000 && stageRef.current) {
           try {
             thumbnail_url = stageRef.current.toDataURL({
               pixelRatio: 0.1,
               mimeType: 'image/jpeg',
               quality: 0.5
             });
+            (window as any)._lastThumbnailTime = now;
           } catch (e) {
             console.warn('Thumbnail generation failed', e);
           }
@@ -212,39 +229,29 @@ export default function EditorApp() {
 
         await updateProject(projectId, {
           canvas_data,
-          scale_config: scaleConfig,
+          scale_config,
           template_layout_id: validLayoutId,
           page_preset: pagePreset,
           template_state: templateState,
-          thumbnail_url: thumbnail_url || undefined,
+          thumbnail_url,
           compliance_score: audit.score,
           audit_status: audit.status,
         });
 
         lastSavedSnapshotRef.current = snapshot;
 
-        toast.success('Otomatik kaydedildi', {
+        toast.success('Değişiklikler kaydedildi', {
           id: 'autosave-status',
           duration: 2000,
           position: 'bottom-right',
         });
       } catch (error: unknown) {
         console.error('Auto-save failed', error);
-        const isOffline = typeof window !== 'undefined' && !window.navigator.onLine;
-        const errorMessage = isOffline
-          ? 'İnternet bağlantınız koptu.'
-          : error instanceof Error
-            ? error.message
-            : 'Bilinmeyen bir hata oluştu';
-        toast.error(`Otomatik kayıt başarısız: ${errorMessage}`, {
-          id: 'autosave-error',
-          duration: 5000,
-        });
       }
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(timeoutId);
-  }, [elements, layers, templateLayoutId, pagePreset, templateState, templateModules, scaleConfig, projectId, updateProject, projectTemplate, templateLayouts, innerZoom, innerPan, projects]);
+  }, [elements, layers, templateLayoutId, pagePreset, templateState, templateModules, scaleConfig, projectId, updateProject, projectTemplate, templateLayouts, innerZoom, innerPan]);
 
   const validateCompliance = () => {
     const missing: string[] = [];
@@ -336,16 +343,53 @@ export default function EditorApp() {
 
   useKeyboardShortcuts(() => exportImage());
 
-  // Show loading state while checking auth or loading project
-  if (isLoading && !profile) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-surface-950 transition-colors">
-        <div className="animate-pulse text-surface-400 font-bold uppercase tracking-widest text-xs">
-          Kullanıcı Doğrulanıyor...
-        </div>
-      </div>
-    );
-  }
+  // Preloader has been completely removed from blocking render.
+  // We handle it gracefully as an overlay below.
+
+  // Smooth preloader fade-out effect
+  useEffect(() => {
+    if (!isLoading && (!projectId || !isInitialLoading)) {
+      setPreloaderOpacity(0);
+      const timer = setTimeout(() => setShowPreloader(false), 500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowPreloader(true);
+      setPreloaderOpacity(1);
+    }
+  }, [isLoading, projectId, isInitialLoading]);
+
+  // Effect to clear initial loading state once project and layout are ready
+  useEffect(() => {
+    if (projectId) {
+      if (hasLoadedProject) {
+        const timer = setTimeout(() => setIsInitialLoading(false), 300);
+        return () => clearTimeout(timer);
+      }
+    } else {
+      setIsInitialLoading(false);
+    }
+  }, [projectId, hasLoadedProject]);
+
+  // Absolute fallback timeout to prevent infinite loading screen
+  useEffect(() => {
+    if (projectId) {
+      const absoluteTimer = setTimeout(() => {
+        if (isInitialLoading) {
+          console.warn('Absolute fallback triggered: 3 seconds passed. Forcing preloader off.');
+          setIsInitialLoading(false);
+          
+          const currentProj = useProjectStore.getState().projects.find(p => p.id === projectId);
+          if (currentProj && !hasLoadedProject) {
+            setHasLoadedProject(true);
+          } else if (!currentProj) {
+            // Project might still be loading or missing, but we don't want to lock the UI
+            // Let the EditorErrorBoundary handle any missing data crashes
+          }
+        }
+      }, 3000);
+      return () => clearTimeout(absoluteTimer);
+    }
+  }, [projectId, isInitialLoading, hasLoadedProject]);
 
   return (
     <EditorErrorBoundary onReset={() => window.location.reload()}>
@@ -370,6 +414,7 @@ export default function EditorApp() {
             />
           )}
           <EditorCanvas
+            id="editor-canvas"
             isPreview={isPreview}
             mobileMenu={mobileMenu}
             setMobileMenu={setMobileMenu}
@@ -402,6 +447,33 @@ export default function EditorApp() {
             projectName={projects.find(p => p.id === projectId)?.title || 'Yeni Proje'}
             onExportComplete={(format, fileName) => projectId ? recordProjectExport(projectId, format, fileName) : undefined}
           />
+        )}
+
+        <OnboardingWizard />
+        <EditorTour />
+
+        {/* Beautiful Overlay Preloader */}
+        {showPreloader && (
+          <div 
+            className="absolute inset-0 z-[9999] flex flex-col items-center justify-center bg-[#050b16] transition-opacity duration-500 ease-in-out"
+            style={{ opacity: preloaderOpacity }}
+          >
+            <div className="relative w-24 h-24 mb-8">
+              <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin"></div>
+              <div className="absolute inset-4 rounded-full border-4 border-cyan-500/20 border-b-cyan-500 animate-spin-slow"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-emerald-400 animate-pulse" />
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <div className="text-white font-black uppercase tracking-[0.2em] text-sm flex items-center gap-2">
+                Planify <span className="text-emerald-400">Editor</span>
+              </div>
+              <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest animate-pulse">
+                {isLoading ? 'Kullanıcı Doğrulanıyor...' : 'Çalışma Alanı Hazırlanıyor...'}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </EditorErrorBoundary>

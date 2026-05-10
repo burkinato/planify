@@ -4,15 +4,15 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useShallow } from 'zustand/react/shallow';
 import { Shield, ArrowRight, CheckCircle2, Building, Heart, GraduationCap, Flame, PlayCircle } from 'lucide-react';
 
-const TRUSTED = [
-  { name: 'MetroİSTANBUL', Icon: Building },
-  { name: 'Acıbadem Sağlık', Icon: Heart },
-  { name: 'Anadolu Eğitim', Icon: GraduationCap },
-  { name: 'Yangın Guard OSGB', Icon: Flame },
-  { name: 'İzmir Belediyesi', Icon: Building },
-  { name: 'Sağlık Bakanlığı', Icon: Heart },
-  { name: 'MEB Okul Ağı', Icon: GraduationCap },
-  { name: 'SafeWork OSGB', Icon: Shield },
+const SECTORS = [
+  { name: 'Hastane & Sağlık', Icon: Heart },
+  { name: 'Okul & Eğitim', Icon: GraduationCap },
+  { name: 'Fabrika & Endüstri', Icon: Building },
+  { name: 'İSG & OSGB', Icon: Shield },
+  { name: 'AVM & Ticaret', Icon: Building },
+  { name: 'Otel & Konaklama', Icon: Heart },
+  { name: 'Kamu & Belediye', Icon: GraduationCap },
+  { name: 'Şantiye & Saha', Icon: Flame },
 ];
 
 function EditorPreview() {
@@ -160,8 +160,8 @@ export default function LandingHero() {
                   Ücretsiz Çizmeye Başla <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               )}
-              <a href="#how" className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/50 backdrop-blur-md text-slate-700 font-bold rounded-2xl border border-slate-200 hover:bg-white hover:border-slate-300 transition-all shadow-sm">
-                <PlayCircle className="w-5 h-5 text-primary-600" /> Demoyu İzle
+              <a href="#showcase" className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/50 backdrop-blur-md text-slate-700 font-bold rounded-2xl border border-slate-200 hover:bg-white hover:border-slate-300 transition-all shadow-sm">
+                <PlayCircle className="w-5 h-5 text-primary-600" /> Nasıl Çalışır?
               </a>
             </div>
 
@@ -197,7 +197,7 @@ export default function LandingHero() {
       {/* TRUSTED BY */}
       <section className="py-14 bg-white border-y border-slate-100 overflow-hidden">
         <p className="text-center text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-10">
-          Sektör Liderleri Tarafından Güveniliyor
+          Her Sektörden İşletmeye Uygun Tahliye Planı
         </p>
         <div className="relative flex overflow-hidden">
           {/* Gradient Masks for smooth scroll edges */}
@@ -205,7 +205,7 @@ export default function LandingHero() {
           <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-white to-transparent z-10" />
           
           <div className="logo-slider-track">
-            {[...TRUSTED, ...TRUSTED, ...TRUSTED].map((org, i) => (
+            {[...SECTORS, ...SECTORS, ...SECTORS].map((org, i) => (
               <div key={i} className="flex items-center gap-3 px-10 min-w-max select-none grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300 cursor-default">
                 <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">
                   <org.Icon className="w-5 h-5 text-slate-700" />

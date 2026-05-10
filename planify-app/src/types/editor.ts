@@ -291,6 +291,7 @@ export type SymbolCategory = 'E_ACIL' | 'F_YANGIN' | 'E_SAGLIK' | 'W_TEHLIKE' | 
 export interface SymbolTemplate {
   id: string;
   name: string;
+  nameEn?: string;
   color: string;
   shape: 'square' | 'circle' | 'here' | 'none';
   category: SymbolCategory;
@@ -299,38 +300,39 @@ export interface SymbolTemplate {
 export interface CustomSymbol {
   id: string;
   name: string;
+  nameEn?: string;
   dataUrl: string;
   width?: number;
   height?: number;
 }
 
 export const SYMBOLS: SymbolTemplate[] = [
-  { id: 'E001', name: 'Çıkış (Sağ)', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
-  { id: 'E002', name: 'Çıkış (Sol)', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
-  { id: 'E003', name: 'Acil Çıkış Kapısı', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
-  { id: 'E004', name: 'Buradasınız', color: '#050b16', shape: 'square', category: 'E_ACIL' },
-  { id: 'E005', name: 'Çıkış (Yukarı)', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
-  { id: 'E006', name: 'Çıkış (Aşağı)', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
-  { id: 'E007', name: 'Toplanma Noktası', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
-  { id: 'E008', name: 'Acil Telefon', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
-  { id: 'E009', name: 'Acil Sedye', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
-  { id: 'E010', name: 'Yön Oku', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
-  { id: 'E011', name: 'Engelli Alanı', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
-  { id: 'E012', name: 'Acil Asansör', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
-  { id: 'E013', name: 'Acil Aydınlatma', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
-  { id: 'F001', name: 'Yangın Söndürücü', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
-  { id: 'F002', name: 'Yangın Hortumu', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
-  { id: 'F003', name: 'Yangın Merdiveni', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
-  { id: 'F004', name: 'Alarm Butonu', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
-  { id: 'F005', name: 'Yangın Hidrantı', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
-  { id: 'F006', name: 'Yangın Dolabı', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
-  { id: 'F007', name: 'Sprinkler', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
-  { id: 'F008', name: 'Yangın Paneli', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
-  { id: 'F009', name: 'Yangın Battaniyesi', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
-  { id: 'F010', name: 'Köpük Söndürücü', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
-  { id: 'F011', name: 'CO2 Tüpü', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
-  { id: 'F012', name: 'Gaz Kesme Vanası', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
-  { id: 'F013', name: 'Duman Dedektörü', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
+  { id: 'E001', name: 'Çıkış (Sağ)', nameEn: 'Exit (Right)', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
+  { id: 'E002', name: 'Çıkış (Sol)', nameEn: 'Exit (Left)', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
+  { id: 'E003', name: 'Acil Çıkış Kapısı', nameEn: 'Emergency Exit Door', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
+  { id: 'E004', name: 'Buradasınız', nameEn: 'You Are Here', color: '#050b16', shape: 'square', category: 'E_ACIL' },
+  { id: 'E005', name: 'Çıkış (Yukarı)', nameEn: 'Exit (Up)', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
+  { id: 'E006', name: 'Çıkış (Aşağı)', nameEn: 'Exit (Down)', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
+  { id: 'E007', name: 'Toplanma Noktası', nameEn: 'Assembly Point', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
+  { id: 'E008', name: 'Acil Telefon', nameEn: 'Emergency Phone', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
+  { id: 'E009', name: 'Acil Sedye', nameEn: 'Stretcher', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
+  { id: 'E010', name: 'Yön Oku', nameEn: 'Direction Arrow', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
+  { id: 'E011', name: 'Engelli Alanı', nameEn: 'Accessibility Area', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
+  { id: 'E012', name: 'Acil Asansör', nameEn: 'Emergency Elevator', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
+  { id: 'E013', name: 'Acil Aydınlatma', nameEn: 'Emergency Lighting', color: '#008F4C', shape: 'square', category: 'E_ACIL' },
+  { id: 'F001', name: 'Yangın Söndürücü', nameEn: 'Fire Extinguisher', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F002', name: 'Yangın Hortumu', nameEn: 'Fire Hose', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F003', name: 'Yangın Merdiveni', nameEn: 'Fire Escape', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F004', name: 'Alarm Butonu', nameEn: 'Alarm Button', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F005', name: 'Yangın Hidrantı', nameEn: 'Fire Hydrant', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F006', name: 'Yangın Dolabı', nameEn: 'Fire Cabinet', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F007', name: 'Sprinkler', nameEn: 'Sprinkler', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F008', name: 'Yangın Paneli', nameEn: 'Fire Panel', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F009', name: 'Yangın Battaniyesi', nameEn: 'Fire Blanket', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F010', name: 'Köpük Söndürücü', nameEn: 'Foam Extinguisher', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F011', name: 'CO2 Tüpü', nameEn: 'CO2 Cylinder', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F012', name: 'Gaz Kesme Vanası', nameEn: 'Gas Shut-off Valve', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
+  { id: 'F013', name: 'Duman Dedektörü', nameEn: 'Smoke Detector', color: '#E81123', shape: 'square', category: 'F_YANGIN' },
   { id: 'E020', name: 'İlk Yardım', color: '#008F4C', shape: 'square', category: 'E_SAGLIK' },
   { id: 'E021', name: 'İlk Yardım Dolabı', color: '#008F4C', shape: 'square', category: 'E_SAGLIK' },
   { id: 'E022', name: 'İlk Yardım Çantası', color: '#008F4C', shape: 'square', category: 'E_SAGLIK' },

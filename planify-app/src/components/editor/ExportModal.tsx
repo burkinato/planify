@@ -11,6 +11,11 @@ import { useEditorStore, useShallow } from '@/store/useEditorStore';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { THEME_CONFIGS } from '@/types/editor';
+import { exportToPDF } from '@/lib/editor/export';
+import { addWatermarkToPng } from '@/lib/editor/watermark';
+import { useCreditStore } from '@/store/useCreditStore';
+import { trackEvent, TRACKING_EVENTS } from '@/lib/analytics/events';
+import { TRANSLATIONS } from '@/lib/editor/translations';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -39,10 +44,12 @@ export function ExportModal({
   projectName,
   onExportComplete
 }: ExportModalProps) {
-  const { layers, activeTemplateLayout, projectMetadata } = useEditorStore(useShallow(s => ({
+  const { layers, activeTemplateLayout, projectMetadata, language, setLanguage } = useEditorStore(useShallow(s => ({
     layers: s.layers,
     activeTemplateLayout: s.activeTemplateLayout,
-    projectMetadata: s.projectMetadata
+    projectMetadata: s.projectMetadata,
+    language: s.language,
+    setLanguage: s.setLanguage,
   })));
 
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('pdf');
@@ -50,6 +57,12 @@ export function ExportModal({
   const [isExporting, setIsExporting] = useState(false);
   const [quality, setQuality] = useState<'standard' | 'high' | 'ultra'>('high');
   const [bgMode, setBgMode] = useState<'minimal' | 'current' | 'transparent'>('minimal');
+
+  const { balance, fetchBalance, deductCredits } = useCreditStore();
+
+  React.useEffect(() => {
+    if (isOpen) fetchBalance();
+  }, [isOpen, fetchBalance]);
 
   if (!isOpen) return null;
 
@@ -64,8 +77,16 @@ export function ExportModal({
     setSelectedLayers(next);
   };
 
-  const handleExport = async () => {
+  const handleExport = async (spendCredits: boolean = false) => {
+    if (spendCredits) {
+      if (balance < 10) {
+        toast.error('Yetersiz kredi! Filigransız çıktı için hesabınıza kredi yüklemelisiniz.', { duration: 5000 });
+        return;
+      }
+    }
+    
     setIsExporting(true);
+    const exportAsPro = isPro || spendCredits;
     // Capture inner zoom/pan before the try block so they're accessible in finally
     const { innerZoom: savedInnerZoom, innerPan: savedInnerPan, editorTheme: savedEditorTheme } = useEditorStore.getState();
     try {
@@ -102,11 +123,12 @@ export function ExportModal({
           containerRef, 
           projectName || projectMetadata.name, 
           activeTemplateLayout, 
-          isPro,
+          exportAsPro,
           quality === 'ultra' ? 4 : quality === 'high' ? 3 : 2,
           bgMode === 'transparent' ? 'rgba(0,0,0,0)' : (bgMode === 'current' ? THEME_CONFIGS[savedEditorTheme].bg : '#ffffff'),
           bgMode
         );
+        if (spendCredits) await deductCredits(10, 'export_pdf', 'Filigransız PDF çıktısı alındı');
         await onExportComplete?.('pdf', fileName);
       } else if (selectedFormat === 'png') {
         if (activeTemplateLayout && containerRef.current) {
@@ -126,23 +148,34 @@ export function ExportModal({
               delete containerRef.current.dataset.exportBgMode;
             }
           }
+          if (!exportAsPro) {
+            dataUrl = await addWatermarkToPng(dataUrl);
+          }
+          
           const fileName = `${projectName || projectMetadata.name}.png`;
           const link = document.createElement('a');
           link.download = fileName;
           link.href = dataUrl;
           link.click();
+          if (spendCredits) await deductCredits(10, 'export_png', 'Filigransız PNG çıktısı alındı');
           await onExportComplete?.('png', fileName);
         } else if (!stageRef.current) {
           toast.error('Tuval hazır değil. Lütfen tekrar deneyin.');
           return;
         } else {
           const pixelRatio = quality === 'ultra' ? 5 : quality === 'high' ? 3 : 2;
-          const dataURL = stageRef.current.toDataURL({ pixelRatio });
+          let dataURL = stageRef.current.toDataURL({ pixelRatio });
+          
+          if (!exportAsPro) {
+            dataURL = await addWatermarkToPng(dataURL);
+          }
+          
           const link = document.createElement('a');
           const fileName = `${projectName || projectMetadata.name}.png`;
           link.download = fileName;
           link.href = dataURL;
           link.click();
+          if (spendCredits) await deductCredits(10, 'export_png', 'Filigransız PNG çıktısı alındı');
           await onExportComplete?.('png', fileName);
         }
       } else if (selectedFormat === 'svg') {
@@ -158,6 +191,12 @@ export function ExportModal({
       });
 
       toast.success('Dışa aktarma tamamlandı.');
+      trackEvent(TRACKING_EVENTS.EXPORT_COMPLETE, {
+        format: selectedFormat,
+        quality: quality,
+        project_name: projectName || projectMetadata.name,
+        is_pro: isPro || spendCredits
+      });
       onClose();
     } catch (error) {
       console.error('Export error:', error);
@@ -179,18 +218,48 @@ export function ExportModal({
         <div className="flex-1 p-8 overflow-y-auto custom-scrollbar flex flex-col gap-8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Dışa Aktar</h2>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Profesyonel Çıktı Ayarları</p>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                {language === 'en' ? 'Export' : 'Dışa Aktar'}
+              </h2>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+                {language === 'en' ? 'Professional Output Settings' : 'Profesyonel Çıktı Ayarları'}
+              </p>
             </div>
             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 transition-colors">
               <X className="w-6 h-6 text-slate-400" />
             </button>
           </div>
 
+          {/* Language Selection */}
+          <div className="space-y-4">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5" /> {language === 'en' ? 'Output Language' : 'Çıktı Dili'}
+            </h3>
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+              {(['tr', 'en'] as const).map(lang => (
+                <button
+                  key={lang}
+                  onClick={() => setLanguage(lang)}
+                  className={cn(
+                    "flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
+                    language === lang 
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  {lang === 'tr' ? 'Türkçe (TR)' : 'English (EN)'}
+                </button>
+              ))}
+            </div>
+            <p className="text-[9px] text-slate-400 font-bold uppercase leading-relaxed">
+              {language === 'en' ? '★ Module headers and symbols will be exported in English.' : '★ Modül başlıkları ve sembol isimleri Türkçe olarak dışa aktarılacak.'}
+            </p>
+          </div>
+
           {/* Format Selection */}
           <div className="space-y-4">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-              <FileType className="w-3.5 h-3.5" /> Dosya Formatı
+              <FileType className="w-3.5 h-3.5" /> {language === 'en' ? 'File Format' : 'Dosya Formatı'}
             </h3>
             <div className="grid grid-cols-3 gap-3">
               {(['pdf', 'png', 'svg'] as const).map(f => (
@@ -216,7 +285,7 @@ export function ExportModal({
           {/* Layer Selection */}
           <div className="space-y-4">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-              <Layers className="w-3.5 h-3.5" /> Katman Filtresi
+              <Layers className="w-3.5 h-3.5" /> {language === 'en' ? 'Layer Filter' : 'Katman Filtresi'}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {layers.map(layer => (
@@ -244,7 +313,7 @@ export function ExportModal({
           {/* Quality Settings */}
           <div className="space-y-4">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5" /> Baskı Kalitesi
+              <Sparkles className="w-3.5 h-3.5" /> {language === 'en' ? 'Print Quality' : 'Baskı Kalitesi'}
             </h3>
             <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
               {(['standard', 'high', 'ultra'] as const).map(q => (
@@ -272,7 +341,7 @@ export function ExportModal({
           {/* Background Mode */}
           <div className="space-y-4">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-              <ImageIcon className="w-3.5 h-3.5" /> Arka Plan
+              <ImageIcon className="w-3.5 h-3.5" /> {language === 'en' ? 'Background' : 'Arka Plan'}
             </h3>
             <div className="flex flex-col sm:flex-row gap-2">
               {(['minimal', 'current', 'transparent'] as const).map(m => (
@@ -286,7 +355,9 @@ export function ExportModal({
                       : "bg-white border-slate-100 text-slate-400 hover:border-slate-200 hover:text-slate-600"
                   )}
                 >
-                  {m === 'minimal' ? 'Temiz (Beyaz)' : m === 'current' ? 'Mevcut Tema' : 'Şeffaf (PNG)'}
+                  {m === 'minimal' ? (language === 'en' ? 'Clean (White)' : 'Temiz (Beyaz)') : 
+                   m === 'current' ? (language === 'en' ? 'Current Theme' : 'Mevcut Tema') : 
+                   (language === 'en' ? 'Transparent (PNG)' : 'Şeffaf (PNG)')}
                 </button>
               ))}
             </div>
@@ -331,32 +402,76 @@ export function ExportModal({
           </div>
 
           <div className="mt-8 space-y-3">
+            {isPro ? (
+              <button
+                onClick={() => handleExport(false)}
+                disabled={isExporting}
+                className={cn(
+                  "w-full py-5 rounded-[20px] text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl",
+                  isExporting 
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-1 active:scale-95"
+                )}
+              >
+                {isExporting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                    İŞLENİYOR...
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="w-4 h-4" />
+                    ŞİMDİ İNDİR (PRO)
+                  </>
+                )}
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-2 mb-1">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Krediniz:</span>
+                  <span className={cn("text-[11px] font-black px-2 py-0.5 rounded-full", balance >= 10 ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700")}>
+                    {balance} Kredi
+                  </span>
+                </div>
+                <button
+                  onClick={() => handleExport(true)}
+                  disabled={isExporting}
+                  className={cn(
+                    "w-full py-4 rounded-[16px] text-xs font-black uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-2 shadow-lg relative overflow-hidden",
+                    isExporting 
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-0.5 active:scale-95"
+                  )}
+                >
+                  {isExporting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                      İŞLENİYOR...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      FİLİGRANSIZ İNDİR
+                      <span className="absolute right-4 text-[9px] bg-indigo-800 px-2 py-1 rounded-lg">10 Kredi</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleExport(false)}
+                  disabled={isExporting}
+                  className={cn(
+                    "w-full py-3 rounded-[16px] text-[10px] font-black uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-2 border-2",
+                    isExporting 
+                      ? "border-slate-200 text-slate-300 cursor-not-allowed"
+                      : "border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-600 hover:bg-slate-100 active:scale-95"
+                  )}
+                >
+                  ÜCRETSİZ İNDİR (FİLİGRANLI)
+                </button>
+              </div>
+            )}
             
-            
-            <button
-              onClick={handleExport}
-              disabled={isExporting}
-              className={cn(
-                "w-full py-5 rounded-[20px] text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl",
-                isExporting 
-                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                  : "bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-1 active:scale-95"
-              )}
-            >
-              {isExporting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-                  İŞLENİYOR...
-                </>
-              ) : (
-                <>
-                  <FileDown className="w-4 h-4" />
-                  ŞİMDİ İNDİR
-                </>
-              )}
-            </button>
-            
-            <div className="flex items-center justify-center gap-2 text-slate-400">
+            <div className="flex items-center justify-center gap-2 text-slate-400 pt-2">
                <Info className="w-3 h-3" />
                <span className="text-[8px] font-black uppercase tracking-widest">Yüksek çözünürlüklü vektörel çıktı</span>
             </div>

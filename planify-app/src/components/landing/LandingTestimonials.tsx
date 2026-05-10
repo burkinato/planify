@@ -1,37 +1,37 @@
-import { FileText, Users, Award, Star } from 'lucide-react';
+import { FileText, Users, Award, Star, Sparkles } from 'lucide-react';
 
 const TESTIMONIALS = [
   {
-    name: 'Ahmet Yılmaz',
-    role: 'A Sınıfı İSG Uzmanı',
-    company: 'Güven İş OSGB',
-    quote: 'Planify sayesinde saatlerce süren AutoCAD çizimlerini 15 dakikada bitiriyoruz. İnanılmaz bir zaman tasarrufu ve tam mevzuat uyumu. Artık denetimler bizi hiç korkutmuyor.',
-    initials: 'AY',
+    name: 'Beta Kullanıcı',
+    role: 'İSG Uzmanı',
+    company: 'OSGB Firması',
+    quote: 'AutoCAD ile saatlerce uğraştığım tahliye planlarını Planify ile çok daha hızlı oluşturabiliyorum. ISO 7010 sembol kütüphanesi gerçekten işimi kolaylaştırıyor.',
+    initials: 'BK',
     bg: 'bg-blue-600',
   },
   {
-    name: 'Zeynep Demir',
+    name: 'Beta Kullanıcı',
     role: 'Mimar',
-    company: 'Demir Mimarlık Ltd.',
-    quote: 'Müşterilere acil durum planı sunarken PDF çıktısının profesyonelliği bizi her zaman rakiplerden öne geçiriyor. Özellikle hazır şablonlar ve otomatik lejand özelliği gerçekten hayat kurtarıyor.',
-    initials: 'ZD',
+    company: 'Mimarlık Ofisi',
+    quote: 'Müşterilerime sunduğum tahliye planlarının profesyonel görünümü sayesinde güven oluşturuyorum. Hazır şablonlar ve otomatik lejant özelliği büyük kolaylık.',
+    initials: 'BK',
     bg: 'bg-violet-600',
   },
   {
-    name: 'Caner Aydın',
+    name: 'Beta Kullanıcı',
     role: 'Yangın Güvenlik Danışmanı',
-    company: 'Aydın Güvenlik A.Ş.',
-    quote: 'ISO 7010 uyumlu sembol kütüphanesi ve anında lejand özelliği muhteşem. Ayda 30+ proje yapıyoruz, Planify olmadan bu iş yükünü taşımak mümkün olmazdı.',
-    initials: 'CA',
+    company: 'Güvenlik Firması',
+    quote: 'Modüler şablon sistemi sayesinde farklı tesis tipleri için hızlıca plan oluşturabiliyorum. Uyumluluk denetim aracı çok kullanışlı.',
+    initials: 'BK',
     bg: 'bg-cyan-600',
   },
 ];
 
 const STATS = [
-  { value: '2,400+', label: 'Oluşturulan Plan', sub: 'Türkiye genelinde', Icon: FileText },
-  { value: '580+', label: 'Aktif Uzman', sub: 'ISG & Mimar & Müh.', Icon: Users },
-  { value: '%100', label: 'Mevzuat Uyumu', sub: 'ISO 7010 & TSE', Icon: Award },
-  { value: '4.9/5', label: 'Müşteri Puanı', sub: '200+ değerlendirme', Icon: Star },
+  { value: 'ISO 23601', label: 'Standart Uyumu', sub: 'Uluslararası referans', Icon: Award },
+  { value: '60+', label: 'ISO 7010 Sembolü', sub: 'Hazır kütüphane', Icon: FileText },
+  { value: '8', label: 'Şablon Ailesi', sub: 'Sektöre özel tasarım', Icon: Sparkles },
+  { value: '21', label: 'Denetim Maddesi', sub: 'Otomatik uyumluluk', Icon: Users },
 ];
 
 export default function LandingTestimonials() {
@@ -42,13 +42,13 @@ export default function LandingTestimonials() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16 space-y-4">
             <span className="inline-block text-sm font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-1.5 rounded-full">
-              Müşteri Yorumları
+              Beta Kullanıcı Görüşleri
             </span>
             <h2 className="text-3xl md:text-5xl font-black text-slate-900">
-              Uzmanların Tercihi
+              Erken Erişimcilerden Geri Bildirimler
             </h2>
             <p className="text-lg text-slate-500 max-w-xl mx-auto">
-              Türkiye&apos;nin önde gelen İSG uzmanları, mimarlar ve danışmanlık firmaları Planify kullanıyor.
+              Beta sürecimizde platformumuzu test eden İSG uzmanları ve mimarlardan ilk izlenimler.
             </p>
           </div>
 

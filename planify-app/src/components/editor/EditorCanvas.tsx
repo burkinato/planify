@@ -24,14 +24,11 @@ import {
   wallPoints,
   type WallElement,
 } from '@/lib/editor/wallGeometry';
-
-interface GridProps {
-  gridVisible: boolean;
-  themeConfig: (typeof THEME_CONFIGS)[EditorTheme];
-  editorTheme: EditorTheme;
-  gridSize: number;
-  size?: number;
-}
+import { GridRenderer } from './canvas/GridRenderer';
+import { getHatchPattern, LegendItem, CustomSymbolImage, WatermarkGroup, BrandingBanner } from './canvas/CanvasHelpers';
+import { ModuleOverlay } from './canvas/ModuleOverlay';
+import { calculateModuleSnap } from '@/lib/editor/moduleSnapping';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 
 type CanvasStageEvent = Konva.KonvaEventObject<MouseEvent>;
 type CanvasWheelEvent = Konva.KonvaEventObject<WheelEvent>;
@@ -39,76 +36,11 @@ type DebugEditorWindow = Window & {
   __konvaInvalidChildren?: Array<Record<string, unknown>>;
 };
 
-const MemoizedGrid = React.memo(({ gridVisible, themeConfig, editorTheme, gridSize, size = 2000 }: GridProps) => {
-  if (!gridVisible) return null;
-  return (
-    <Group>
-      {Array.from({ length: 81 }).map((_, i) => (
-        <Group key={i}>
-          <Line points={[(i - 40) * gridSize, -size, (i - 40) * gridSize, size]} stroke={themeConfig.grid} strokeWidth={1} opacity={editorTheme === 'blueprint' ? 0.3 : 0.5} />
-          <Line points={[-size, (i - 40) * gridSize, size, (i - 40) * gridSize]} stroke={themeConfig.grid} strokeWidth={1} opacity={editorTheme === 'blueprint' ? 0.3 : 0.5} />
-        </Group>
-      ))}
-    </Group>
-  );
-});
-MemoizedGrid.displayName = 'MemoizedGrid';
 
-let hatchPattern: CanvasPattern | null = null;
-const getHatchPattern = () => {
-  if (typeof window === 'undefined') return null;
-  if (hatchPattern) return hatchPattern;
-  const canvas = document.createElement('canvas');
-  canvas.width = 16;
-  canvas.height = 16;
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    ctx.strokeStyle = '#cbd5e1'; // slate-300
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, 16);
-    ctx.lineTo(16, 0);
-    // Draw corners to make it tile perfectly
-    ctx.moveTo(-8, 8);
-    ctx.lineTo(8, -8);
-    ctx.moveTo(8, 24);
-    ctx.lineTo(24, 8);
-    ctx.stroke();
-    hatchPattern = ctx.createPattern(canvas, 'repeat');
-  }
-  return hatchPattern;
-};
 
-export function LegendItem({ color, label, type = 'line' }: { color: string; label: string; type?: 'line' | 'dash' | 'bold' }) {
-  return (
-    <div className="flex items-center gap-3 mb-2 animate-slide-right">
-      <div className="w-6 flex items-center justify-center shrink-0">
-        {type === 'line' && <div className="w-full h-0.5 rounded-full" style={{ backgroundColor: color }} />}
-        {type === 'dash' && <div className="w-full h-0.5" style={{ backgroundImage: `linear-gradient(to right, ${color} 50%, transparent 50%)`, backgroundSize: '8px 100%' }} />}
-        {type === 'bold' && <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: color }} />}
-      </div>
-      <span className="text-[9px] font-black uppercase tracking-wider text-surface-900">{label}</span>
-    </div>
-  );
-}
-
-const CustomSymbolImage = ({ src, size, isSelected }: { src: string, size: number, isSelected: boolean }) => {
-  const [image, setImage] = useState<HTMLImageElement | null>(null);
-  useEffect(() => {
-    const img = new window.Image();
-    img.src = src;
-    img.onload = () => setImage(img);
-  }, [src]);
-
-  const r = size / 2;
-  return (
-    <Group shadowBlur={isSelected ? 0 : 2} shadowOpacity={0.15}>
-      {image && <KonvaImage image={image} width={size} height={size} x={-r} y={-r} />}
-    </Group>
-  );
-};
 
 interface EditorCanvasProps {
+  id?: string;
   isPreview: boolean;
   mobileMenu: string | null;
   setMobileMenu: (m: 'tools' | 'properties' | null) => void;
@@ -117,90 +49,14 @@ interface EditorCanvasProps {
   projectId?: string | null;
 }
 
-const WatermarkGroup = ({ width, height, tier, email }: { width: number; height: number; tier: string; email?: string }) => {
-  if (tier !== 'free') return null;
 
-  const patternSize = 160; 
-  const rows = Number.isFinite(height) ? Math.ceil(height / (patternSize * 0.8)) + 4 : 0;
-  const cols = Number.isFinite(width) ? Math.ceil(width / patternSize) + 4 : 0;
-
-  return (
-    <Group opacity={0.12} listening={false}>
-      {Array.from({ length: rows }).map((_, r) => (
-        Array.from({ length: cols }).map((_, c) => (
-          <Group 
-            key={`${r}-${c}`} 
-            x={c * patternSize + (r % 2 === 0 ? 0 : patternSize / 2)} 
-            y={r * patternSize * 0.8} 
-            rotation={-25}
-          >
-            <Text
-              text="PLANIFY"
-              fontSize={24}
-              fontStyle="900"
-              fill="#94a3b8"
-              align="center"
-              verticalAlign="middle"
-              width={patternSize}
-              height={30}
-            />
-            {email && (
-              <Text
-                text={email.toLowerCase()}
-                y={20}
-                fontSize={8}
-                fontStyle="bold"
-                fill="#94a3b8"
-                align="center"
-                width={patternSize}
-                opacity={0.4}
-              />
-            )}
-          </Group>
-        ))
-      ))}
-    </Group>
-  );
-};
-
-const BrandingBanner = ({ width, height, tier }: { width: number; height: number; tier: string }) => {
-  if (tier !== 'free') return null;
-
-  return (
-    <Group x={width / 2} y={height - 40} listening={false}>
-      <Rect
-        x={-200}
-        width={400}
-        height={30}
-        fill="#f8fafc"
-        stroke="#e2e8f0"
-        strokeWidth={1}
-        cornerRadius={15}
-        shadowBlur={10}
-        shadowOpacity={0.1}
-      />
-      <Text
-        x={-200}
-        width={400}
-        height={30}
-        text="BU ÇİZİM PLANIFY ÜCRETSİZ SÜRÜM İLE OLUŞTURULMUŞTUR"
-        fontSize={10}
-        fontStyle="900"
-        fill="#64748b"
-        align="center"
-        verticalAlign="middle"
-        letterSpacing={1}
-      />
-    </Group>
-  );
-};
 
 const clampNumber = (value: number | undefined, min: number, max: number) => {
   if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
   return Math.max(min, Math.min(max, value));
 };
 
-export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, setContainerNode, projectId }: EditorCanvasProps) {
+export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRef, setContainerNode, projectId }: EditorCanvasProps) {
   const DEFAULT_PLAN_HEADER = 'ACİL DURUM TAHLİYE PLANI';
   const ISO_HEADER_GREEN = '#008F4C';
   const { profile, user } = useAuthStore();
@@ -210,7 +66,8 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     elements, layers, tool, toolOptions, zoom, pan, gridVisible, selectedIds, customSymbols,
     addElement, updateElement, updateElementsBatch, removeElements, setSelectedIds, scaleConfig, setScaleConfig, setTool,
     editorTheme, setZoom, setPan, activeTemplateLayout, projectTemplate, templateLayoutId, templateModules, selectedTemplateModuleId, templateState, focusedRegionId, setFocusedRegionId, setSelectedTemplateModuleId, addTemplateModule, updateTemplateModule, updateTemplateRegion, removeTemplateModule,
-    innerZoom, innerPan, setInnerZoom, setInnerPan, projectMetadata, setProjectMetadata
+    innerZoom, innerPan, setInnerZoom, setInnerPan, projectMetadata, setProjectMetadata,
+    moduleSnapLines, setModuleSnapLines
   } = useEditorStore(useShallow((s) => ({
     elements: s.elements,
     layers: s.layers,
@@ -251,7 +108,11 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     projectMetadata: s.projectMetadata,
     setProjectMetadata: s.setProjectMetadata,
     removeTemplateModule: s.removeTemplateModule,
+    moduleSnapLines: s.moduleSnapLines,
+    setModuleSnapLines: s.setModuleSnapLines,
   })));
+
+  const [confirmDeleteDrawingId, setConfirmDeleteDrawingId] = useState<string | null>(null);
 
   const themeConfig = THEME_CONFIGS[editorTheme];
   const stageHostRef = useRef<HTMLDivElement>(null);
@@ -260,6 +121,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   const isPanningRef = useRef(false);
   const isSpacePressedRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+  const lastMouseMovePosRef = useRef({ x: 0, y: 0 });
 
   const [scaleModal, setScaleModal] = useState<{ pixels: number } | null>(null);
   const [scaleValue, setScaleValue] = useState('1');
@@ -408,6 +270,46 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
       const tagName = target.tagName;
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) return;
 
+      const state = useEditorStore.getState();
+
+      // Figma-like Undo / Redo
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.code === 'KeyZ') {
+        e.preventDefault();
+        state.undo();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && ((e.shiftKey && e.code === 'KeyZ') || e.code === 'KeyY')) {
+        e.preventDefault();
+        state.redo();
+        return;
+      }
+
+      // Figma-like Copy / Paste / Duplicate
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyC') {
+        e.preventDefault();
+        state.copySelection();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyV') {
+        e.preventDefault();
+        state.pasteSelection();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyD') {
+        e.preventDefault();
+        if (state.selectedIds.length > 0) state.duplicateElements(state.selectedIds);
+        return;
+      }
+
+      // Tool Shortcuts
+      if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+        if (e.code === 'KeyV') { e.preventDefault(); state.setTool('select'); return; }
+        if (e.code === 'KeyT') { e.preventDefault(); state.setTool('text'); return; }
+        if (e.code === 'KeyR') { e.preventDefault(); state.setTool('rect'); return; }
+        if (e.code === 'KeyL') { e.preventDefault(); state.setTool('wall'); return; }
+      }
+
+      // Space pan
       if (e.code === 'Space') {
         if (!isSpacePressedRef.current) {
           isSpacePressedRef.current = true;
@@ -417,23 +319,21 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
         return;
       }
 
+      // Delete
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        if (selectedIds.length > 0) {
-          removeElements(selectedIds);
-          setSelectedIds([]);
-        } else if (selectedTemplateModuleId && selectedTemplateModuleId !== 'drawing') {
-          const module = templateModules.find(m => m.id === selectedTemplateModuleId);
-          if (module && module.type !== 'DrawingArea') {
-            removeTemplateModule(selectedTemplateModuleId);
-          }
+        if (state.selectedIds.length > 0) {
+          state.removeElements(state.selectedIds);
+          state.setSelectedIds([]);
+        } else if (state.selectedTemplateModuleId) {
+          state.removeTemplateModule(state.selectedTemplateModuleId);
         }
         return;
       }
 
       if (e.key === 'Escape') {
-        setSelectedIds([]);
-        setSelectedTemplateModuleId(null);
+        state.setSelectedIds([]);
+        state.setSelectedTemplateModuleId(null);
         return;
       }
     };
@@ -447,8 +347,13 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
       }
     };
 
+    const onBlur = () => {
+      // isSpacePressedRef.current = false; // REMOVED: Aggressive reset on blur was breaking panning during auto-save toasts
+      if (host) host.style.cursor = '';
+    };
+
     const onWheel = (e: WheelEvent) => {
-      // ── Scrollable element check ──────────────────────────────────────────
+      const state = useEditorStore.getState();
       const target = e.target as HTMLElement;
 
       const isScrollableEl = (el: HTMLElement | null): boolean => {
@@ -464,50 +369,89 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
 
       if (isScrollableEl(target)) return;
 
-      // ── If focused on drawing region, let Konva handleWheel take over ─────
-      // (don't zoom outer canvas when user is drawing)
+      const activeModules = state.templateModules.length > 0 
+        ? state.templateModules 
+        : (state.activeTemplateLayout ? getTemplateModules(state.activeTemplateLayout) : []);
+      const dRegion = activeModules.find(m => m.type === 'DrawingArea');
+
       const overDrawing = !!(target as HTMLElement).closest('.drawing-region-wrapper');
-      const drawingFocused = useEditorStore.getState().focusedRegionId === drawingRegion?.id;
+      const drawingFocused = state.focusedRegionId === dRegion?.id;
       if (overDrawing && drawingFocused) {
-        // Konva's onWheel will handle this — just block outer canvas zoom
         e.preventDefault();
         return;
       }
 
-      // ── Normal outer canvas zoom ──────────────────────────────────────────
       e.preventDefault();
-      const scaleBy = 1.08;
-      const rect = host.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      const direction = e.deltaY < 0 ? 1 : -1;
-      const newZoom = Math.max(0.08, Math.min(8, zoom * (direction > 0 ? scaleBy : 1 / scaleBy)));
-      const newPanX = mouseX - (mouseX - pan.x) * (newZoom / zoom);
-      const newPanY = mouseY - (mouseY - pan.y) * (newZoom / zoom);
-      setZoom(newZoom);
-      setPan({ x: newPanX, y: newPanY });
+      
+      if (e.ctrlKey || e.metaKey) {
+        const scaleBy = 1.08;
+        const rect = host.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const direction = e.deltaY < 0 ? 1 : -1;
+        
+        const currentZoom = state.zoom;
+        const currentPan = state.pan;
+        
+        const newZoom = Math.max(0.08, Math.min(8, currentZoom * (direction > 0 ? scaleBy : 1 / scaleBy)));
+        const newPanX = mouseX - (mouseX - currentPan.x) * (newZoom / currentZoom);
+        const newPanY = mouseY - (mouseY - currentPan.y) * (newZoom / currentZoom);
+        
+        state.setZoom(newZoom);
+        state.setPan({ x: newPanX, y: newPanY });
+      } else {
+        const panX = e.shiftKey ? e.deltaY : e.deltaX;
+        const panY = e.shiftKey ? e.deltaX : e.deltaY;
+        state.setPan((prev) => ({
+          x: prev.x - panX,
+          y: prev.y - panY,
+        }));
+      }
     };
 
 
     const onMouseDown = (e: MouseEvent) => {
+      const state = useEditorStore.getState();
       const target = e.target as HTMLElement;
-      if (target.closest('.drawing-region-wrapper') && useEditorStore.getState().focusedRegionId === drawingRegion?.id) {
-        return;
-      }
 
       if (e.button === 1 || (e.button === 0 && (e.altKey || isSpacePressedRef.current))) {
         e.preventDefault();
         isPanningRef.current = true;
-        panStartRef.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
+        const currentPan = state.pan;
+        panStartRef.current = { x: e.clientX, y: e.clientY, panX: currentPan.x, panY: currentPan.y };
         host.style.cursor = 'grabbing';
+        return;
+      }
+
+      const activeModules = state.templateModules.length > 0 
+        ? state.templateModules 
+        : (state.activeTemplateLayout ? getTemplateModules(state.activeTemplateLayout) : []);
+      const dRegion = activeModules.find(m => m.type === 'DrawingArea');
+
+      if (target.closest('.drawing-region-wrapper') && state.focusedRegionId === dRegion?.id) {
+        return;
       }
     };
+
     const onMouseMove = (e: MouseEvent) => {
+      const state = useEditorStore.getState();
+      lastMouseMovePosRef.current = { x: e.clientX, y: e.clientY };
+
+      // Emergency check: If panning is true but mouse buttons are released, force stop panning
+      // e.buttons === 0 means no mouse button is currently held down
+      if (isPanningRef.current && e.buttons === 0) {
+        isPanningRef.current = false;
+        host.style.cursor = isSpacePressedRef.current ? 'grab' : '';
+        return;
+      }
+
       if (!isPanningRef.current) return;
-      const dx = e.clientX - panStartRef.current.x;
-      const dy = e.clientY - panStartRef.current.y;
-      setPan({ x: panStartRef.current.panX + dx, y: panStartRef.current.panY + dy });
+      
+      const totalDx = e.clientX - panStartRef.current.x;
+      const totalDy = e.clientY - panStartRef.current.y;
+      state.setPan({ x: panStartRef.current.panX + totalDx, y: panStartRef.current.panY + totalDy });
     };
+
     const onMouseUp = () => {
       if (isPanningRef.current) {
         isPanningRef.current = false;
@@ -517,20 +461,23 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
 
     host.addEventListener('wheel', onWheel, { passive: false });
     host.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
+
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
       host.removeEventListener('wheel', onWheel);
       host.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
-  }, [zoom, pan, tool, setZoom, setPan, drawingRegion?.id]);
+  }, []);
 
   const snapToGrid = (val: number) => Math.round(val / GRID_SIZE) * GRID_SIZE;
 
@@ -682,6 +629,14 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
   };
 
   const handleStageMouseMove = (e: CanvasStageEvent) => {
+    // Safety check for inner panning
+    if (isInnerPanningRef.current && e.evt.buttons === 0) {
+      isInnerPanningRef.current = false;
+      const stage = e.target.getStage();
+      if (stage) stage.container().style.cursor = isSpacePressedRef.current ? 'grab' : 'default';
+      return;
+    }
+
     if (isInnerPanningRef.current) {
       const dx = e.evt.clientX - innerPanStartRef.current.x;
       const dy = e.evt.clientY - innerPanStartRef.current.y;
@@ -1464,11 +1419,52 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     addTemplateModule(moduleType as Parameters<typeof addTemplateModule>[0], placement);
   };
 
+  const handleModuleDragPointerDown = (event: React.PointerEvent<HTMLDivElement>, regionId: string) => {
+    const templateModule = activeTemplateModules.find(m => m.id === regionId);
+    const paperNode = stageHostRef.current;
+    if (!templateModule || !paperNode || templateModule.movable === false || isPreview) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedTemplateModuleId(regionId);
+
+    const paperRect = paperNode.getBoundingClientRect();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startModX = templateModule.x;
+    const startModY = templateModule.y;
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const deltaX = ((moveEvent.clientX - startX) / paperRect.width) * 100;
+      const deltaY = ((moveEvent.clientY - startY) / paperRect.height) * 100;
+      
+      const res = calculateModuleSnap(
+        'drag', '',
+        startModX + deltaX, startModY + deltaY,
+        templateModule.w, templateModule.h,
+        activeTemplateModules, regionId
+      );
+
+      setModuleSnapLines(res.lines);
+      updateTemplateModule(regionId, { x: res.x, y: res.y });
+    };
+
+    const handlePointerUp = () => {
+      setModuleSnapLines([]);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  };
+
   const handleModuleResizePointerDown = (
     event: React.PointerEvent<HTMLDivElement>,
-    regionId: string
+    regionId: string,
+    direction: string = 'se'
   ) => {
-    const templateModule = activeTemplateModules.find((entry) => entry.id === regionId);
+    const templateModule = activeTemplateModules.find(m => m.id === regionId);
     const paperNode = stageHostRef.current;
     if (!templateModule || !paperNode || templateModule.resizable === false || isPreview) return;
 
@@ -1481,17 +1477,55 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
     const startY = event.clientY;
     const startW = templateModule.w;
     const startH = templateModule.h;
+    const startModX = templateModule.x;
+    const startModY = templateModule.y;
+    const aspect = startW / startH;
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
-      const deltaW = ((moveEvent.clientX - startX) / paperRect.width) * 100;
-      const deltaH = ((moveEvent.clientY - startY) / paperRect.height) * 100;
-      updateTemplateModule(regionId, {
-        w: startW + deltaW,
-        h: startH + deltaH,
-      });
+      let deltaW = ((moveEvent.clientX - startX) / paperRect.width) * 100;
+      let deltaH = ((moveEvent.clientY - startY) / paperRect.height) * 100;
+      
+      let newW = startW;
+      let newH = startH;
+      let newX = startModX;
+      let newY = startModY;
+
+      if (direction.includes('e')) newW = startW + deltaW;
+      if (direction.includes('s')) newH = startH + deltaH;
+      if (direction.includes('w')) {
+        newW = startW - deltaW;
+        newX = startModX + deltaW;
+      }
+      if (direction.includes('n')) {
+        newH = startH - deltaH;
+        newY = startModY + deltaH;
+      }
+
+      if (moveEvent.shiftKey && direction.length === 2) {
+        if (Math.abs(newW / aspect) > Math.abs(newH)) {
+          newH = newW / aspect;
+        } else {
+          newW = newH * aspect;
+        }
+        if (direction.includes('w')) newX = startModX + (startW - newW);
+        if (direction.includes('n')) newY = startModY + (startH - newH);
+      }
+
+      if (newW < 2) { newW = 2; if (direction.includes('w')) newX = startModX + startW - 2; }
+      if (newH < 2) { newH = 2; if (direction.includes('n')) newY = startModY + startH - 2; }
+
+      const res = calculateModuleSnap(
+        'resize', direction,
+        newX, newY, newW, newH,
+        activeTemplateModules, regionId
+      );
+
+      setModuleSnapLines(res.lines);
+      updateTemplateModule(regionId, { x: res.x, y: res.y, w: res.w, h: res.h });
     };
 
     const handlePointerUp = () => {
+      setModuleSnapLines([]);
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
     };
@@ -1644,7 +1678,8 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
       if (el.type === 'symbol') {
         const sym = SYMBOLS.find(s => s.id === el.symbolType);
         const customSym = customSymbols.find(cs => cs.id === el.symbolType);
-        const isoDataUrl = el.symbolType ? ISO_SYMBOLS[el.symbolType] : null;
+        const symId = el.symbolType || 'exit';
+        const isoDataUrl = ISO_SYMBOLS[symId] || ISO_SYMBOLS[symId.toUpperCase()] || null;
         const sWidth = el.width || 36;
         return (
           <Group key={el.id} x={el.x} y={el.y} rotation={el.rotation || 0} draggable={canInteract} onClick={(e) => selectOrErase(el.id, isLocked, e)} onDragEnd={(e) => updateElement(el.id, { x: e.target.x(), y: e.target.y() })}>
@@ -1653,7 +1688,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
             ) : isoDataUrl ? (
               <CustomSymbolImage src={isoDataUrl} size={sWidth} isSelected={isSelected} />
             ) : (
-              renderCorporateIcon(el.symbolType || 'exit', sWidth, el.color || sym?.color || '#ef4444', isSelected)
+              renderCorporateIcon(symId, sWidth, el.color || sym?.color || '#ef4444', isSelected)
             )}
             {isSelected && <Rect width={sWidth + 8} height={sWidth + 8} x={-sWidth / 2 - 4} y={-sWidth / 2 - 4} stroke={themeConfig.accent} strokeWidth={2} dash={[4, 2]} />}
           </Group>
@@ -1809,645 +1844,124 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                 </button>
               )}
 
-              {/* Non-drawing regions (header, instruction, etc.) */}
-              {paperRegions.filter((region) => region.type !== 'drawing').map((region) => {
-                const content = mergedTemplateState[region.id] || {};
-                const selectedTemplateModule = selectedTemplateModuleId === region.id;
-                const focused = focusedRegionId === region.id || selectedTemplateModule;
-                const dimmed = !!focusedRegionId && !focused;
-                const moduleInstance = activeTemplateModules.find((module) => module.id === region.id);
-                const regionIdNormalized = (region.id || '').toLowerCase();
-                const regionLabelNormalized = (region.label || '').toLocaleLowerCase('tr-TR');
-                const isHeader = (
-                  region.type === 'header'
-                  || regionIdNormalized.includes('header')
-                  || regionIdNormalized.includes('baslik')
-                  || regionIdNormalized.includes('title')
-                  || regionLabelNormalized.includes('başlık')
-                  || regionLabelNormalized.includes('duyuru')
-                  || regionLabelNormalized.includes('tahliye planı')
-                );
-                const tone = region.tone || 'neutral';
-                const toneClass =
-                  tone === 'red' ? 'border-red-100 bg-white shadow-md shadow-red-900/5' :
-                    tone === 'blue' ? 'border-blue-100 bg-white shadow-md shadow-blue-900/5' :
-                      tone === 'info' ? 'border-slate-200 bg-white shadow-sm' :
-                        tone === 'green' ? 'border-emerald-100 bg-white shadow-md shadow-emerald-900/5' :
-                          'border-slate-200 bg-white shadow-sm';
-                const headerTitleSize = clampNumber(content.titleSize, 24, 48);
-                const headerTitleSpacing = clampNumber(content.titleLetterSpacing, 0, 8);
-                const headerMetaSize = clampNumber(content.metaSize, 9, 20);
-                const headerMetaSpacing = clampNumber(content.metaLetterSpacing, 0, 4);
+                            {/* Module Snapping Guides */}
+              {moduleSnapLines.map((line, i) => (
+                <div
+                  key={`snap-line-${i}`}
+                  className="absolute z-[100] pointer-events-none"
+                  style={{
+                    [line.axis === 'x' ? 'left' : 'top']: `${line.pos}%`,
+                    [line.axis === 'x' ? 'top' : 'left']: '0',
+                    [line.axis === 'x' ? 'width' : 'height']: '1px',
+                    [line.axis === 'x' ? 'height' : 'width']: '100%',
+                    backgroundColor: '#0ea5e9', // cyan-500
+                    boxShadow: '0 0 4px #0ea5e9',
+                  }}
+                />
+              ))}
+
+              <ModuleOverlay
+                paperRegions={paperRegions}
+                mergedTemplateState={mergedTemplateState}
+                isPreview={isPreview}
+                stageHostRef={stageHostRef}
+                isLogoLoading={isLogoLoading}
+                uploadingRegionId={uploadingRegionId}
+                projectMetadata={projectMetadata}
+                setProjectMetadata={setProjectMetadata}
+                handleModuleResizePointerDown={handleModuleResizePointerDown}
+                handleProjectLogoUpload={handleProjectLogoUpload}
+                handleRegionImageUpload={handleRegionImageUpload}
+                clearRegionImage={clearRegionImage}
+                logoFileInputRef={logoFileInputRef}
+                visibleElements={visibleElements}
+              />
+              {/* Drawing Region Wrapper and Konva Stage */}
+              {drawingRegion && (() => {
+                const isSelected = selectedTemplateModuleId === drawingRegion.id;
+                const isFocused = focusedRegionId === drawingRegion.id;
+                
                 return (
-                  <section
-                    key={region.id}
-                    draggable={!isPreview && moduleInstance?.movable !== false}
-                    onDragStart={(event) => {
-                      if (isPreview || moduleInstance?.movable === false) return;
-                      const paperRect = stageHostRef.current?.getBoundingClientRect();
-                      const sectionRect = event.currentTarget.getBoundingClientRect();
-                      const offset = paperRect
-                        ? {
-                            x: ((event.clientX - sectionRect.left) / paperRect.width) * 100,
-                            y: ((event.clientY - sectionRect.top) / paperRect.height) * 100,
-                          }
-                        : { x: 0, y: 0 };
-                      event.dataTransfer.setData('application/planify-existing-module', region.id);
-                      event.dataTransfer.setData('application/planify-module-offset', JSON.stringify(offset));
-                      event.dataTransfer.effectAllowed = 'move';
-                    }}
+                  <div
                     onClick={(event) => {
                       event.stopPropagation();
                       if (selectedIds.length > 0) setSelectedIds([]);
-                      setFocusedRegionId(region.id);
-                      setSelectedTemplateModuleId(region.id);
+                      if (!isFocused) setFocusedRegionId(drawingRegion.id);
+                      setSelectedTemplateModuleId(drawingRegion.id);
                     }}
                     className={cn(
-                      "absolute border box-border",
-                      "overflow-hidden",
-                      isHeader ? "border-none" : "rounded-[12px]",
-                      !isHeader && toneClass,
-                      focused && (isHeader
-                        ? "z-30 shadow-[0_16px_36px_rgba(5,150,105,0.22)] ring-4 ring-emerald-500/35 border-emerald-500"
-                        : "z-30 shadow-[0_16px_36px_rgba(8,145,178,0.22)] ring-4 ring-cyan-500/30 border-cyan-500"),
-                      selectedTemplateModule && "outline outline-2 outline-offset-2 outline-cyan-400/80",
-                      dimmed && "pointer-events-none opacity-25 grayscale",
-                      !focused && "cursor-pointer hover:shadow-lg hover:border-cyan-400",
-                      "data-[export-mode=true]:shadow-none data-[export-mode=true]:ring-0"
+                      "drawing-region-wrapper absolute z-20 bg-transparent rounded-[12px] box-border",
+                      !isFocused && !isSelected && "overflow-hidden",
+                      !focusedRegionId ? "border border-slate-300 hover:shadow-lg hover:border-cyan-400 cursor-pointer" : "",
+                      isFocused ? "z-30 scale-[1.015] shadow-[0_20px_50px_rgba(8,145,178,0.3)] ring-4 ring-cyan-500/30 border-2 border-cyan-500" : "border-2 border-transparent",
+                      focusedRegionId && !isFocused ? "pointer-events-none opacity-25 grayscale" : "",
+                      isSelected && "outline outline-2 outline-offset-2 outline-cyan-400/80"
                     )}
                     style={{
-                      left: isHeader ? `${region.x}%` : `calc(${region.x}% + 6px)`,
-                      top: isHeader ? `${region.y}%` : `calc(${region.y}% + 6px)`,
-                      width: isHeader ? `${region.w}%` : `calc(${region.w}% - 12px)`,
-                      height: isHeader ? `${region.h}%` : `calc(${region.h}% - 12px)`,
-                      zIndex: focused ? (isHeader ? 80 : 40) : undefined,
-                      background: isHeader ? ISO_HEADER_GREEN : undefined,
+                      left: `calc(${drawingRegion.x}% + 6px)`, top: `calc(${drawingRegion.y}% + 6px)`,
+                      width: `calc(${drawingRegion.w}% - 12px)`, height: `calc(${drawingRegion.h}% - 12px)`,
                     }}
                   >
-                    {!isPreview && selectedTemplateModule && (
+                    {!isPreview && isSelected && (
                       <>
-                        <div className="template-module-edit-badge absolute right-2 top-2 z-50 rounded-full bg-slate-950/90 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-cyan-200 shadow-lg">
-                          Modul
-                        </div>
-                        {moduleInstance?.resizable !== false && (
+                        {/* Floating toolbar above the drawing region */}
+                        <div className="absolute -top-11 left-0 right-0 z-50 flex items-center justify-between pointer-events-none">
+                          {/* Left: Move handle */}
                           <div
-                            onPointerDown={(event) => handleModuleResizePointerDown(event, region.id)}
-                            className="template-module-resize-handle absolute bottom-1 right-1 z-50 h-4 w-4 cursor-nwse-resize rounded-sm border border-cyan-200 bg-cyan-500 shadow-lg"
-                            title="Modulu yeniden boyutlandir"
-                          />
+                            onPointerDown={(event) => handleModuleDragPointerDown(event, drawingRegion.id)}
+                            className="pointer-events-auto h-8 w-8 flex items-center justify-center cursor-move rounded-lg border border-slate-200 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-slate-600 hover:text-cyan-600 hover:border-cyan-400 hover:shadow-[0_4px_16px_rgba(8,145,178,0.2)] transition-all"
+                            title="Taşı (Tutup Sürükleyin)"
+                          >
+                            <svg className="w-[16px] h-[16px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/></svg>
+                          </div>
+                          {/* Right: Edit + Delete */}
+                          <div className="pointer-events-auto flex items-center gap-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setFocusedRegionId(drawingRegion.id); }}
+                              className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-slate-600 hover:text-cyan-600 hover:border-cyan-400 hover:shadow-[0_4px_16px_rgba(8,145,178,0.2)] transition-all"
+                              title="Düzenle"
+                            >
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteDrawingId(drawingRegion.id); }}
+                              className="h-8 w-8 flex items-center justify-center rounded-lg border border-red-200 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-red-400 hover:text-red-600 hover:border-red-400 hover:bg-red-50 hover:shadow-[0_4px_16px_rgba(239,68,68,0.2)] transition-all"
+                              title="Modülü Sil"
+                            >
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </button>
+                          </div>
+                        </div>
+
+                        {activeTemplateModules.find(m => m.id === drawingRegion.id)?.resizable !== false && (
+                          <>
+                            {(['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const).map(dir => {
+                              const positions: Record<string, string> = {
+                                nw: '-top-1.5 -left-1.5 cursor-nwse-resize',
+                                n: '-top-1.5 left-1/2 -translate-x-1/2 cursor-ns-resize',
+                                ne: '-top-1.5 -right-1.5 cursor-nesw-resize',
+                                e: 'top-1/2 -right-1.5 -translate-y-1/2 cursor-ew-resize',
+                                se: '-bottom-1.5 -right-1.5 cursor-nwse-resize',
+                                s: '-bottom-1.5 left-1/2 -translate-x-1/2 cursor-ns-resize',
+                                sw: '-bottom-1.5 -left-1.5 cursor-nesw-resize',
+                                w: 'top-1/2 -left-1.5 -translate-y-1/2 cursor-ew-resize'
+                              };
+                              return (
+                                <div
+                                  key={dir}
+                                  onPointerDown={(event) => handleModuleResizePointerDown(event, drawingRegion.id, dir)}
+                                  className={cn(
+                                    "absolute z-50 h-3.5 w-3.5 rounded-full border-2 border-white bg-cyan-500 shadow-md hover:scale-125 transition-transform",
+                                    positions[dir]
+                                  )}
+                                  title={dir.length === 2 ? "Shift ile orantılı ölçeklendir" : "Boyutlandır"}
+                                />
+                              );
+                            })}
+                          </>
                         )}
                       </>
                     )}
-                    {false && focused ? (
-                      <div
-                        className={cn(
-                          "flex flex-col bg-white animate-fade-in relative z-10",
-                          isHeader
-                            ? "absolute left-0 top-full mt-3 w-[min(520px,92vw)] max-h-[70vh] rounded-2xl border border-emerald-200 shadow-2xl overflow-hidden"
-                            : "h-full overflow-hidden"
-                        )}
-                      >
-                        {/* Title Bar with Tone-Specific Gradient */}
-                        <div className={cn(
-                          "flex items-center justify-between p-3 border-b shrink-0",
-                          isHeader ? "bg-emerald-50 border-emerald-100" :
-                          tone === 'red' ? "bg-red-50 border-red-100" :
-                          tone === 'blue' ? "bg-blue-50 border-blue-100" :
-                          tone === 'green' ? "bg-emerald-50 border-emerald-100" :
-                          "bg-slate-50 border-slate-200"
-                        )}>
-                          <div className={cn(
-                            "text-[10px] font-black uppercase tracking-widest flex items-center gap-2",
-                            isHeader ? "text-emerald-700" :
-                            tone === 'red' ? "text-red-600" :
-                            tone === 'blue' ? "text-blue-600" :
-                            tone === 'green' ? "text-emerald-600" :
-                            "text-slate-500"
-                          )}>
-                            <div className={cn("w-1.5 h-3 rounded-full", 
-                              isHeader ? "bg-emerald-600" :
-                              tone === 'red' ? "bg-red-500" : 
-                              tone === 'blue' ? "bg-blue-500" : 
-                              tone === 'green' ? "bg-emerald-500" : 
-                              "bg-slate-400"
-                            )} />
-                            {isHeader ? 'ŞABLON BAŞLIĞI' : region.label}
-                          </div>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); setFocusedRegionId(null); }} 
-                            className="w-6 h-6 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all active:scale-90"
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                          </button>
-                        </div>
-
-                        {/* Scrollable Form Content */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" onWheel={(e) => e.stopPropagation()}>
-                          {isHeader ? (
-                            <>
-                              <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3">
-                                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800">{DEFAULT_PLAN_HEADER}</p>
-                                <p className="mt-1 text-[10px] font-semibold text-emerald-700/80">ISO 7010 / ISO 23601 uyumlu başlık rengi güvenlik yeşili olarak sabitlenmiştir.</p>
-                              </div>
-                              <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Alt Bilgi</label>
-                                <input
-                                  value={content.meta || ''}
-                                  onChange={(event) => updateTemplateRegion(region.id, { meta: event.target.value.toUpperCase() })}
-                                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-sm font-black uppercase tracking-wide text-slate-900 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-sm placeholder:text-slate-300"
-                                  placeholder="ORN: 1. NORMAL KAT"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Başlık Logosu</label>
-                                {projectMetadata.logoUrl && (
-                                  <div className="relative h-20 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={projectMetadata.logoUrl} alt="Başlık logosu" className="h-full w-full object-contain" />
-                                  </div>
-                                )}
-                                <div className="grid grid-cols-2 gap-2">
-                                  <label className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 text-[10px] font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-100">
-                                    <ImageUp className="h-4 w-4" />
-                                    {isLogoLoading ? 'Yükleniyor' : 'Logo Seç'}
-                                    <input
-                                      type="file"
-                                      accept="image/*"
-                                      className="hidden"
-                                      disabled={isLogoLoading}
-                                      onChange={(event) => {
-                                        void handleProjectLogoUpload(event.target.files?.[0] || null);
-                                        event.currentTarget.value = '';
-                                      }}
-                                    />
-                                  </label>
-                                  <button
-                                    type="button"
-                                    onClick={() => setProjectMetadata({ logoUrl: '' })}
-                                    disabled={!projectMetadata.logoUrl}
-                                    className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                    Kaldır
-                                  </button>
-                                </div>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Başlık</label>
-                            <input
-                              value={content.title || ''}
-                              onChange={(event) => updateTemplateRegion(region.id, { title: event.target.value })}
-                              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-sm font-black uppercase tracking-wide text-slate-900 outline-none focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-500/10 transition-all shadow-sm placeholder:text-slate-300"
-                              placeholder={region.label}
-                            />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">İçerik</label>
-                            <textarea
-                              value={content.body || ''}
-                              onChange={(event) => updateTemplateRegion(region.id, { body: event.target.value })}
-                              onWheel={(e) => e.stopPropagation()}
-                              rows={4}
-                              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs font-bold leading-relaxed text-slate-700 outline-none focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-500/10 transition-all shadow-sm min-h-[100px] placeholder:text-slate-300"
-                              placeholder={region.type === 'instruction' ? "Ek acil durum talimatlarını veya diğer telefon numaralarını buraya girin..." : "Bölge içeriğini buraya girin..."}
-                            />
-                          </div>
-
-                            </>
-                          )}
-
-                          {(!isHeader && (content.meta !== undefined || region.type !== 'header')) && (
-                            <div className="space-y-1.5">
-                              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Alt Bilgi / Meta</label>
-                              <input
-                                value={content.meta || ''}
-                                onChange={(event) => updateTemplateRegion(region.id, { meta: event.target.value })}
-                                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600 outline-none focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-500/10 transition-all shadow-sm"
-                                placeholder="Kat / Revizyon vs."
-                              />
-                            </div>
-                          )}
-
-                          {region.type === 'assembly' && (
-                            <div className="space-y-2 pb-2">
-                              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Vaziyet / Toplanma Görseli</label>
-                              {content.imageUrl && (
-                                <div className="relative h-28 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={content.imageUrl} alt={content.imageAlt || region.label} className="h-full w-full object-contain p-2" />
-                                </div>
-                              )}
-                              <div className="grid grid-cols-2 gap-2">
-                                <label className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 text-[10px] font-black uppercase tracking-widest text-blue-700 hover:bg-blue-100">
-                                  <ImageUp className="h-4 w-4" />
-                                  {uploadingRegionId === region.id ? 'Yükleniyor' : 'Görsel Seç'}
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    disabled={uploadingRegionId === region.id}
-                                    onChange={(event) => {
-                                      void handleRegionImageUpload(region.id, event.target.files?.[0] || null);
-                                      event.currentTarget.value = '';
-                                    }}
-                                  />
-                                </label>
-                                <button
-                                  type="button"
-                                  onClick={() => clearRegionImage(region.id)}
-                                  disabled={!content.imageUrl}
-                                  className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  Kaldır
-                                </button>
-                              </div>
-                              <p className="text-[10px] font-semibold leading-relaxed text-slate-400">
-                                Görsel eklendiğinde çıktı alanında açıklama metni gizlenir ve vaziyet resmi kırpılmadan basılır.
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ) : isHeader ? (
-                      // ── IMPROVED HEADER BLOCK ───────────────────────────────────────
-                      <div className="pointer-events-none w-full h-full flex items-center group/header relative" style={{ containerType: 'size' } as React.CSSProperties}>
-                        {/* Logo Area */}
-                        <div
-                          className="h-full aspect-square flex items-center justify-center bg-white/10 border-r border-white/10 overflow-hidden"
-                          title={isLogoLoading ? 'Logo yükleniyor' : 'Logo yükle / değiştir'}
-                        >
-                          {projectMetadata.logoUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={projectMetadata.logoUrl} alt="Logo" className="max-w-[80%] max-h-[80%] object-contain" />
-                          ) : (
-                            <svg className="w-1/2 h-1/2 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
-                          )}
-                        </div>
-
-                        {/* Title & Meta Group */}
-                        <div className="flex-1 flex flex-col items-center justify-center text-center px-[3cqw] overflow-hidden">
-                          <div
-                            className="w-full text-center uppercase text-white truncate"
-                            style={{
-                              fontFamily: 'Arial, Helvetica, sans-serif',
-                              fontSize: headerTitleSize ? `${headerTitleSize}px` : 'clamp(24px, 3.2cqw, 44px)',
-                              fontWeight: 800,
-                              letterSpacing: `${headerTitleSpacing ?? 4}px`,
-                              lineHeight: 1.05,
-                              color: '#ffffff',
-                              textShadow: '0 1px 0 rgba(0,0,0,0.24)',
-                            }}
-                            title={content.title || DEFAULT_PLAN_HEADER}
-                          >
-                            {content.title || DEFAULT_PLAN_HEADER}
-                          </div>
-                          {!!content.meta?.trim() && (
-                            <div
-                              className="w-full text-center uppercase text-white truncate mt-[0.7cqh]"
-                              style={{
-                                fontFamily: 'Arial, Helvetica, sans-serif',
-                                fontSize: headerMetaSize ? `${headerMetaSize}px` : 'clamp(9px, 1.1cqw, 14px)',
-                                fontWeight: 700,
-                                letterSpacing: `${headerMetaSpacing ?? 0.5}px`,
-                                lineHeight: 1.15,
-                                color: '#ffffff',
-                              }}
-                              title={content.meta}
-                            >
-                              {content.meta}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Header Logo Upload Action */}
-                        <div className="hidden">
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              logoFileInputRef.current?.click();
-                            }}
-                            className="group/logo flex h-[72%] aspect-square items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white/70 transition-all hover:bg-white/20 hover:text-white"
-                            title={isLogoLoading ? 'Logo yükleniyor' : 'Logo yükle / değiştir'}
-                          >
-                            {isLogoLoading ? (
-                              <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                            ) : (
-                              <ImageUp className="h-[44%] w-[44%]" />
-                            )}
-                          </button>
-                          <input
-                            ref={logoFileInputRef}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(event) => {
-                              void handleProjectLogoUpload(event.target.files?.[0] || null);
-                              event.currentTarget.value = '';
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                    ) : (
-                      <div className="pointer-events-none w-full h-full flex flex-col overflow-hidden" style={{ containerType: 'size' } as React.CSSProperties}>
-                        {/* Gradient Pill Header */}
-                        <div className="shrink-0 p-[3cqmin]">
-                          <div className={cn(
-                            "font-black uppercase tracking-widest rounded-xl flex items-center px-[3cqmin] py-[2.5cqmin] gap-[2cqmin]",
-                            tone === 'red' ? "text-white bg-gradient-to-r from-red-600 to-red-500 shadow-md shadow-red-500/20" :
-                              tone === 'blue' ? "text-white bg-gradient-to-r from-blue-600 to-blue-500 shadow-md shadow-blue-500/20" :
-                                tone === 'green' ? "text-white bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-md shadow-emerald-500/20" :
-                                  "text-slate-700 bg-slate-100 shadow-inner border border-slate-200/60"
-                          )}
-                            style={{
-                              fontSize: content.titleSize ? `${content.titleSize}px` : 'max(8px, min(3.5cqw, 15cqh))',
-                              fontWeight: content.titleWeight || 'black',
-                              letterSpacing: content.titleLetterSpacing !== undefined ? `${content.titleLetterSpacing}px` : undefined,
-                              lineHeight: content.titleLineHeight || 1.15,
-                              color: content.titleColor || undefined,
-                            }}>
-                            {region.type === 'assembly' && <svg className="w-[1.4em] h-[1.4em]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M12 2v4" /><path d="M12 2l-2 2" /><path d="M12 2l2 2" /></svg>}
-                            {region.type !== 'assembly' && tone === 'red' && <svg className="w-[1.2em] h-[1.2em]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}
-                            {region.type !== 'assembly' && tone === 'green' && <svg className="w-[1.2em] h-[1.2em]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
-                            {region.type !== 'assembly' && (tone === 'info' || tone === 'neutral') && <svg className="w-[1.2em] h-[1.2em]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>}
-                            {content.title || region.label}
-                          </div>
-                        </div>
-                        {/* Body Content */}
-                        <div className="flex-1 min-h-0 flex flex-col px-[3cqmin] pb-[3cqmin] overflow-hidden">
-                          {region.type === 'approval' ? (
-                            <div className="flex-1 min-h-0 pt-[1.5cqmin] flex flex-col">
-                              <div className="flex-1 grid auto-cols-fr grid-flow-col gap-x-[2cqw] gap-y-[1.5cqh] content-start overflow-hidden divide-x divide-slate-200">
-                                {(content.body || '').split('\n').filter(l => l.trim() !== '').map((line, i, arr) => {
-                                  const parts = line.split(/:(.*)/);
-                                  const isLast = i === arr.length - 1;
-                                  
-                                  if (parts.length >= 2) {
-                                    return (
-                                      <div key={i} className={cn("flex flex-col justify-center px-[2cqw] py-[1cqh]", isLast && "bg-slate-50/50")}>
-                                        <span className="text-slate-400 font-black uppercase tracking-widest" style={{ fontSize: 'max(5px, min(1.8cqw, 6cqh))' }}>
-                                          {parts[0].trim()}
-                                        </span>
-                                        <div className="flex items-baseline gap-[1cqw] mt-[0.5cqh]">
-                                          <span className="text-slate-800 font-black truncate uppercase" style={{ fontSize: isLast ? 'max(10px, min(3cqw, 11cqh))' : 'max(8px, min(2.5cqw, 9cqh))' }}>
-                                            {parts[1].trim() || '—'}
-                                          </span>
-                                          {isLast && <span className="text-emerald-600 font-black uppercase tracking-tighter" style={{ fontSize: 'max(5px, min(1.5cqw, 5cqh))' }}>Güncel</span>}
-                                        </div>
-                                      </div>
-                                    );
-                                  }
-                                  return (
-                                    <div key={i} className="flex flex-col justify-center px-[2cqw] py-[1cqh]">
-                                      <span className="text-slate-800 font-black truncate uppercase" style={{ fontSize: 'max(8px, min(2.5cqw, 9cqh))' }}>
-                                        {line}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              {region.type === 'assembly' && content.imageUrl && (
-                                <div className="flex-1 min-h-0 relative flex items-center justify-center rounded-lg border border-blue-100 bg-gradient-to-br from-slate-50 to-blue-50/60 p-[2cqmin]">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={content.imageUrl} alt={content.imageAlt || region.label} className="max-h-full max-w-full object-contain rounded-sm shadow-sm" />
-                                  <div className="absolute left-[2cqmin] top-[2cqmin] rounded-full bg-blue-600 px-[2cqmin] py-[1cqmin] text-[max(6px,min(2.6cqw,8cqh))] font-black uppercase tracking-widest text-white shadow-md">
-                                    Vaziyet
-                                  </div>
-                                </div>
-                              )}
-
-                              {region.type !== 'assembly' && content.imageUrl && (
-                                <div className="shrink-0 h-[30%] relative mb-[2cqmin] flex items-center justify-center">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={content.imageUrl} alt={content.imageAlt || region.label} className="max-w-full max-h-full object-contain rounded-sm shadow-sm border border-slate-200/50" />
-                                </div>
-                              )}
-
-                              {/* Auto-generated Legend or Manual Body Text */}
-                              {region.type === 'legend' ? (
-                                <div className="flex-1 w-full overflow-hidden flex flex-wrap gap-y-[3cqh] gap-x-[5cqw] content-start pt-[2cqh]">
-                                  {/* Dynamic Routes */}
-                                  {visibleElements.some(el => el.type === 'route' && el.routeType === 'evacuation') && (
-                                    <div className="flex items-center gap-[3cqw] w-[45%] shrink-0">
-                                      <div className="w-[18cqw] max-w-[2.5cqh] aspect-square flex items-center justify-center bg-emerald-100 rounded-sm">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" className="w-3/4 h-3/4"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                                      </div>
-                                      <span className="font-bold text-slate-700 leading-tight flex-1" style={{ fontSize: 'max(11px, min(4cqw, 14cqh))' }}>Tahliye Yolu</span>
-                                    </div>
-                                  )}
-
-                                  {visibleElements.some(el => el.type === 'route' && el.routeType === 'rescue') && (
-                                    <div className="flex items-center gap-[3cqw] w-[45%] shrink-0">
-                                      <div className="w-[18cqw] max-w-[2.5cqh] aspect-square flex items-center justify-center bg-red-100 rounded-sm">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="3" className="w-3/4 h-3/4"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                                      </div>
-                                      <span className="font-bold text-slate-700 leading-tight flex-1" style={{ fontSize: 'max(11px, min(4cqw, 14cqh))' }}>Kurtarma Yolu</span>
-                                    </div>
-                                  )}
-
-                                  {/* Dynamic Symbols */}
-                                  {Array.from(new Set(visibleElements.filter(el => el.type === 'symbol' && el.symbolType).map(el => el.symbolType as string))).map(id => {
-                                    const isCustom = id.startsWith('data:') || id.startsWith('http');
-                                    const symDef = SYMBOLS.find(s => s.id === id);
-
-                                    // Fallback map for legacy symbol IDs
-                                    const legacyMap: Record<string, string> = {
-                                      exit: 'Acil Çıkış', fire: 'Yangın Söndürücü', alarm: 'Yangın Alarmı',
-                                      assembly: 'Toplanma Alanı', firstaid: 'İlk Yardım', here: 'Buradasınız',
-                                      hydrant: 'Yangın Dolabı', electric: 'Elektrik Tehlikesi', gas: 'Gaz Kesme Vanası',
-                                      sign: 'Yönlendirme Oku', info: 'Bilgi', point: 'Özel Nokta'
-                                    };
-
-                                    const name = isCustom ? 'Özel Sembol' : (symDef?.name || legacyMap[id] || id);
-                                    const src = isCustom ? id : ISO_SYMBOLS[id];
-                                    if (!src) return null;
-
-                                    return (
-                                      <div key={id} className="flex items-center gap-[3cqw] w-[45%] shrink-0">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={src} alt={name} className="w-[18cqw] max-w-[2.5cqh] aspect-square object-contain shadow-sm rounded-sm bg-white" />
-                                        <span className="font-bold text-slate-700 leading-tight flex-1" style={{ fontSize: 'max(11px, min(4cqw, 14cqh))' }}>
-                                          {name}
-                                        </span>
-                                      </div>
-                                    )
-                                  })}
-                                </div>
-                              ) : region.type === 'emergency' ? (
-                                <div className="flex-1 min-h-0 flex items-center gap-[4cqmin] rounded-xl border border-red-100 bg-gradient-to-br from-red-50 to-white p-[4cqmin] shadow-inner">
-                                  <div className="flex h-[22cqmin] w-[22cqmin] shrink-0 items-center justify-center rounded-xl bg-red-600 text-white shadow-lg shadow-red-500/20">
-                                    <span className="font-black leading-none" style={{ fontSize: 'max(14px, min(8cqmin, 18cqh))' }}>112</span>
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <p className="font-black uppercase tracking-tight text-red-700 leading-none" style={{
-                                      fontSize: content.titleSize ? `${content.titleSize}px` : 'max(10px, min(4.8cqw, 16cqh))',
-                                      fontWeight: content.titleWeight || 'black',
-                                      letterSpacing: content.titleLetterSpacing !== undefined ? `${content.titleLetterSpacing}px` : undefined,
-                                      lineHeight: content.titleLineHeight || 1,
-                                      color: content.titleColor || undefined,
-                                    }}>
-                                      {content.title || '112 Acil Durum Telefonu'}
-                                    </p>
-                                    <p className="mt-[1.5cqmin] font-bold leading-snug text-slate-700" style={{
-                                      fontSize: content.bodySize ? `${content.bodySize}px` : 'max(8px, min(3.4cqw, 9cqh))',
-                                      fontWeight: content.bodyWeight || 'bold',
-                                      letterSpacing: content.bodyLetterSpacing !== undefined ? `${content.bodyLetterSpacing}px` : undefined,
-                                      lineHeight: content.bodyLineHeight || undefined,
-                                      color: content.bodyColor || undefined,
-                                    }}>
-                                      {content.body || 'Acil durumlarda 112 aranmalıdır.'}
-                                    </p>
-                                    <p className="mt-[1cqmin] font-black uppercase tracking-widest text-red-400" style={{
-                                      fontSize: content.metaSize ? `${content.metaSize}px` : 'max(6px, min(2.2cqw, 6cqh))',
-                                      fontWeight: content.metaWeight || 'black',
-                                      letterSpacing: content.metaLetterSpacing !== undefined ? `${content.metaLetterSpacing}px` : undefined,
-                                      lineHeight: content.metaLineHeight || undefined,
-                                      color: content.metaColor || undefined,
-                                    }}>
-                                      {content.meta || 'EMERGENCY CALL'}
-                                    </p>
-                                  </div>
-                                </div>
-                              ) : region.type === 'instruction' ? (
-                                <div className="flex-1 min-h-0 flex flex-col pt-[1cqh] pb-[2cqh] gap-[1.5cqh] overflow-hidden">
-                                  {(content.body || '').split('\n').map((line, i, arr) => {
-                                    const validLineCount = arr.filter(l => l.trim() !== '').length || 1;
-                                    const computedBaseSize = content.bodySize ? `${content.bodySize}px` : `max(8px, min(3cqw, ${70 / validLineCount}cqh))`;
-                                    const computedSmallSize = content.bodySize ? `${content.bodySize - 1}px` : `max(7px, min(2.7cqw, ${65 / validLineCount}cqh))`;
-                                    
-                                    const trimmed = line.trim();
-                                    if (trimmed === '') return <div key={i} className="h-[0.5cqh]" />;
-                                    
-                                    const isFireInstruction = region.id?.toLowerCase().includes('fire');
-                                    const accentColor = tone === 'red' || isFireInstruction ? 'rose' : tone === 'green' ? 'emerald' : 'slate';
-                                    
-                                    const numberedMatch = trimmed.match(/^(\d+)\.\s*(.+)/);
-                                    if (numberedMatch) {
-                                      const [, num, text] = numberedMatch;
-                                      return (
-                                        <div key={i} className="flex items-start gap-[1.5cqw]">
-                                          <div className={cn("flex-shrink-0 flex items-center justify-center text-white mt-[0.3cqh] shadow-sm rounded-full",
-                                            accentColor === 'rose' ? "bg-rose-500" : accentColor === 'emerald' ? "bg-emerald-500" : "bg-slate-600"
-                                          )} style={{ width: 'max(14px, 3.5cqw)', height: 'max(14px, 3.5cqw)', fontSize: 'max(9px, 2.2cqw)', fontWeight: 900 }}>
-                                            {num}
-                                          </div>
-                                          <span className="font-bold text-slate-700 leading-[1.25] flex-1" style={{ fontSize: computedBaseSize }}>
-                                            {text}
-                                          </span>
-                                        </div>
-                                      );
-                                    }
-                                    
-                                    if (line.startsWith('   ') || line.startsWith('\t')) {
-                                      return (
-                                        <div key={i} className="ml-[5cqw] flex items-start gap-[1cqw]">
-                                          <span className={cn("leading-[1.25] font-bold", accentColor === 'rose' ? "text-rose-700" : accentColor === 'emerald' ? "text-emerald-700" : "text-slate-600")} style={{ fontSize: computedSmallSize }}>
-                                            {trimmed}
-                                          </span>
-                                        </div>
-                                      );
-                                    }
-                                    
-                                    const bulletMatch = trimmed.match(/^[•\-—►]\s*(.+)/);
-                                    if (bulletMatch) {
-                                      return (
-                                        <div key={i} className="flex items-start gap-[1cqw] ml-[1cqw]">
-                                          <span className={cn("mt-[0.2cqh]", accentColor === 'rose' ? "text-rose-400" : accentColor === 'emerald' ? "text-emerald-400" : "text-slate-400")} style={{ fontSize: 'max(8px, 1.5cqw)' }}>●</span>
-                                          <span className="font-bold text-slate-700 leading-[1.25] flex-1" style={{ fontSize: computedSmallSize }}>
-                                            {bulletMatch[1]}
-                                          </span>
-                                        </div>
-                                      );
-                                    }
-
-                                    return (
-                                      <p key={i} className="font-bold text-slate-700 leading-[1.25]" style={{ fontSize: computedBaseSize }}>
-                                        {trimmed}
-                                      </p>
-                                    );
-                                  })}
-                                </div>
-                                ) : region.type === 'assembly' && content.imageUrl ? null : region.type === 'assembly' ? (
-                                  <div className="flex-1 min-h-0 flex flex-col justify-center gap-[2cqh] rounded-lg border border-dashed border-blue-200 bg-blue-50/40 p-[3cqmin]">
-                                    <div className="mx-auto flex h-[18cqmin] w-[18cqmin] items-center justify-center rounded-full bg-blue-600 text-white shadow-md">
-                                      <svg className="h-[55%] w-[55%]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11Z" /><circle cx="12" cy="10" r="2.5" /></svg>
-                                    </div>
-                                    <p className="text-center font-bold text-slate-700 leading-[1.25]" style={{
-                                      fontSize: content.bodySize ? `${content.bodySize}px` : 'max(9px, min(3.7cqw, 10cqh))',
-                                      fontWeight: content.bodyWeight || 'bold',
-                                      letterSpacing: content.bodyLetterSpacing !== undefined ? `${content.bodyLetterSpacing}px` : undefined,
-                                      lineHeight: content.bodyLineHeight || 1.25,
-                                      color: content.bodyColor || undefined,
-                                    }}>
-                                      {content.body || 'Toplanma noktası bina dışında, güvenli uzaklıkta işaretlenmiş alanda bulunmaktadır.'}
-                                    </p>
-                                  </div>
-                                ) : content.body && (
-                                  <div className="flex-1 min-h-0 flex flex-col justify-center">
-                                    <p className="whitespace-pre-line font-bold text-slate-700 leading-[1.3]"
-                                      style={{
-                                        fontSize: content.bodySize ? `${content.bodySize}px` : `max(11px, min(4cqw, ${85 / ((content.body.split('\n').length || 1) * 1.3)}cqh))`,
-                                        fontWeight: content.bodyWeight || 'bold',
-                                        letterSpacing: content.bodyLetterSpacing !== undefined ? `${content.bodyLetterSpacing}px` : undefined,
-                                        lineHeight: content.bodyLineHeight || ((content.body.split('\n').length || 1) > 6 ? 1.15 : 1.3),
-                                        color: content.bodyColor || undefined,
-                                      }}>
-                                      {content.body}
-                                    </p>
-                                  </div>
-                                )}
-
-
-                              {content.meta && (
-                                <p className="shrink-0 mt-auto pt-[2cqh] font-black uppercase tracking-widest text-slate-400"
-                                  style={{
-                                    fontSize: content.metaSize ? `${content.metaSize}px` : 'max(6px, min(2.5cqw, 8cqh))',
-                                    fontWeight: content.metaWeight || 'black',
-                                    letterSpacing: content.metaLetterSpacing !== undefined ? `${content.metaLetterSpacing}px` : undefined,
-                                    lineHeight: content.metaLineHeight || undefined,
-                                    color: content.metaColor || undefined,
-                                  }}>
-                                  {content.meta}
-                                </p>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </section>
-                );
-              })}
-
-              {/* Drawing Region Wrapper and Konva Stage */}
-              {drawingRegion && (
-                <div
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    if (selectedIds.length > 0) setSelectedIds([]);
-                    if (focusedRegionId !== drawingRegion.id) setFocusedRegionId(drawingRegion.id);
-                    setSelectedTemplateModuleId(drawingRegion.id);
-                  }}
-                  className={cn(
-                    "drawing-region-wrapper absolute z-20 overflow-hidden bg-transparent rounded-[12px]",
-                    !focusedRegionId ? "border border-slate-300 hover:shadow-lg hover:border-cyan-400 cursor-pointer" : "",
-                    focusedRegionId === drawingRegion.id ? "z-30 scale-[1.015] shadow-[0_20px_50px_rgba(8,145,178,0.3)] ring-4 ring-cyan-500/30 border-2 border-cyan-500" : "border-2 border-transparent",
-                    focusedRegionId && focusedRegionId !== drawingRegion.id ? "pointer-events-none opacity-25 grayscale" : ""
-                  )}
-                  style={{
-                    left: `calc(${drawingRegion.x}% + 6px)`, top: `calc(${drawingRegion.y}% + 6px)`,
-                    width: `calc(${drawingRegion.w}% - 12px)`, height: `calc(${drawingRegion.h}% - 12px)`,
-                  }}
-                >
                   <Stage
                     ref={stageRef}
                     width={stageWidth}
@@ -2468,7 +1982,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                       width: '100%',
                       height: '100%',
                       pointerEvents: (!focusedRegionId || focusedRegionId === drawingRegion.id) ? 'auto' : 'none',
-                      filter: isFocused ? 'none' : 'blur(20px)',
+                      filter: (focusedRegionId && focusedRegionId !== drawingRegion.id) ? 'blur(20px)' : 'none',
                       transition: 'filter 0.3s ease-in-out',
                       backgroundColor: '#ffffff'
                     }}
@@ -2481,7 +1995,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                         x={innerPan.x}
                         y={innerPan.y}
                       >
-                        <MemoizedGrid gridVisible={gridVisible} themeConfig={themeConfig} editorTheme={editorTheme} gridSize={GRID_SIZE} size={2000} />
+                        <GridRenderer gridVisible={gridVisible} themeConfig={themeConfig} editorTheme={editorTheme} gridSize={GRID_SIZE} size={2000} />
 
                         {/* Wall Rendering Passes (CAD-like) */}
                         {/* Pass 1: Outer Stroke (Black outline) */}
@@ -2705,7 +2219,8 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
                     </Layer>
                   </Stage>
                 </div>
-              )}
+                );
+              })()}
             </div>
           ) : (
             /* ── BLANK MODE: Stage fills the infinite space ── */
@@ -2734,7 +2249,7 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
               >
                 <Layer>
                   <Group>
-                    <MemoizedGrid gridVisible={gridVisible} themeConfig={themeConfig} editorTheme={editorTheme} gridSize={GRID_SIZE} size={4000} />
+                    <GridRenderer gridVisible={gridVisible} themeConfig={themeConfig} editorTheme={editorTheme} gridSize={GRID_SIZE} size={4000} />
                     <WatermarkGroup
                       width={Math.max(4000, stageWidth * 4)}
                       height={Math.max(3000, stageHeight * 4)}
@@ -2910,6 +2425,21 @@ export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, s
           </div>
         </>
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmDeleteDrawingId}
+        onClose={() => setConfirmDeleteDrawingId(null)}
+        onConfirm={() => {
+          if (confirmDeleteDrawingId) {
+            removeTemplateModule(confirmDeleteDrawingId);
+            setConfirmDeleteDrawingId(null);
+          }
+        }}
+        title="Çizim Alanını Sil"
+        message="Bu çizim alanını silmek istediğinize emin misiniz? Tüm çizimleriniz kaybolacaktır."
+        confirmText="Evet, Sil"
+        cancelText="Vazgeç"
+      />
     </main>
   );
 }

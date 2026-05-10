@@ -51,16 +51,16 @@ export default function LandingFooter() {
 
             {/* Links */}
             {[
-              { title: 'Ürün', links: ['Özellikler', 'Fiyatlandırma', 'Şablonlar', 'Güncellemeler'] },
-              { title: 'Destek', links: ['Yardım Merkezi', 'Başlarken', 'Video Rehberler', 'İletişim'] },
-              { title: 'Yasal', links: ['Kullanım Koşulları', 'Gizlilik Politikası', 'KVKK Metni', 'Çerez Politikası'] },
+              { title: 'Ürün', links: [{ label: 'Özellikler', href: '/#features' }, { label: 'Fiyatlandırma', href: '/#pricing' }, { label: 'Şablonlar', href: '/#showcase' }, { label: 'Nasıl Çalışır', href: '/#how' }] },
+              { title: 'Destek', links: [{ label: 'Yardım Merkezi', href: '#' }, { label: 'Başlarken', href: '/register' }, { label: 'İletişim', href: 'mailto:destek@planify.com.tr' }, { label: 'SSS', href: '/#pricing' }] },
+              { title: 'Yasal', links: [{ label: 'Kullanım Koşulları', href: '/legal/terms' }, { label: 'Gizlilik Politikası', href: '/legal/privacy' }, { label: 'KVKK Metni', href: '/legal/kvkk' }, { label: 'Çerez Politikası', href: '/legal/cookies' }] },
             ].map(({ title, links }) => (
               <div key={title}>
                 <h4 className="text-white font-bold mb-4 text-sm">{title}</h4>
                 <ul className="space-y-2.5">
                   {links.map(l => (
-                    <li key={l}>
-                      <a href="#" className="text-sm hover:text-white transition-colors">{l}</a>
+                    <li key={l.label}>
+                      <a href={l.href} className="text-sm hover:text-white transition-colors">{l.label}</a>
                     </li>
                   ))}
                 </ul>

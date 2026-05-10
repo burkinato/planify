@@ -120,9 +120,10 @@ export default function LoginPage() {
       if (data.user) {
         router.replace(getRedirectPath());
       }
-    } catch {
+    } catch (err: unknown) {
       clearBrowserSession();
-      setError('E-posta veya şifre hatalı. Lütfen tekrar deneyin.');
+      const message = err instanceof Error ? err.message : 'E-posta veya şifre hatalı. Lütfen tekrar deneyin.';
+      setError(message === 'Invalid login credentials' ? 'E-posta veya şifre hatalı. Lütfen tekrar deneyin.' : message);
     } finally {
       setLoading(false);
     }

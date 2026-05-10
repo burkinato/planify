@@ -32,7 +32,8 @@ export function EditorHeader({
 }: EditorHeaderProps) {
   const {
     zoom, setZoom, gridVisible, setGridVisible, undo, redo, canUndo, canRedo,
-    scaleConfig, setScaleConfig, editorTheme, setEditorTheme
+    scaleConfig, setScaleConfig, editorTheme, setEditorTheme,
+    language, setLanguage
   } = useEditorStore();
   const { projects, updateProject } = useProjectStore();
   const { isPro } = useProAccess();
@@ -228,6 +229,26 @@ export function EditorHeader({
 
       {/* Center - Zoom & Theme */}
       <div className="flex items-center gap-2 md:gap-3">
+        {/* Language Switcher */}
+        <div className="flex items-center bg-surface-950 rounded-lg p-0.5 border border-surface-600">
+          {(['tr', 'en'] as const).map((lang) => (
+            <button
+              key={lang}
+              onClick={() => setLanguage(lang)}
+              className={cn(
+                "px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all",
+                language === lang
+                  ? "bg-primary-500 text-white"
+                  : "text-surface-400 hover:text-surface-200 hover:bg-surface-800"
+              )}
+            >
+              {lang}
+            </button>
+          ))}
+        </div>
+
+        <div className="hidden sm:block h-5 w-px bg-surface-600" />
+
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 hover:text-surface-200 transition-all"
@@ -356,6 +377,7 @@ export function EditorHeader({
         {/* Export dropdown */}
         <div className="relative">
           <button
+            id="header-export-btn"
             onClick={() => {
               if (!isPro) {
                 router.push('/dashboard/upgrade');

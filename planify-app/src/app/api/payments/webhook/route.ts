@@ -71,10 +71,10 @@ export async function POST(request: Request) {
 
     const supabaseAdmin = createSupabaseJS(supabaseUrl, supabaseServiceKey);
 
-    // 3. Get payment history record
+    // 3. Get payment history record and related credit package
     const { data: paymentRecord, error: fetchError } = await supabaseAdmin
       .from('payment_history')
-      .select('*, plans:plan_id(id, name, price_try, price_usd)')
+      .select('*, credit_packages:plan_id(id, name, price_try, credits)')
       .eq('merchant_oid', merchantOid)
       .single();
 
@@ -84,49 +84,59 @@ export async function POST(request: Request) {
     }
 
     if (status === 'success') {
-      // 4. Activate subscription in Supabase
-      const plan = paymentRecord.plans;
+      // 4. Add credits to user's account
+      const pkg = paymentRecord.credit_packages;
       const userId = paymentRecord.user_id;
 
-      // Calculate subscription end date (e.g., 1 month from now for monthly plans)
-      const now = new Date();
-      const endDate = new Date(now);
-      endDate.setMonth(endDate.getMonth() + 1);
+      if (!pkg) {
+        console.error('Credit package not found for payment:', merchantOid);
+        return new Response('PACKAGE_NOT_FOUND', { status: 404 });
+      }
 
-      // Upsert subscription (activate or update existing)
+      // Add to credit_transactions
+      const { error: txError } = await supabaseAdmin
+        .from('credit_transactions')
+        .insert({
+          user_id: userId,
+          amount: pkg.credits,
+          transaction_type: 'purchase',
+          description: `${pkg.name} satın alımı`,
+        });
+
+      if (txError) {
+        console.error('Failed to create credit transaction:', txError);
+        return new Response('TRANSACTION_ERROR', { status: 500 });
+      }
+
+      // Read current balance
+      const { data: creditData } = await supabaseAdmin
+        .from('user_credits')
+        .select('balance, total_purchased')
+        .eq('user_id', userId)
+        .single();
+
+      // Upsert balance
+      const currentBalance = creditData?.balance || 0;
+      const currentTotal = creditData?.total_purchased || 0;
+      
       const { error: subError } = await supabaseAdmin
-        .from('subscriptions')
+        .from('user_credits')
         .upsert({
           user_id: userId,
-          plan_id: plan.id,
-          status: 'active',
-          current_period_start: now.toISOString(),
-          current_period_end: endDate.toISOString(),
-          cancel_at_period_end: false,
+          balance: currentBalance + pkg.credits,
+          total_purchased: currentTotal + pkg.credits,
+          updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id',
         });
 
       if (subError) {
-        console.error('Failed to activate subscription:', subError);
-        return new Response('SUBSCRIPTION_ERROR', { status: 500 });
-      }
-
-      // 5. Update user's profile to pro tier
-      const { error: profileError } = await supabaseAdmin
-        .from('profiles')
-        .update({
-          subscription_tier: 'pro',
-          subscription_status: 'active',
-        })
-        .eq('id', userId);
-
-      if (profileError) {
-        console.error('Failed to update profile:', profileError);
-        // Don't fail the webhook, subscription is more important
+        console.error('Failed to update user credits:', subError);
+        return new Response('CREDIT_UPDATE_ERROR', { status: 500 });
       }
 
       // 6. Update payment history
+      const now = new Date();
       await supabaseAdmin
         .from('payment_history')
         .update({
@@ -141,8 +151,9 @@ export async function POST(request: Request) {
       console.log('PayTR Webhook: Payment success processed', {
         merchantOid,
         userId,
-        plan: plan.name,
+        package: pkg.name,
         amount: totalAmount,
+        addedCredits: pkg.credits
       });
 
     } else {

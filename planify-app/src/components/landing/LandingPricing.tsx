@@ -1,128 +1,152 @@
 'use client';
 
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles, Zap, Building2 } from 'lucide-react';
 import Link from 'next/link';
-import { usePricing } from '@/hooks/usePricing';
 
-const FREE_FEATURES = [
-  'Temel CAD çizim araçları',
-  'Sınırsız proje oluşturma',
-  'ISO 7010 temel sembol kütüphanesi',
-  'Bulut depolama',
-  'PDF çıktısı',
-];
-
-const PRO_FEATURES = [
-  'Tüm ücretsiz özellikler +',
-  'Sınırsız proje ve depolama',
-  'Filigransız PDF çıktısı',
-  'Premium şablon kütüphanesi',
-  'ISO 7010 tam sembol paketi',
-  'Öncelikli 7/24 teknik destek',
-  'Çoklu kullanıcı (ekip hesabı)',
-  'Özel antet ve logo desteği',
+const PACKAGES = [
+  {
+    name: 'Başlangıç',
+    credits: '50 Kredi',
+    price: 'Ücretsiz',
+    desc: 'Hemen kayıt olun, sistemi test edin. Kredi kartı gerekmez.',
+    icon: Sparkles,
+    features: [
+      '50 Başlangıç Kredisi hediye',
+      'Tüm çizim araçları',
+      'Filigranlı PDF çıktısı (0 kredi)',
+      'Filigransız PDF çıktısı (10 kredi)',
+    ],
+    cta: 'Ücretsiz Başla',
+    href: '/register',
+    popular: false,
+    color: 'slate'
+  },
+  {
+    name: 'Standart',
+    credits: '100 Kredi',
+    price: '₺149',
+    desc: 'Bireysel uzmanlar ve küçük ölçekli işletmeler için ideal.',
+    icon: Zap,
+    features: [
+      '10 PDF Çıktısı (Filigransız)',
+      'Tüm şablonlara erişim',
+      'Krediler hesapta birikir',
+      'Öncelikli destek',
+    ],
+    cta: 'Kredi Satın Al',
+    href: '/register',
+    popular: true,
+    color: 'primary'
+  },
+  {
+    name: 'Profesyonel',
+    credits: '300 Kredi',
+    price: '₺349',
+    desc: 'OSGB ve kurumsal mimarlık ofisleri için avantajlı paket.',
+    icon: Building2,
+    features: [
+      '30 PDF Çıktısı (Filigransız)',
+      'Birim maliyette %20 avantaj',
+      'Tüm şablonlara erişim',
+      'Kurumsal faturalandırma',
+    ],
+    cta: 'Kredi Satın Al',
+    href: '/register',
+    popular: false,
+    color: 'indigo'
+  }
 ];
 
 const FAQS = [
   {
-    q: 'Deneme süresi bitmeden iptal edebilir miyim?',
-    a: 'Evet. 7 günlük deneme süresinde istediğiniz zaman iptal edebilirsiniz. Ücret kesilmez.',
+    q: 'Kredi sistemi nasıl çalışır?',
+    a: 'Planify, abonelik yerine kullandıkça öde (kredi) sistemiyle çalışır. Yeni kayıt olan herkese 50 kredi hediye edilir. Her filigransız PDF çıktısı 10 kredi düşer.',
   },
   {
-    q: 'Planlarım bulutta güvende mi?',
-    a: 'Tüm verileriniz SSL şifreli bağlantı ile Türkiye serverlarında saklanır. KVKK uyumludur.',
+    q: 'Satın aldığım kredilerin süresi doluyor mu?',
+    a: 'Hayır. Satın aldığınız krediler hesabınızda ömür boyu kalır ve istediğiniz zaman kullanabilirsiniz.',
   },
   {
-    q: 'Kurumsal lisans alabilir miyim?',
-    a: 'Evet. 5+ kullanıcı için özel fiyatlandırma mevcuttur. destek@planify.com.tr adresine yazın.',
+    q: 'Ücretsiz pakette neler var?',
+    a: 'Tüm çizim araçlarını, sembolleri ve şablonları ücretsiz kullanabilirsiniz. Çizimlerinizi kaydetmek ve filigranlı PDF almak tamamen ücretsizdir.',
   },
   {
-    q: 'PDF çıktılarım MEBBİS ile uyumlu mu?',
-    a: 'Evet. PDF çıktılarımız MEBBİS 150KB limitine otomatik olarak optimize edilir.',
+    q: 'Büyük ölçekli ofisler için toplu alım var mı?',
+    a: 'Evet. 1000 kredi ve üzeri toplu alımlar için destek@planify.com.tr adresi üzerinden özel fiyat teklifi alabilirsiniz.',
   },
 ];
 
 export default function LandingPricing() {
-  const { config, priceTry, loading } = usePricing();
-
-  if (loading) {
-    return (
-      <section id="pricing" className="py-24 px-6 bg-white">
-        <div className="max-w-5xl mx-auto flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section id="pricing" className="py-24 px-6 bg-white">
-      <div className="max-w-5xl mx-auto">
+    <section id="pricing" className="py-24 px-6 bg-slate-50">
+      <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16 space-y-4">
-          <span className="inline-block text-sm font-bold text-primary-600 uppercase tracking-widest bg-primary-50 px-4 py-1.5 rounded-full">
-            Fiyatlandırma
+          <span className="inline-block text-sm font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-1.5 rounded-full">
+            Esnek Fiyatlandırma
           </span>
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900">Sade ve Şeffaf Fiyatlandırma</h2>
-          <p className="text-lg text-slate-500 max-w-xl mx-auto">Sürpriz ücret yok. Aboneliğinizi istediğiniz zaman iptal edin.</p>
+          <h2 className="text-3xl md:text-5xl font-black text-slate-900">Sadece Kullandığın Kadar Öde</h2>
+          <p className="text-lg text-slate-500 max-w-xl mx-auto">Aylık taahhüt veya sürpriz ücret yok. İhtiyacınız oldukça kredi yükleyin, çizim yapın.</p>
         </div>
 
         {/* Cards */}
-        <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-16">
-          {/* Free */}
-          <div className="p-8 rounded-3xl bg-slate-50 border border-slate-200 shadow-sm">
-            <p className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-2">Deneme</p>
-            <div className="flex items-end gap-2 mb-1">
-              <span className="text-5xl font-black text-slate-900">Ücretsiz</span>
-            </div>
-            <p className="text-slate-500 text-sm mb-6">Hemen kayıt olun, çizmeye başlayın. Özel kart gerekmez.</p>
-            <ul className="space-y-3 mb-8">
-              {FREE_FEATURES.map((f, i) => (
-                <li key={i} className="flex items-center gap-2.5 text-sm text-slate-700">
-                  <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <Link href="/register" className="block w-full py-3.5 text-center rounded-2xl bg-white border-2 border-slate-200 text-slate-700 font-bold hover:border-primary-300 hover:text-primary-600 transition-all text-sm">
-              Ücretsiz Kayıt Ol
-            </Link>
-          </div>
-
-          {/* Pro */}
-          <div className="pricing-highlight p-8 rounded-3xl bg-gradient-to-br from-primary-700 to-indigo-800 text-white shadow-2xl shadow-primary-200 relative md:-translate-y-4">
-            <div className="absolute top-4 right-4 bg-amber-400 text-amber-900 text-[11px] font-black px-3 py-1 rounded-full shadow">
-              EN POPÜLER ⭐
-            </div>
-            <p className="text-sm font-bold text-primary-200 uppercase tracking-wide mb-2">Pro Uzman</p>
-            <div className="flex items-end gap-2 mb-1">
-              <span className="text-5xl font-black">₺{Math.round(priceTry)}</span>
-              <span className="text-primary-300 mb-1">/ay</span>
-            </div>
-            {config.show_both_currencies && (
-              <p className="text-primary-200 text-xs font-bold mb-4">($ {config.pro_price_usd.toFixed(2)} / ay)</p>
-            )}
-            <p className="text-primary-200 text-sm mb-6">Profesyonel İSG uzmanları ve danışmanlık firmaları için.</p>
-            <ul className="space-y-3 mb-8">
-              {PRO_FEATURES.map((f, i) => (
-                <li key={i} className="flex items-center gap-2.5 text-sm text-blue-100">
-                  <CheckCircle2 className="w-4 h-4 text-primary-300 shrink-0" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <Link href="/register" className="block w-full py-3.5 text-center rounded-2xl bg-white text-primary-700 font-bold hover:bg-primary-50 transition-all text-sm shadow-lg">
-              7 Gün Ücretsiz Dene
-            </Link>
-          </div>
+        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-20">
+          {PACKAGES.map((pkg, i) => {
+            const Icon = pkg.icon;
+            return (
+              <div key={i} className={`p-8 rounded-3xl relative flex flex-col ${
+                pkg.popular 
+                ? 'bg-blue-600 text-white shadow-2xl shadow-blue-200 md:-translate-y-4' 
+                : 'bg-white border border-slate-200 text-slate-900 shadow-sm'
+              }`}>
+                {pkg.popular && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-400 text-amber-900 text-[11px] font-black px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap">
+                    EN ÇOK TERCİH EDİLEN
+                  </div>
+                )}
+                
+                <div className={`w-12 h-12 rounded-xl mb-6 flex items-center justify-center ${pkg.popular ? 'bg-blue-500/50' : 'bg-slate-50 border border-slate-100'}`}>
+                  <Icon className={`w-6 h-6 ${pkg.popular ? 'text-white' : 'text-slate-700'}`} />
+                </div>
+                
+                <h3 className="text-2xl font-black mb-2">{pkg.name}</h3>
+                <p className={`text-sm mb-6 ${pkg.popular ? 'text-blue-100' : 'text-slate-500'}`}>{pkg.desc}</p>
+                
+                <div className="flex flex-col gap-1 mb-8">
+                  <span className="text-4xl font-black">{pkg.price}</span>
+                  <span className={`text-sm font-bold ${pkg.popular ? 'text-blue-200' : 'text-blue-600'}`}>{pkg.credits}</span>
+                </div>
+                
+                <ul className="space-y-4 mb-8 flex-1">
+                  {pkg.features.map((f, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      <CheckCircle2 className={`w-5 h-5 shrink-0 ${pkg.popular ? 'text-blue-300' : 'text-blue-500'}`} />
+                      <span className={`text-sm font-medium ${pkg.popular ? 'text-blue-50' : 'text-slate-600'}`}>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                
+                <Link 
+                  href={pkg.href} 
+                  className={`block w-full py-4 text-center rounded-2xl font-bold transition-all text-sm ${
+                    pkg.popular
+                    ? 'bg-white text-blue-600 hover:bg-blue-50 shadow-lg'
+                    : 'bg-slate-50 border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-white'
+                  }`}
+                >
+                  {pkg.cta}
+                </Link>
+              </div>
+            );
+          })}
         </div>
 
         {/* FAQs */}
-        <div className="max-w-2xl mx-auto">
-          <h3 className="text-xl font-black text-slate-900 text-center mb-8">Sıkça Sorulan Sorular</h3>
-          <div className="space-y-4">
+        <div className="max-w-3xl mx-auto">
+          <h3 className="text-2xl font-black text-slate-900 text-center mb-10">Sıkça Sorulan Sorular</h3>
+          <div className="grid sm:grid-cols-2 gap-4">
             {FAQS.map(({ q, a }, i) => (
-              <div key={i} className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
-                <p className="font-bold text-slate-900 mb-2 text-sm">{q}</p>
+              <div key={i} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <p className="font-bold text-slate-900 mb-3 text-[15px]">{q}</p>
                 <p className="text-slate-500 text-sm leading-relaxed">{a}</p>
               </div>
             ))}

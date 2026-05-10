@@ -8,7 +8,8 @@ import { useEditorStore } from '@/store/useEditorStore';
 import { useProjectStore } from '@/store/useProjectStore';
 import { cn } from '@/lib/utils';
 import { FALLBACK_TEMPLATE_LAYOUTS, getTemplateModules, modulesToRegions, normalizePagePreset, normalizeTemplateLayout } from '@/lib/editor/templateLayouts';
-import type { PagePreset, TemplateLayout, TemplateRegion } from '@/types/editor';
+import type { PagePreset, TemplateLayout, TemplateModuleType, TemplateRegion } from '@/types/editor';
+import { MODULE_ICONS } from './modules/ModuleIconSet';
 
 interface TemplateSelectorModalProps {
   isOpen: boolean;
@@ -51,7 +52,8 @@ const mergeTemplateSources = (dbLayouts: TemplateLayout[]) => {
 };
 
 function TemplateThumbnail({ layout, isLarge = false }: { layout: TemplateLayout; isLarge?: boolean }) {
-  const regions = modulesToRegions(getTemplateModules(layout));
+  const modules = getTemplateModules(layout);
+  const regions = modulesToRegions(modules);
 
   const toneStyle = (region: TemplateRegion): React.CSSProperties => {
     const map: Record<string, { bg: string; border: string }> = {
@@ -102,11 +104,24 @@ function TemplateThumbnail({ layout, isLarge = false }: { layout: TemplateLayout
                 ...toneStyle(region),
             }}
             >
-            {region.type === 'drawing' && (
+            {region.type === 'drawing' ? (
                 <div className="opacity-20 flex items-center justify-center w-full h-full">
                     <LayoutTemplate className={isLarge ? "w-12 h-12" : "w-4 h-4"} />
                 </div>
-            )}
+            ) : (() => {
+                const mod = modules.find(m => m.id === region.id);
+                const modType = mod?.type as TemplateModuleType | undefined;
+                if (modType && MODULE_ICONS[modType] && isLarge) {
+                    const IconComp = MODULE_ICONS[modType];
+                    return (
+                        <div className="flex flex-col items-center justify-center w-full h-full gap-0.5 opacity-60">
+                            <IconComp size={14} className="text-white/80" />
+                            <span className="text-[5px] font-black uppercase tracking-wider text-white/50 truncate max-w-[90%]">{region.label}</span>
+                        </div>
+                    );
+                }
+                return null;
+            })()}
             </div>
         ))}
       </div>

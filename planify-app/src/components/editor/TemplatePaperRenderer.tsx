@@ -8,6 +8,7 @@ import { useEditorStore } from '@/store/useEditorStore';
 import { mergeTemplateState } from '@/lib/editor/templateLayouts';
 import { SYMBOLS } from '@/types/editor';
 import type { TemplateLayout, TemplateRegion, TemplateState, SymbolTemplate } from '@/types/editor';
+import { ModuleDispatcher } from './modules/ModuleDispatcher';
 
 interface TemplatePaperRendererProps {
   layout: TemplateLayout;
@@ -44,14 +45,14 @@ function getDynamicFontSize(text: string, baseSize: number, maxLength: number = 
   return `${baseSize * scaleFactor}px`;
 }
 
-function ReadOnlyRegion({ 
-  region, title, body, meta, 
+function ReadOnlyRegion({
+  region, title, body, meta,
   titleSize, titleWeight, titleLetterSpacing, titleLineHeight,
   bodySize, bodyWeight, bodyLetterSpacing, bodyLineHeight,
   metaSize, metaWeight, metaLetterSpacing, metaLineHeight,
   gap, titleColor, bodyColor, metaColor
-}: { 
-  region: TemplateRegion; 
+}: {
+  region: TemplateRegion;
   title?: string; body?: string; meta?: string;
   titleSize?: number; titleWeight?: string; titleLetterSpacing?: number; titleLineHeight?: number;
   bodySize?: number; bodyWeight?: string; bodyLetterSpacing?: number; bodyLineHeight?: number;
@@ -83,9 +84,9 @@ function ReadOnlyRegion({
 
     return (
       <div className="h-full overflow-hidden p-3 flex flex-col">
-        <div 
+        <div
           className={cn("flex items-center gap-2 uppercase tracking-widest text-slate-700 flex-shrink-0", getFocusStyle('title'))}
-          style={{ 
+          style={{
             fontSize: titleSize || 10,
             fontWeight: titleWeight || 'black',
             letterSpacing: titleLetterSpacing !== undefined ? `${titleLetterSpacing}px` : undefined,
@@ -97,20 +98,20 @@ function ReadOnlyRegion({
           <RegionIcon region={region} />
           {title || region.label}
         </div>
-        <div 
+        <div
           className="grid grid-cols-1 overflow-y-auto pr-1 custom-scrollbar"
-          style={{ gap: gap !== undefined ? `${gap/2}px` : '10px' }}
+          style={{ gap: gap !== undefined ? `${gap / 2}px` : '10px' }}
         >
           {displaySymbols.length > 0 ? (
             displaySymbols.map((symbol) => (
               <div key={symbol.id} className="flex items-center gap-3 group/legend-item">
-                 <div 
+                <div
                   className="h-6 w-6 rounded-lg flex-shrink-0 flex items-center justify-center border border-black/10 shadow-[inset_0_1px_2px_rgba(255,255,255,0.4),0_2px_4px_rgba(0,0,0,0.05)] transition-all group-hover/legend-item:scale-110 group-hover/legend-item:shadow-md"
                   style={{ backgroundColor: symbol.color }}
                 >
                   <div className="w-2.5 h-2.5 bg-white/40 backdrop-blur-[1px] rounded-[3px] rotate-45 border border-white/20 shadow-sm" />
                 </div>
-                <span 
+                <span
                   className="font-black text-slate-800 truncate uppercase tracking-tight"
                   style={{ fontSize: getDynamicFontSize(symbol.name, 9.5, 24) }}
                 >
@@ -134,23 +135,23 @@ function ReadOnlyRegion({
     const isEmergency = region.type === 'emergency';
     const isFireInstruction = region.id?.toLowerCase().includes('fire');
     const accentColor = region.tone === 'red' || isFireInstruction ? 'rose' : region.tone === 'green' ? 'emerald' : 'slate';
-    
+
     // Parse body into structured items
     const lines = (body || 'Talimatlar buraya gelecek...').split('\n');
     const validLineCount = lines.filter(l => l.trim() !== '').length || 1;
     const computedBaseSize = bodySize || Math.max(5.5, Math.min(8.5, 95 / validLineCount));
-    
+
     const renderLine = (line: string, i: number) => {
       const trimmed = line.trim();
       if (trimmed === '') return <div key={i} className="h-1.5" />;
-      
+
       // Numbered items (e.g., "1. Something")
       const numberedMatch = trimmed.match(/^(\d+)\.\s*(.+)/);
       if (numberedMatch) {
         const [, num, text] = numberedMatch;
         return (
           <div key={i} className="flex items-start gap-2 group/item">
-            <div 
+            <div
               className={cn(
                 "flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-white mt-[1px] shadow-sm",
                 accentColor === 'rose' ? "bg-rose-500" : accentColor === 'emerald' ? "bg-emerald-500" : "bg-slate-600"
@@ -159,10 +160,10 @@ function ReadOnlyRegion({
             >
               {num}
             </div>
-            <span 
-              className="text-slate-800 leading-snug flex-1"
-              style={{ 
-                fontSize: computedBaseSize, 
+            <span
+              className={cn("leading-snug flex-1", (region.tone === 'red' || region.tone === 'green' || region.tone === 'blue') ? 'text-white' : 'text-slate-800')}
+              style={{
+                fontSize: computedBaseSize,
                 fontWeight: bodyWeight || 600,
                 letterSpacing: bodyLetterSpacing !== undefined ? `${bodyLetterSpacing}px` : '-0.01em',
                 color: bodyColor || undefined,
@@ -173,18 +174,18 @@ function ReadOnlyRegion({
           </div>
         );
       }
-      
+
       // Sub-items with indent (e.g., "   Ç — something")
       if (line.startsWith('   ') || line.startsWith('\t')) {
         return (
           <div key={i} className="ml-6 flex items-start gap-1.5">
-            <span 
+            <span
               className={cn(
                 "text-slate-600 leading-snug",
                 accentColor === 'rose' ? "text-rose-700" : accentColor === 'emerald' ? "text-emerald-700" : "text-slate-600"
               )}
-              style={{ 
-                fontSize: computedBaseSize - 0.5, 
+              style={{
+                fontSize: computedBaseSize - 0.5,
                 fontWeight: 700,
                 color: bodyColor || undefined,
               }}
@@ -194,7 +195,7 @@ function ReadOnlyRegion({
           </div>
         );
       }
-      
+
       // Bullet items (e.g., "• Something" or "— Something")
       const bulletMatch = trimmed.match(/^[•\-—►]\s*(.+)/);
       if (bulletMatch) {
@@ -204,10 +205,10 @@ function ReadOnlyRegion({
               "mt-[2px] text-[6px]",
               accentColor === 'rose' ? "text-rose-400" : accentColor === 'emerald' ? "text-emerald-400" : "text-slate-400"
             )}>●</span>
-            <span 
-              className="text-slate-700 leading-snug flex-1"
-              style={{ 
-                fontSize: computedBaseSize - 0.5, 
+            <span
+              className={cn("leading-snug flex-1", (region.tone === 'red' || region.tone === 'green' || region.tone === 'blue') ? 'text-white' : 'text-slate-700')}
+              style={{
+                fontSize: computedBaseSize - 0.5,
                 fontWeight: bodyWeight || 600,
                 color: bodyColor || undefined,
               }}
@@ -217,14 +218,14 @@ function ReadOnlyRegion({
           </div>
         );
       }
-      
+
       // Phone number lines (e.g., "112 — Something")
       const phoneMatch = trimmed.match(/^(\d{3})\s*[—\-–]\s*(.+)/);
       if (phoneMatch && isEmergency) {
         const [, phoneNum, desc] = phoneMatch;
         return (
           <div key={i} className="flex items-center gap-2 py-[1px]">
-            <span 
+            <span
               className={cn(
                 "font-[1000] text-white rounded px-1 py-[1px] shadow-sm",
                 phoneNum === '112' ? "bg-rose-600" : phoneNum === '110' ? "bg-orange-500" : "bg-slate-600"
@@ -233,10 +234,10 @@ function ReadOnlyRegion({
             >
               {phoneNum}
             </span>
-            <span 
-              className="text-slate-700 leading-snug flex-1"
-              style={{ 
-                fontSize: computedBaseSize - 0.5, 
+            <span
+              className={cn("leading-snug flex-1", (region.tone === 'red' || region.tone === 'green' || region.tone === 'blue') ? 'text-white' : 'text-slate-700')}
+              style={{
+                fontSize: computedBaseSize - 0.5,
                 fontWeight: 700,
                 color: bodyColor || undefined,
               }}
@@ -246,14 +247,15 @@ function ReadOnlyRegion({
           </div>
         );
       }
-      
+
       // Section headers (e.g., "Aramada bildirin:")
       if (trimmed.endsWith(':')) {
         return (
           <div key={i} className="mt-1">
-            <span 
+            <span
               className={cn(
                 "uppercase tracking-wider font-[900]",
+                (region.tone === 'red' || region.tone === 'green' || region.tone === 'blue') ? "text-white/90" :
                 accentColor === 'rose' ? "text-rose-600" : accentColor === 'emerald' ? "text-emerald-600" : "text-slate-600"
               )}
               style={{ fontSize: 7 }}
@@ -263,14 +265,14 @@ function ReadOnlyRegion({
           </div>
         );
       }
-      
+
       // Regular text
       return (
-        <p 
-          key={i} 
-          className="text-slate-700 leading-snug"
-          style={{ 
-            fontSize: computedBaseSize, 
+        <p
+          key={i}
+          className={cn("leading-snug", (region.tone === 'red' || region.tone === 'green' || region.tone === 'blue') ? 'text-white' : 'text-slate-700')}
+          style={{
+            fontSize: computedBaseSize,
             fontWeight: bodyWeight || 600,
             color: bodyColor || undefined,
           }}
@@ -281,19 +283,20 @@ function ReadOnlyRegion({
     };
 
     return (
-      <div className="flex h-full w-full flex-col overflow-hidden bg-white shadow-inner">
+      <div className="flex h-full w-full flex-col overflow-hidden shadow-inner bg-transparent">
         {/* Title Bar */}
         <div className={cn(
           "flex shrink-0 items-center justify-between border-b px-3 py-1.5",
-          region.tone === 'green' ? "bg-emerald-600 border-emerald-700/30" :
-          region.tone === 'red' ? "bg-rose-600 border-rose-700/30" :
+          region.tone === 'green' ? "bg-white/10 border-white/20" :
+          region.tone === 'red' ? "bg-white/10 border-white/20" :
+          region.tone === 'blue' ? "bg-white/10 border-white/20" :
           "bg-slate-800 border-slate-900/30"
         )}>
           <div className={cn("flex items-center gap-2", getFocusStyle('title'))}>
             <RegionIcon region={region} />
-            <span 
+            <span
               className="uppercase tracking-[0.2em] text-white/90"
-              style={{ 
+              style={{
                 fontSize: titleSize || 9,
                 fontWeight: titleWeight || 'black',
                 letterSpacing: titleLetterSpacing !== undefined ? `${titleLetterSpacing}px` : '0.15em',
@@ -305,11 +308,11 @@ function ReadOnlyRegion({
             </span>
           </div>
         </div>
-        
+
         {/* Content Body */}
-        <div 
+        <div
           className="flex-1 px-2.5 pt-2 pb-6 flex flex-col overflow-hidden"
-          style={{ gap: gap !== undefined ? `${gap/2}px` : '3px' }}
+          style={{ gap: gap !== undefined ? `${gap / 2}px` : '3px' }}
         >
           {lines.map((line, i) => renderLine(line, i))}
         </div>
@@ -317,9 +320,9 @@ function ReadOnlyRegion({
         {/* Bottom accent bar */}
         <div className={cn(
           "h-[3px] w-full shrink-0",
-          accentColor === 'rose' ? "bg-gradient-to-r from-rose-500 via-rose-400 to-rose-500" : 
-          accentColor === 'emerald' ? "bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500" :
-          "bg-gradient-to-r from-slate-400 via-slate-300 to-slate-400"
+          accentColor === 'rose' ? "bg-gradient-to-r from-rose-500 via-rose-400 to-rose-500" :
+            accentColor === 'emerald' ? "bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500" :
+              "bg-gradient-to-r from-slate-400 via-slate-300 to-slate-400"
         )} />
       </div>
     );
@@ -338,14 +341,14 @@ function ReadOnlyRegion({
         )}
 
         <div className="flex-1 flex flex-col items-center justify-center px-12 relative h-full">
-          <div 
+          <div
             className={cn(
-              "text-emerald-950 uppercase tracking-[-0.01em] drop-shadow-sm pt-1 transition-all duration-200",
-              isRegionFocused && "ring-2 ring-blue-500 ring-offset-4 ring-offset-white rounded-md px-2 py-1 bg-blue-50/50 shadow-[0_0_30px_rgba(59,130,246,0.15)]",
+              "text-white uppercase tracking-[-0.01em] drop-shadow-md pt-1 transition-all duration-200",
+              isRegionFocused && "ring-2 ring-blue-500 ring-offset-4 ring-offset-emerald-600 rounded-md px-2 py-1 bg-blue-50/20 shadow-[0_0_30px_rgba(59,130,246,0.3)]",
               getFocusStyle('title')
             )}
-            style={{ 
-              fontSize: titleSize || 32, 
+            style={{
+              fontSize: titleSize || 32,
               fontWeight: titleWeight || 'black',
               letterSpacing: titleLetterSpacing !== undefined ? `${titleLetterSpacing}px` : undefined,
               lineHeight: titleLineHeight || 1.2,
@@ -360,16 +363,16 @@ function ReadOnlyRegion({
               </span>
             )}
           </div>
-          
+
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <span 
+              <span
                 className={cn(
-                  "text-emerald-800 uppercase whitespace-nowrap opacity-95 transition-all duration-200",
-                  focusedRegionId === region.id && advancedType === 'body' && "ring-2 ring-blue-400 ring-offset-2 ring-offset-white rounded px-1 bg-blue-50/30",
+                  "text-white/90 uppercase whitespace-nowrap transition-all duration-200",
+                  focusedRegionId === region.id && advancedType === 'body' && "ring-2 ring-blue-400 ring-offset-2 ring-offset-emerald-600 rounded px-1 bg-blue-50/20",
                   getFocusStyle('body')
                 )}
-                style={{ 
+                style={{
                   fontSize: bodySize || 14,
                   fontWeight: bodyWeight || 'black',
                   letterSpacing: bodyLetterSpacing !== undefined ? `${bodyLetterSpacing}px` : '0.25em',
@@ -379,16 +382,16 @@ function ReadOnlyRegion({
               >
                 {body !== undefined ? body : (projectMetadata.name || 'İSİMSİZ PROJE')}
               </span>
-              {( (body !== undefined ? body : projectMetadata.name) && (meta !== undefined ? meta : projectMetadata.floor) ) && (
-                <span className="text-emerald-300/50 mx-1">|</span>
+              {((body !== undefined ? body : projectMetadata.name) && (meta !== undefined ? meta : projectMetadata.floor)) && (
+                <span className="text-white/50 mx-1">|</span>
               )}
-              <span 
+              <span
                 className={cn(
-                  "text-emerald-800 uppercase whitespace-nowrap opacity-95 transition-all duration-200",
-                  focusedRegionId === region.id && advancedType === 'meta' && "ring-2 ring-blue-400 ring-offset-2 ring-offset-white rounded px-1 bg-blue-50/30",
+                  "text-white/90 uppercase whitespace-nowrap transition-all duration-200",
+                  focusedRegionId === region.id && advancedType === 'meta' && "ring-2 ring-blue-400 ring-offset-2 ring-offset-emerald-600 rounded px-1 bg-blue-50/20",
                   getFocusStyle('meta')
                 )}
-                style={{ 
+                style={{
                   fontSize: metaSize || bodySize || 14,
                   fontWeight: metaWeight || bodyWeight || 'black',
                   letterSpacing: metaLetterSpacing !== undefined ? `${metaLetterSpacing}px` : '0.25em',
@@ -414,9 +417,9 @@ function ReadOnlyRegion({
           <div className="p-1 rounded bg-white/10">
             <ClipboardList className="w-3 h-3" />
           </div>
-          <span 
+          <span
             className={cn("uppercase tracking-[0.25em]", getFocusStyle('title'))}
-            style={{ 
+            style={{
               fontSize: titleSize || 10,
               fontWeight: titleWeight || 'black',
               letterSpacing: titleLetterSpacing !== undefined ? `${titleLetterSpacing}px` : undefined,
@@ -429,20 +432,20 @@ function ReadOnlyRegion({
           <div className="h-[1px] flex-1 bg-white/10" />
         </div>
 
-        <div 
+        <div
           className="flex-1 grid auto-cols-fr grid-flow-col divide-x divide-slate-200"
-          style={{ gap: gap !== undefined ? `${gap/4}px` : '0px' }}
+          style={{ gap: gap !== undefined ? `${gap / 4}px` : '0px' }}
         >
           {(body || '').split('\n').filter(l => l.trim() !== '').map((line, i, arr) => {
             const parts = line.split(/:(.*)/);
             const isLast = i === arr.length - 1;
-            
+
             if (parts.length >= 2) {
               return (
-                <div key={i} className={cn("flex flex-col justify-center px-3 py-2", isLast && "bg-slate-50/50")}>
-                  <span className={cn("text-slate-400 uppercase tracking-widest", getFocusStyle('meta'))} style={{ fontSize: metaSize || 7, fontWeight: metaWeight || 'black', letterSpacing: metaLetterSpacing !== undefined ? `${metaLetterSpacing}px` : undefined, color: metaColor || undefined }}>{parts[0].trim()}</span>
+                <div key={i} className={cn("flex flex-col justify-center px-3 py-2", isLast && ((region.tone === 'red' || region.tone === 'green' || region.tone === 'blue') ? "bg-white/10" : "bg-slate-50/50"))}>
+                  <span className={cn("uppercase tracking-widest", (region.tone === 'red' || region.tone === 'green' || region.tone === 'blue') ? "text-white/70" : "text-slate-400", getFocusStyle('meta'))} style={{ fontSize: metaSize || 7, fontWeight: metaWeight || 'black', letterSpacing: metaLetterSpacing !== undefined ? `${metaLetterSpacing}px` : undefined, color: metaColor || undefined }}>{parts[0].trim()}</span>
                   <div className="flex items-baseline gap-1 mt-[1px]">
-                    <span className={cn("text-slate-800 uppercase truncate", getFocusStyle('body'))} style={{ fontSize: isLast ? (bodySize ? bodySize + 2 : 12) : (bodySize || 9), fontWeight: bodyWeight || 'black', letterSpacing: bodyLetterSpacing !== undefined ? `${bodyLetterSpacing}px` : undefined, color: bodyColor || undefined }}>{parts[1].trim() || '—'}</span>
+                    <span className={cn("uppercase truncate", (region.tone === 'red' || region.tone === 'green' || region.tone === 'blue') ? "text-white" : "text-slate-800", getFocusStyle('body'))} style={{ fontSize: isLast ? (bodySize ? bodySize + 2 : 12) : (bodySize || 9), fontWeight: bodyWeight || 'black', letterSpacing: bodyLetterSpacing !== undefined ? `${bodyLetterSpacing}px` : undefined, color: bodyColor || undefined }}>{parts[1].trim() || '—'}</span>
                     {isLast && <span className="text-[7px] font-black text-emerald-600 uppercase tracking-tighter ml-1">Current</span>}
                   </div>
                 </div>
@@ -450,18 +453,18 @@ function ReadOnlyRegion({
             }
             return (
               <div key={i} className="flex flex-col justify-center px-3 py-2">
-                <span className={cn("text-slate-800 uppercase truncate", getFocusStyle('body'))} style={{ fontSize: bodySize || 9, fontWeight: bodyWeight || 'black', color: bodyColor || undefined }}>{line}</span>
+                <span className={cn("uppercase truncate", (region.tone === 'red' || region.tone === 'green' || region.tone === 'blue') ? "text-white" : "text-slate-800", getFocusStyle('body'))} style={{ fontSize: bodySize || 9, fontWeight: bodyWeight || 'black', color: bodyColor || undefined }}>{line}</span>
               </div>
             );
           })}
         </div>
-        
+
         <div className="px-4 py-1.5 bg-slate-100/50 border-t border-slate-100 flex justify-between items-center shrink-0">
-           <span className="text-[7px] font-bold text-slate-400 uppercase tracking-tighter italic">© PLANIFY TECH SOLUTIONS - TÜM HAKLARI SAKLIDIR / ALL RIGHTS RESERVED</span>
-           <div className="flex gap-4">
-             <span className="text-[7px] font-black text-slate-600 uppercase">ISO 23601 COMPLIANT</span>
-             <span className="text-[7px] font-black text-slate-600 uppercase">OFFICIAL DOCUMENT</span>
-           </div>
+          <span className="text-[7px] font-bold text-slate-400 uppercase tracking-tighter italic">© PLANIFY TECH SOLUTIONS - TÜM HAKLARI SAKLIDIR / ALL RIGHTS RESERVED</span>
+          <div className="flex gap-4">
+            <span className="text-[7px] font-black text-slate-600 uppercase">ISO 23601 COMPLIANT</span>
+            <span className="text-[7px] font-black text-slate-600 uppercase">OFFICIAL DOCUMENT</span>
+          </div>
         </div>
       </div>
     );
@@ -469,9 +472,9 @@ function ReadOnlyRegion({
 
   return (
     <div className="h-full overflow-hidden p-3 flex flex-col">
-      <div 
+      <div
         className={cn("flex items-center gap-2 uppercase tracking-widest text-slate-800 flex-shrink-0", getFocusStyle('title'))}
-        style={{ 
+        style={{
           fontSize: titleSize || 10,
           fontWeight: titleWeight || 'black',
           letterSpacing: titleLetterSpacing !== undefined ? `${titleLetterSpacing}px` : undefined,
@@ -482,14 +485,14 @@ function ReadOnlyRegion({
         <RegionIcon region={region} />
         {title || region.label}
       </div>
-      <div 
+      <div
         className={cn("text-slate-700 overflow-y-auto custom-scrollbar flex flex-col", getFocusStyle('body'))}
-        style={{ 
+        style={{
           fontSize: bodySize || parseInt(getDynamicFontSize(body || '', 10, 150)),
           fontWeight: bodyWeight || 'semibold',
           letterSpacing: bodyLetterSpacing !== undefined ? `${bodyLetterSpacing}px` : undefined,
           lineHeight: bodyLineHeight || 1.5,
-          gap: gap !== undefined ? `${gap/4}px` : '4px'
+          gap: gap !== undefined ? `${gap / 4}px` : '4px'
         }}
       >
         {(body || '').split('\n').map((p, i) => (
@@ -497,9 +500,9 @@ function ReadOnlyRegion({
         ))}
       </div>
       {meta && (
-        <div 
+        <div
           className={cn("uppercase tracking-widest text-slate-500 flex-shrink-0", getFocusStyle('meta'))}
-          style={{ 
+          style={{
             fontSize: metaSize || parseInt(getDynamicFontSize(meta, 9, 50)),
             fontWeight: metaWeight || 'bold',
             letterSpacing: metaLetterSpacing !== undefined ? `${metaLetterSpacing}px` : undefined,
@@ -598,27 +601,10 @@ export function TemplatePaperRenderer({
                 </div>
               ) : (
                 <div className="relative h-full w-full group/region">
-                  <ReadOnlyRegion 
-                    region={region} 
-                    title={content.title} 
-                    body={content.body} 
-                    meta={content.meta} 
-                    titleSize={content.titleSize}
-                    titleWeight={content.titleWeight}
-                    titleLetterSpacing={content.titleLetterSpacing}
-                    titleLineHeight={content.titleLineHeight}
-                    bodySize={content.bodySize}
-                    bodyWeight={content.bodyWeight}
-                    bodyLetterSpacing={content.bodyLetterSpacing}
-                    bodyLineHeight={content.bodyLineHeight}
-                    metaSize={content.metaSize}
-                    metaWeight={content.metaWeight}
-                    metaLetterSpacing={content.metaLetterSpacing}
-                    metaLineHeight={content.metaLineHeight}
-                    gap={content.gap}
-                    titleColor={content.titleColor}
-                    bodyColor={content.bodyColor}
-                    metaColor={content.metaColor}
+                  <ModuleDispatcher
+                    region={region}
+                    content={content}
+                    accent={accent}
                   />
                 </div>
               )}
