@@ -518,42 +518,45 @@ const m = (
 function buildLandscapeModules(style: LayoutStyle): TemplateModuleInstance[] {
   if (style === 'auditMinimal') {
     return [
-      m('Header', 3, 3, 94, 10, 20),
-      m('EmergencyCall', 3, 16, 19, 10, 21),
-      m('EvacuationInstructions', 3, 28, 19, 24, 22),
-      m('FireInstructions', 3, 54, 19, 24, 23),
+      m('Logo', 3, 3, 10, 10, 20),
+      m('Header', 14, 3, 83, 10, 21),
+      m('EmergencyCall', 3, 16, 19, 10, 22),
+      m('EvacuationInstructions', 3, 28, 19, 24, 23),
+      m('FireInstructions', 3, 54, 19, 24, 24),
       m('DrawingArea', 25, 16, 57, 62, 10),
-      m('Legend', 84, 16, 13, 28, 24),
-      m('AssemblyMap', 84, 47, 13, 31, 25),
-      m('ApprovalRevision', 3, 82, 94, 15, 26),
+      m('Legend', 84, 16, 13, 28, 25),
+      m('AssemblyMap', 84, 47, 13, 31, 26),
+      m('ApprovalRevision', 3, 82, 94, 15, 27),
     ];
   }
 
   if (style === 'corporateIso') {
     return [
-      m('Header', 3, 3, 94, 12, 20),
+      m('Logo', 3, 3, 12, 12, 20),
+      m('Header', 16, 3, 81, 12, 21),
       m('DrawingArea', 4, 18, 65, 58, 10),
-      m('Legend', 72, 18, 25, 17, 21),
-      m('EmergencyCall', 72, 37, 25, 10, 22),
-      m('EvacuationInstructions', 72, 49, 25, 27, 23),
-      m('QrDocumentInfo', 4, 79, 16, 17, 24),
-      m('EmergencyTeams', 22, 79, 35, 17, 25),
-      m('ApprovalRevision', 59, 79, 38, 17, 26),
+      m('Legend', 72, 18, 25, 17, 22),
+      m('EmergencyCall', 72, 37, 25, 10, 23),
+      m('EvacuationInstructions', 72, 49, 25, 27, 24),
+      m('QrDocumentInfo', 4, 79, 16, 17, 25),
+      m('EmergencyTeams', 22, 79, 35, 17, 26),
+      m('ApprovalRevision', 59, 79, 38, 17, 27),
     ];
   }
 
   if (style === 'industrialPlant') {
     return [
-      m('Header', 2, 2, 96, 9, 20),
-      m('EmergencyCall', 2, 13, 18, 10, 21),
-      m('HazardUtilities', 2, 25, 18, 19, 22),
-      m('FireEquipmentInventory', 2, 46, 18, 16, 23),
-      m('FireInstructions', 2, 64, 18, 16, 24),
+      m('Logo', 2, 2, 10, 9, 20),
+      m('Header', 13, 2, 85, 9, 21),
+      m('EmergencyCall', 2, 13, 18, 10, 22),
+      m('HazardUtilities', 2, 25, 18, 19, 23),
+      m('FireEquipmentInventory', 2, 46, 18, 16, 24),
+      m('FireInstructions', 2, 64, 18, 16, 25),
       m('DrawingArea', 22, 13, 50, 67, 10),
-      m('Legend', 74, 13, 24, 18, 25),
-      m('AssemblyMap', 74, 33, 24, 18, 26),
-      m('EmergencyTeams', 74, 53, 24, 13, 27),
-      m('ApprovalRevision', 22, 83, 76, 14, 28),
+      m('Legend', 74, 13, 24, 18, 26),
+      m('AssemblyMap', 74, 33, 24, 18, 27),
+      m('EmergencyTeams', 74, 53, 24, 13, 28),
+      m('ApprovalRevision', 22, 83, 76, 14, 29),
     ];
   }
 
@@ -586,15 +589,16 @@ function buildLandscapeModules(style: LayoutStyle): TemplateModuleInstance[] {
 
   if (style === 'healthAccessibility') {
     return [
-      m('Header', 3, 3, 94, 10, 20),
-      m('EmergencyCall', 3, 16, 19, 10, 21),
-      m('AccessibilityRefuge', 3, 28, 19, 24, 22),
-      m('EmergencyTeams', 3, 54, 19, 24, 23),
+      m('Logo', 3, 3, 10, 10, 20),
+      m('Header', 14, 3, 83, 10, 21),
+      m('EmergencyCall', 3, 16, 19, 10, 22),
+      m('AccessibilityRefuge', 3, 28, 19, 24, 23),
+      m('EmergencyTeams', 3, 54, 19, 24, 24),
       m('DrawingArea', 25, 16, 55, 62, 10),
-      m('Legend', 82, 16, 15, 22, 24),
-      m('AssemblyMap', 82, 40, 15, 21, 25),
-      m('EvacuationInstructions', 82, 63, 15, 15, 26),
-      m('ApprovalRevision', 3, 82, 94, 15, 27),
+      m('Legend', 82, 16, 15, 22, 25),
+      m('AssemblyMap', 82, 40, 15, 21, 26),
+      m('EvacuationInstructions', 82, 63, 15, 15, 27),
+      m('ApprovalRevision', 3, 82, 94, 15, 28),
     ];
   }
 
@@ -630,41 +634,44 @@ function buildLandscapeModules(style: LayoutStyle): TemplateModuleInstance[] {
 function buildPortraitModules(style: LayoutStyle): TemplateModuleInstance[] {
   if (style === 'premiumAudit' || style === 'industrialPlant' || style === 'constructionSite') {
     return [
-      m('Header', 4, 2, 92, 8, 20),
-      m('EmergencyCall', 4, 12, 26, 8, 21),
-      m('Legend', 32, 12, 30, 8, 22),
-      m('QrDocumentInfo', 64, 12, 32, 8, 23),
+      m('Logo', 4, 2, 12, 8, 20),
+      m('Header', 17, 2, 79, 8, 21),
+      m('EmergencyCall', 4, 12, 26, 8, 22),
+      m('Legend', 32, 12, 30, 8, 23),
+      m('QrDocumentInfo', 64, 12, 32, 8, 24),
       m('DrawingArea', 4, 22, 92, 45, 10),
-      m('HazardUtilities', 4, 69, 30, 12, 24),
-      m('FireEquipmentInventory', 36, 69, 28, 12, 25),
-      m('EmergencyTeams', 66, 69, 30, 12, 26),
-      m('EvacuationInstructions', 4, 83, 44, 10, 27),
-      m('ApprovalRevision', 50, 83, 46, 10, 28),
+      m('HazardUtilities', 4, 69, 30, 12, 25),
+      m('FireEquipmentInventory', 36, 69, 28, 12, 26),
+      m('EmergencyTeams', 66, 69, 30, 12, 27),
+      m('EvacuationInstructions', 4, 83, 44, 10, 28),
+      m('ApprovalRevision', 50, 83, 46, 10, 29),
     ];
   }
 
   if (style === 'healthAccessibility' || style === 'publicSchool') {
     return [
-      m('Header', 4, 2, 92, 8, 20),
-      m('EmergencyCall', 4, 12, 28, 8, 21),
-      m('AccessibilityRefuge', 34, 12, 30, 8, 22),
-      m('Legend', 66, 12, 30, 8, 23),
+      m('Logo', 4, 2, 12, 8, 20),
+      m('Header', 17, 2, 79, 8, 21),
+      m('EmergencyCall', 4, 12, 28, 8, 22),
+      m('AccessibilityRefuge', 34, 12, 30, 8, 23),
+      m('Legend', 66, 12, 30, 8, 24),
       m('DrawingArea', 4, 22, 92, 47, 10),
-      m('EvacuationInstructions', 4, 71, 44, 12, 24),
-      m('AssemblyMap', 50, 71, 46, 12, 25),
-      m('ApprovalRevision', 4, 85, 92, 10, 26),
+      m('EvacuationInstructions', 4, 71, 44, 12, 25),
+      m('AssemblyMap', 50, 71, 46, 12, 26),
+      m('ApprovalRevision', 4, 85, 92, 10, 27),
     ];
   }
 
   return [
-    m('Header', 4, 2, 92, 8, 20),
-    m('EmergencyCall', 4, 12, 28, 8, 21),
-    m('Legend', 34, 12, 30, 8, 22),
-    m('AssemblyMap', 66, 12, 30, 8, 23),
+    m('Logo', 4, 2, 12, 8, 20),
+    m('Header', 17, 2, 79, 8, 21),
+    m('EmergencyCall', 4, 12, 28, 8, 22),
+    m('Legend', 34, 12, 30, 8, 23),
+    m('AssemblyMap', 66, 12, 30, 8, 24),
     m('DrawingArea', 4, 22, 92, 48, 10),
-    m('EvacuationInstructions', 4, 72, 44, 11, 24),
-    m('FireInstructions', 50, 72, 46, 11, 25),
-    m('ApprovalRevision', 4, 85, 92, 10, 26),
+    m('EvacuationInstructions', 4, 72, 44, 11, 25),
+    m('FireInstructions', 50, 72, 46, 11, 26),
+    m('ApprovalRevision', 4, 85, 92, 10, 27),
   ];
 }
 
