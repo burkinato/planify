@@ -788,8 +788,8 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
       isInnerPanningRef.current = false;
       const stage = e?.target?.getStage();
       if (stage) {
-        stage.container().style.cursor = isSpacePressedRef.current ? 'grab' : 'default';
-        if (infiniteHostRef.current) infiniteHostRef.current.style.cursor = isSpacePressedRef.current ? 'grab' : 'default';
+        stage.container().style.cursor = isSpacePressedRef.current ? 'grab' : (tool === 'select' ? 'default' : 'crosshair');
+        if (infiniteHostRef.current) infiniteHostRef.current.style.cursor = isSpacePressedRef.current ? 'grab' : (tool === 'select' ? 'default' : 'crosshair');
       }
       return;
     }
@@ -949,6 +949,8 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
       onClick: (e: CanvasStageEvent) => selectOrErase(el.id, isLocked, e),
       onDragStart: () => !isLocked && setSelectedIds([el.id]),
       onDragEnd: (e: CanvasStageEvent) => updateElement(el.id, { x: e.target.x(), y: e.target.y() }),
+      onMouseEnter: (e: CanvasStageEvent) => { if (canInteract) { const s = e.target.getStage(); if (s) s.container().style.cursor = 'move'; } },
+      onMouseLeave: (e: CanvasStageEvent) => { const s = e.target.getStage(); if (s) s.container().style.cursor = isSpacePressedRef.current ? 'grab' : (tool === 'select' ? 'default' : 'crosshair'); },
     };
 
     /* ─── STRAIGHT ──────────────────────────────────────────── */
@@ -1148,6 +1150,8 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
         onClick={(e) => selectOrErase(el.id, isLocked, e)}
         onDragStart={(e: CanvasStageEvent) => { if (!isLocked && !selectedIds.includes(el.id)) { setSelectedIds(e.evt.shiftKey ? [...selectedIds, el.id] : [el.id]); } }}
         onDragEnd={(e) => updateElement(el.id, { x: e.target.x(), y: e.target.y() })}
+        onMouseEnter={(e) => { if (canInteract) { const s = e.target.getStage(); if (s) s.container().style.cursor = 'move'; } }}
+        onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = isSpacePressedRef.current ? 'grab' : (tool === 'select' ? 'default' : 'crosshair'); }}
       >
         {/* Elevator box */}
         <Rect x={-w / 2} y={-h / 2} width={w} height={h} fill="white" stroke={isSelected ? themeConfig.accent : '#1e293b'} strokeWidth={2} />
@@ -1174,6 +1178,8 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
           const updates = calculateSnapToWall(el, e.target.x(), e.target.y());
           updateElement(el.id, updates);
         }}
+        onMouseEnter={(e) => { if (canInteract) { const s = e.target.getStage(); if (s) s.container().style.cursor = 'move'; } }}
+        onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = isSpacePressedRef.current ? 'grab' : (tool === 'select' ? 'default' : 'crosshair'); }}
       >
         {/* White mask behind column to trim the wall */}
         {el.columnShape === 'circle' ? (
@@ -1216,6 +1222,8 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
           const updates = calculateSnapToWall(el, e.target.x(), e.target.y());
           updateElement(el.id, updates);
         }}
+        onMouseEnter={(e) => { if (canInteract) { const s = e.target.getStage(); if (s) s.container().style.cursor = 'move'; } }}
+        onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = isSpacePressedRef.current ? 'grab' : (tool === 'select' ? 'default' : 'crosshair'); }}
       >
         {/* White mask behind door to trim wall */}
         <Line points={pts} stroke="white" strokeWidth={16} lineCap="square" />
@@ -1266,6 +1274,8 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
           const updates = calculateSnapToWall(el, e.target.x(), e.target.y());
           updateElement(el.id, updates);
         }}
+        onMouseEnter={(e) => { if (canInteract) { const s = e.target.getStage(); if (s) s.container().style.cursor = 'move'; } }}
+        onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = isSpacePressedRef.current ? 'grab' : (tool === 'select' ? 'default' : 'crosshair'); }}
       >
         {/* White mask behind window to trim wall */}
         <Line points={pts} stroke="white" strokeWidth={16} lineCap="square" />
@@ -1648,7 +1658,10 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
       if (el.type === 'rect') {
         return (
           <Group key={el.id} x={el.x} y={el.y} rotation={el.rotation || 0}>
-            <Rect width={el.width} height={el.height} x={-el.width! / 2} y={-el.height! / 2} fill={el.color || 'transparent'} opacity={el.color ? 0.2 : 1} stroke={isSelected ? themeConfig.accent : (el.color || themeConfig.text)} strokeWidth={2} draggable={canInteract} onClick={(e) => selectOrErase(el.id, isLocked, e)} onDragStart={(e: CanvasStageEvent) => { if (!isLocked && !selectedIds.includes(el.id)) { setSelectedIds(e.evt.shiftKey ? [...selectedIds, el.id] : [el.id]); } }} onDragEnd={(e) => updateElement(el.id, { x: e.target.x(), y: e.target.y() })} />
+            <Rect width={el.width} height={el.height} x={-el.width! / 2} y={-el.height! / 2} fill={el.color || 'transparent'} opacity={el.color ? 0.2 : 1} stroke={isSelected ? themeConfig.accent : (el.color || themeConfig.text)} strokeWidth={2} draggable={canInteract} onClick={(e) => selectOrErase(el.id, isLocked, e)} onDragStart={(e: CanvasStageEvent) => { if (!isLocked && !selectedIds.includes(el.id)) { setSelectedIds(e.evt.shiftKey ? [...selectedIds, el.id] : [el.id]); } }} onDragEnd={(e) => updateElement(el.id, { x: e.target.x(), y: e.target.y() })}
+              onMouseEnter={(e: CanvasStageEvent) => { if (canInteract) { const s = e.target.getStage(); if (s) s.container().style.cursor = 'move'; } }}
+              onMouseLeave={(e: CanvasStageEvent) => { const s = e.target.getStage(); if (s) s.container().style.cursor = isSpacePressedRef.current ? 'grab' : (tool === 'select' ? 'default' : 'crosshair'); }}
+            />
           </Group>
         );
       }
@@ -1679,6 +1692,8 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
             onDragEnd={(e) => {
               updateElement(el.id, { x: e.target.x(), y: e.target.y() });
             }}
+            onMouseEnter={(e) => { if (canInteract) { const s = e.target.getStage(); if (s) s.container().style.cursor = 'move'; } }}
+            onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = isSpacePressedRef.current ? 'grab' : (tool === 'select' ? 'default' : 'crosshair'); }}
           >
             <Arrow
               points={pts}
@@ -1702,7 +1717,10 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
         const isoDataUrl = ISO_SYMBOLS[symId] || ISO_SYMBOLS[symId.toUpperCase()] || null;
         const sWidth = el.width || 36;
         return (
-          <Group key={el.id} x={el.x} y={el.y} rotation={el.rotation || 0} draggable={canInteract} onClick={(e) => selectOrErase(el.id, isLocked, e)} onDragEnd={(e) => updateElement(el.id, { x: e.target.x(), y: e.target.y() })}>
+          <Group key={el.id} x={el.x} y={el.y} rotation={el.rotation || 0} draggable={canInteract} onClick={(e) => selectOrErase(el.id, isLocked, e)} onDragEnd={(e) => updateElement(el.id, { x: e.target.x(), y: e.target.y() })}
+            onMouseEnter={(e) => { if (canInteract) { const s = e.target.getStage(); if (s) s.container().style.cursor = 'move'; } }}
+            onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = isSpacePressedRef.current ? 'grab' : (tool === 'select' ? 'default' : 'crosshair'); }}
+          >
             {customSym ? (
               <CustomSymbolImage src={customSym.dataUrl} size={sWidth} isSelected={isSelected} />
             ) : isoDataUrl ? (
@@ -1731,6 +1749,8 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
             draggable={canInteract}
             onClick={(e) => selectOrErase(el.id, isLocked, e)}
             onDragEnd={(e) => updateElement(el.id, { x: e.target.x(), y: e.target.y() })}
+            onMouseEnter={(e) => { if (canInteract) { const s = e.target.getStage(); if (s) s.container().style.cursor = 'move'; } }}
+            onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = isSpacePressedRef.current ? 'grab' : (tool === 'select' ? 'default' : 'crosshair'); }}
           />
         );
       }
@@ -2070,7 +2090,11 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
                                 e.target.position({ x: 0, y: 0 });
                                 updateElementsBatch(buildWallMoveUpdates(el, wallElements, dx, dy));
                               }}
+                              onMouseEnter={(e) => { if (tool === 'select' && !isSpacePressed) { const s = e.target.getStage(); if (s) s.container().style.cursor = 'move'; } }}
+                              onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = isSpacePressedRef.current ? 'grab' : (tool === 'select' ? 'default' : 'crosshair'); }}
                             >
+                              {/* Invisible hit area for better selection */}
+                              <Line points={rpts} stroke="transparent" strokeWidth={(el.thickness || 12) + 6} hitStrokeWidth={(el.thickness || 12) + 12} />
                               {style === 'hatch' && (
                                 <Shape
                                   sceneFunc={(context, shape) => {

@@ -58,11 +58,9 @@ export function ExportModal({
   const [quality, setQuality] = useState<'standard' | 'high' | 'ultra'>('high');
   const [bgMode, setBgMode] = useState<'minimal' | 'current' | 'transparent'>('minimal');
 
-  const { balance, fetchBalance, deductCredits } = useCreditStore();
+  const { balance } = useCreditStore();
 
-  React.useEffect(() => {
-    if (isOpen) fetchBalance();
-  }, [isOpen, fetchBalance]);
+
 
   if (!isOpen) return null;
 
@@ -77,16 +75,11 @@ export function ExportModal({
     setSelectedLayers(next);
   };
 
-  const handleExport = async (spendCredits: boolean = false) => {
-    if (spendCredits) {
-      if (balance < 10) {
-        toast.error('Yetersiz kredi! Filigransız çıktı için hesabınıza kredi yüklemelisiniz.', { duration: 5000 });
-        return;
-      }
-    }
-    
+  const handleExport = async () => {
+    // Yeni hibrit modelde proje başına ödeme yapıldığından,
+    // export her zaman filigransız (Pro) olarak yapılır.
     setIsExporting(true);
-    const exportAsPro = isPro || spendCredits;
+    const exportAsPro = true; // Proje oluşturulurken kredi harcanmıştır
     // Capture inner zoom/pan before the try block so they're accessible in finally
     const { innerZoom: savedInnerZoom, innerPan: savedInnerPan, editorTheme: savedEditorTheme } = useEditorStore.getState();
     try {
@@ -128,7 +121,6 @@ export function ExportModal({
           bgMode === 'transparent' ? 'rgba(0,0,0,0)' : (bgMode === 'current' ? THEME_CONFIGS[savedEditorTheme].bg : '#ffffff'),
           bgMode
         );
-        if (spendCredits) await deductCredits(10, 'export_pdf', 'Filigransız PDF çıktısı alındı');
         await onExportComplete?.('pdf', fileName);
       } else if (selectedFormat === 'png') {
         if (activeTemplateLayout && containerRef.current) {
@@ -157,7 +149,6 @@ export function ExportModal({
           link.download = fileName;
           link.href = dataUrl;
           link.click();
-          if (spendCredits) await deductCredits(10, 'export_png', 'Filigransız PNG çıktısı alındı');
           await onExportComplete?.('png', fileName);
         } else if (!stageRef.current) {
           toast.error('Tuval hazır değil. Lütfen tekrar deneyin.');
@@ -175,7 +166,6 @@ export function ExportModal({
           link.download = fileName;
           link.href = dataURL;
           link.click();
-          if (spendCredits) await deductCredits(10, 'export_png', 'Filigransız PNG çıktısı alındı');
           await onExportComplete?.('png', fileName);
         }
       } else if (selectedFormat === 'svg') {
@@ -195,7 +185,7 @@ export function ExportModal({
         format: selectedFormat,
         quality: quality,
         project_name: projectName || projectMetadata.name,
-        is_pro: isPro || spendCredits
+        is_pro: true
       });
       onClose();
     } catch (error) {
@@ -404,7 +394,7 @@ export function ExportModal({
           <div className="mt-8 space-y-3">
             {isPro ? (
               <button
-                onClick={() => handleExport(false)}
+                onClick={() => handleExport()}
                 disabled={isExporting}
                 className={cn(
                   "w-full py-5 rounded-[20px] text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl",
@@ -427,20 +417,14 @@ export function ExportModal({
               </button>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center justify-between px-2 mb-1">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Krediniz:</span>
-                  <span className={cn("text-[11px] font-black px-2 py-0.5 rounded-full", balance >= 10 ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700")}>
-                    {balance} Kredi
-                  </span>
-                </div>
                 <button
-                  onClick={() => handleExport(true)}
+                  onClick={() => handleExport()}
                   disabled={isExporting}
                   className={cn(
-                    "w-full py-4 rounded-[16px] text-xs font-black uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-2 shadow-lg relative overflow-hidden",
+                    "w-full py-5 rounded-[20px] text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl",
                     isExporting 
                       ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                      : "bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-0.5 active:scale-95"
+                      : "bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-1 active:scale-95"
                   )}
                 >
                   {isExporting ? (
@@ -450,23 +434,10 @@ export function ExportModal({
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-4 h-4" />
-                      FİLİGRANSIZ İNDİR
-                      <span className="absolute right-4 text-[9px] bg-indigo-800 px-2 py-1 rounded-lg">10 Kredi</span>
+                      <FileDown className="w-4 h-4" />
+                      ŞİMDİ İNDİR
                     </>
                   )}
-                </button>
-                <button
-                  onClick={() => handleExport(false)}
-                  disabled={isExporting}
-                  className={cn(
-                    "w-full py-3 rounded-[16px] text-[10px] font-black uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-2 border-2",
-                    isExporting 
-                      ? "border-slate-200 text-slate-300 cursor-not-allowed"
-                      : "border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-600 hover:bg-slate-100 active:scale-95"
-                  )}
-                >
-                  ÜCRETSİZ İNDİR (FİLİGRANLI)
                 </button>
               </div>
             )}

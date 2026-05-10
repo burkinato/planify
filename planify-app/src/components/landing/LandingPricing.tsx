@@ -1,78 +1,81 @@
 'use client';
 
-import { CheckCircle2, Loader2, Sparkles, Zap, Building2 } from 'lucide-react';
+import { CheckCircle2, Sparkles, Crown, Building2, Zap } from 'lucide-react';
 import Link from 'next/link';
 
 const PACKAGES = [
   {
-    name: 'Başlangıç',
-    credits: '50 Kredi',
-    price: 'Ücretsiz',
-    desc: 'Hemen kayıt olun, sistemi test edin. Kredi kartı gerekmez.',
-    icon: Sparkles,
+    name: 'Planify Pro',
+    credits: '1 Proje Hakkı',
+    price: '$5',
+    priceNote: '/ay',
+    desc: 'Hemen başlayın! Aylık abonelikle 1 proje oluşturma hakkı, filigransız çıktı ve tüm özellikler.',
+    icon: Crown,
     features: [
-      '50 Başlangıç Kredisi hediye',
-      'Tüm çizim araçları',
-      'Filigranlı PDF çıktısı (0 kredi)',
-      'Filigransız PDF çıktısı (10 kredi)',
+      '1 Proje oluşturma hakkı dahil',
+      'Filigransız profesyonel PDF çıktısı',
+      'Tüm şablon ve layout erişimi',
+      'ISO 23601 uyumlu denetim çıktıları',
     ],
-    cta: 'Ücretsiz Başla',
-    href: '/register',
-    popular: false,
-    color: 'slate'
-  },
-  {
-    name: 'Standart',
-    credits: '100 Kredi',
-    price: '₺149',
-    desc: 'Bireysel uzmanlar ve küçük ölçekli işletmeler için ideal.',
-    icon: Zap,
-    features: [
-      '10 PDF Çıktısı (Filigransız)',
-      'Tüm şablonlara erişim',
-      'Krediler hesapta birikir',
-      'Öncelikli destek',
-    ],
-    cta: 'Kredi Satın Al',
+    cta: 'Abone Ol — $5/ay',
     href: '/register',
     popular: true,
     color: 'primary'
   },
   {
-    name: 'Profesyonel',
-    credits: '300 Kredi',
-    price: '₺349',
-    desc: 'OSGB ve kurumsal mimarlık ofisleri için avantajlı paket.',
-    icon: Building2,
+    name: '3 Proje Paketi',
+    credits: '3 Proje Hakkı',
+    price: '$12',
+    priceNote: '',
+    desc: 'Bireysel uzmanlar ve küçük ölçekli işletmeler için ideal. Proje başı $4.',
+    icon: Zap,
     features: [
-      '30 PDF Çıktısı (Filigransız)',
-      'Birim maliyette %20 avantaj',
-      'Tüm şablonlara erişim',
-      'Kurumsal faturalandırma',
+      '3 ek proje oluşturma hakkı',
+      'Proje başı $4 — %20 tasarruf',
+      'Krediler hesapta birikir, süresiz',
+      'Öncelikli destek',
     ],
     cta: 'Kredi Satın Al',
     href: '/register',
     popular: false,
     color: 'indigo'
+  },
+  {
+    name: '10 Proje Paketi',
+    credits: '10 Proje Hakkı',
+    price: '$30',
+    priceNote: '',
+    desc: 'OSGB ve kurumsal mimarlık ofisleri için en avantajlı paket. Proje başı $3.',
+    icon: Building2,
+    features: [
+      '10 ek proje oluşturma hakkı',
+      'Proje başı $3 — %40 tasarruf',
+      'Kurumsal faturalandırma',
+      'Öncelikli teknik destek',
+    ],
+    cta: 'Kredi Satın Al',
+    href: '/register',
+    popular: false,
+    color: 'slate'
   }
 ];
 
 const FAQS = [
   {
-    q: 'Kredi sistemi nasıl çalışır?',
-    a: 'Planify, abonelik yerine kullandıkça öde (kredi) sistemiyle çalışır. Yeni kayıt olan herkese 50 kredi hediye edilir. Her filigransız PDF çıktısı 10 kredi düşer.',
+    q: 'Sistem nasıl çalışır?',
+    a: 'Planify, $5/ay abonelik modeli ile çalışır. Abone olduğunuzda 1 proje oluşturma hakkı kazanırsınız. Daha fazla proje için kredi paketleri satın alabilirsiniz.',
   },
   {
     q: 'Satın aldığım kredilerin süresi doluyor mu?',
-    a: 'Hayır. Satın aldığınız krediler hesabınızda ömür boyu kalır ve istediğiniz zaman kullanabilirsiniz.',
+    a: 'Hayır. Satın aldığınız proje kredileri hesabınızda ömür boyu kalır ve istediğiniz zaman kullanabilirsiniz.',
   },
   {
-    q: 'Ücretsiz pakette neler var?',
-    a: 'Tüm çizim araçlarını, sembolleri ve şablonları ücretsiz kullanabilirsiniz. Çizimlerinizi kaydetmek ve filigranlı PDF almak tamamen ücretsizdir.',
+    q: 'Abonelik olmadan kredi alabilir miyim?',
+    a: 'Evet. Abonelik olmadan da kredi paketleri satın alıp proje oluşturabilirsiniz. Abonelik sadece başlangıç avantajı sağlar.',
   },
   {
     q: 'Büyük ölçekli ofisler için toplu alım var mı?',
-    a: 'Evet. 1000 kredi ve üzeri toplu alımlar için destek@planify.com.tr adresi üzerinden özel fiyat teklifi alabilirsiniz.',
+    a: 'Evet. 10+ proje paketleri ve özel kurumsal teklifler için destek@planify.com.tr üzerinden iletişime geçebilirsiniz.',
   },
 ];
 
@@ -84,8 +87,8 @@ export default function LandingPricing() {
           <span className="inline-block text-sm font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-1.5 rounded-full">
             Esnek Fiyatlandırma
           </span>
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900">Sadece Kullandığın Kadar Öde</h2>
-          <p className="text-lg text-slate-500 max-w-xl mx-auto">Aylık taahhüt veya sürpriz ücret yok. İhtiyacınız oldukça kredi yükleyin, çizim yapın.</p>
+          <h2 className="text-3xl md:text-5xl font-black text-slate-900">Abonelik + Kredi Sistemi</h2>
+          <p className="text-lg text-slate-500 max-w-xl mx-auto">$5/ay abonelikle başlayın, 1 proje hakkı kazanın. Daha fazlası için avantajlı kredi paketleri alın.</p>
         </div>
 
         {/* Cards */}
@@ -100,7 +103,7 @@ export default function LandingPricing() {
               }`}>
                 {pkg.popular && (
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-400 text-amber-900 text-[11px] font-black px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap">
-                    EN ÇOK TERCİH EDİLEN
+                    BAŞLANGIÇ İÇİN İDEAL
                   </div>
                 )}
                 
@@ -112,7 +115,7 @@ export default function LandingPricing() {
                 <p className={`text-sm mb-6 ${pkg.popular ? 'text-blue-100' : 'text-slate-500'}`}>{pkg.desc}</p>
                 
                 <div className="flex flex-col gap-1 mb-8">
-                  <span className="text-4xl font-black">{pkg.price}</span>
+                  <span className="text-4xl font-black">{pkg.price}<span className="text-lg font-bold">{pkg.priceNote}</span></span>
                   <span className={`text-sm font-bold ${pkg.popular ? 'text-blue-200' : 'text-blue-600'}`}>{pkg.credits}</span>
                 </div>
                 

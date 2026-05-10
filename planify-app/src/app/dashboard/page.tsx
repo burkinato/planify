@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, LayoutDashboard } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProjectCreationModal, type ProjectCreationDraft } from '@/components/dashboard/ProjectCreationModal';
 import { ProjectDossierGrid } from '@/components/dashboard/ProjectDossierGrid';
@@ -11,6 +11,7 @@ import { TemplateSelectorModal } from '@/components/editor/TemplateSelectorModal
 import { analyzeProjectCompliance } from '@/lib/projects/compliance';
 import { useAuthStore } from '@/store/useAuthStore';
 import { type Project, useProjectStore } from '@/store/useProjectStore';
+import { useCreditStore } from '@/store/useCreditStore';
 import type { PagePreset, TemplateLayout } from '@/types/editor';
 
 const DEFAULT_DRAFT: ProjectCreationDraft = {
@@ -33,11 +34,13 @@ export default function DashboardPage() {
 
 function DashboardLoading() {
   return (
-    <div className="flex flex-col items-center justify-center py-48 space-y-4">
-      <div className="w-16 h-16 bg-surface-900 rounded-lg shadow-xl flex items-center justify-center border border-surface-600">
-        <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
+    <div className="flex flex-col items-center justify-center py-48 space-y-4 animate-in fade-in duration-1000">
+      <div className="w-12 h-12 bg-surface-950/50 backdrop-blur-sm border border-surface-600/20 rounded-full flex items-center justify-center shadow-sm">
+        <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
       </div>
-      <p className="text-[10px] font-bold text-surface-400 uppercase tracking-[0.2em]">Portal Yükleniyor</p>
+      <p className="text-[9px] font-bold text-surface-400 uppercase tracking-widest animate-pulse">
+        Planify Hazırlanıyor
+      </p>
     </div>
   );
 }
@@ -129,6 +132,31 @@ function DashboardPortal() {
     setShowTemplateModal(false);
 
     try {
+      // Kredi kontrolü (1 kredi = 1 proje hakkı = $5)
+      const { deductCredits, canCreateProject } = useCreditStore.getState();
+      const CREDIT_COST = 1; // 1 proje = 1 kredi
+      
+      if (!canCreateProject()) {
+        toast.error('Yeni proje oluşturmak için yeterli hakkınız bulunmuyor.', {
+          description: 'Aboneliğinizi başlatın veya ek paket satın alın.',
+          action: {
+            label: 'Paketlere Göz At',
+            onClick: () => router.push('/dashboard/upgrade')
+          }
+        });
+        setIsCreating(false);
+        return;
+      }
+
+      // Kredi düşme işlemi
+      const success = await deductCredits(CREDIT_COST, 'project_creation', `${draft.title} projesi oluşturuldu`);
+      
+      if (!success) {
+        toast.error('İşlem başarısız oldu, lütfen tekrar deneyin.');
+        setIsCreating(false);
+        return;
+      }
+
       const newProject = await createProject({
         title: draft.title.trim(),
         client_name: draft.clientName.trim() || null,
@@ -147,7 +175,7 @@ function DashboardPortal() {
         router.push(`/editor?id=${newProject.id}${layout ? `&template=${layout.slug}` : ''}`);
       }
     } catch {
-      toast.error('Proje oluşturulamadı');
+      toast.error('Proje oluşturulurken bir hata oluştu');
     } finally {
       setIsCreating(false);
     }
@@ -162,7 +190,7 @@ function DashboardPortal() {
     if (!renamingTitle.trim()) return;
     try {
       await updateProject(id, { title: renamingTitle.trim() });
-      toast.success('Proje adı güncellendi');
+      toast.success('Proje adı başarıyla güncellendi');
       setRenamingId(null);
     } catch {
       toast.error('Ad değiştirilemedi');
@@ -170,24 +198,15 @@ function DashboardPortal() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Bu denetim dosyasını silmek istediğinize emin misiniz?')) {
+    if (confirm('Bu projeyi kalıcı olarak silmek istediğinize emin misiniz?')) {
       void deleteProject(id);
     }
   };
 
   return (
     <>
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-12 space-y-12 animate-in fade-in duration-1000">
-        {/* Welcome Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h1 className="text-4xl font-black text-surface-200 tracking-tight">Denetim Merkezi</h1>
-            <p className="mt-2 text-xs font-bold text-surface-500 uppercase tracking-[0.2em] flex items-center gap-2">
-              <span className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
-              {profile?.company || 'Planify'} İçin Aktif Denetim Dosyaları
-            </p>
-          </div>
-        </div>
+      <div className="max-w-[1400px] mx-auto space-y-12 animate-in fade-in duration-1000">
+        {/* Welcome Header removed per user request */}
 
         {/* Metrics Row */}
         {!isLoading && <DashboardMetrics projects={projects} />}
@@ -195,7 +214,7 @@ function DashboardPortal() {
         {isLoading ? (
           <DashboardLoading />
         ) : (
-          <div className="animate-in slide-in-from-bottom-4 duration-700">
+          <div className="animate-in slide-in-from-bottom-8 duration-700">
             <ProjectDossierGrid
               items={recentAuditItems}
               searchTerm={searchTerm}

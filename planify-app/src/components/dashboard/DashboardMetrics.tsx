@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, ShieldCheck, Zap, BarChart3 } from 'lucide-react';
+import { FileText, ShieldCheck, Zap, TrendingUp } from 'lucide-react';
 import type { Project } from '@/store/useProjectStore';
 
 interface DashboardMetricsProps {
@@ -17,54 +17,57 @@ export function DashboardMetrics({ projects }: DashboardMetricsProps) {
 
   const metrics = [
     {
-      label: 'Toplam Dosya',
+      label: 'Toplam Proje',
       value: totalProjects,
-      icon: <FileText className="w-5 h-5 text-primary-500" />,
-      color: 'blue',
-      description: 'Aktif denetim planları'
+      icon: <FileText className="w-5 h-5 text-blue-500" />,
+      dotColor: 'bg-blue-500',
+      description: 'Sistemde kayıtlı planlar'
     },
     {
-      label: 'Ortalama Uyumluluk',
+      label: 'Ortalama Skor',
       value: `${avgCompliance}%`,
-      icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />,
-      color: 'emerald',
-      description: 'ISO 23601 skoru'
+      icon: <TrendingUp className="w-5 h-5 text-emerald-500" />,
+      dotColor: 'bg-emerald-500',
+      description: 'ISO 23601 uyumluluğu'
     },
     {
-      label: 'Taslak Aşaması',
+      label: 'Bekleyenler',
       value: activeDrafts,
       icon: <Zap className="w-5 h-5 text-amber-500" />,
-      color: 'amber',
-      description: 'Düzenleme bekleyenler'
+      dotColor: 'bg-amber-500',
+      description: 'Aksiyon gerektirenler'
     },
     {
       label: 'Tamamlanan',
       value: completedAudits,
-      icon: <BarChart3 className="w-5 h-5 text-indigo-500" />,
-      color: 'indigo',
-      description: 'Dışa aktarılanlar'
+      icon: <ShieldCheck className="w-5 h-5 text-indigo-500" />,
+      dotColor: 'bg-indigo-500',
+      description: 'Çıktısı alınanlar'
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-surface-600/30 mb-12">
       {metrics.map((metric) => (
         <div 
           key={metric.label}
-          className="bg-surface-900 border border-surface-600 rounded-2xl p-6 shadow-sm hover:border-surface-500 transition-all group"
+          className="flex-1 w-full px-6 py-2 flex flex-col"
         >
-          <div className="flex items-center justify-between">
-            <div className={`p-3 rounded-xl bg-surface-950 border border-surface-600 group-hover:scale-110 transition-transform duration-500`}>
-              {metric.icon}
-            </div>
-            <div className="text-right">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-surface-900 rounded-lg border border-surface-600/30">
+                {metric.icon}
+              </div>
               <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest">{metric.label}</p>
-              <h4 className="text-2xl font-black text-surface-200 mt-1">{metric.value}</h4>
             </div>
+            <h4 className="text-3xl font-black tracking-tighter text-surface-100">{metric.value}</h4>
           </div>
-          <p className="text-[10px] font-bold text-surface-500 uppercase tracking-widest mt-4">
-            {metric.description}
-          </p>
+          <div className="flex items-center gap-2">
+            <div className={`w-1 h-1 rounded-full ${metric.dotColor}`} />
+            <p className="text-[9px] font-bold text-surface-500 uppercase tracking-widest">
+              {metric.description}
+            </p>
+          </div>
         </div>
       ))}
     </div>

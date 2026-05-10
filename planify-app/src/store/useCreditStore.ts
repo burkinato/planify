@@ -3,6 +3,12 @@ import { createClient } from '@/lib/supabase/client';
 
 const supabase = createClient();
 
+/** 1 kredi = 1 proje oluşturma hakkı */
+export const PROJECT_CREDIT_COST = 1;
+
+/** Abonelik fiyatı (USD) */
+export const SUBSCRIPTION_PRICE_USD = 5;
+
 export interface CreditPackage {
   id: string;
   name: string;
@@ -22,6 +28,8 @@ export interface CreditTransaction {
 
 interface CreditState {
   balance: number;
+  hasActiveSubscription: boolean;
+  isInitialized: boolean;
   packages: CreditPackage[];
   transactions: CreditTransaction[];
   isLoading: boolean;
@@ -31,10 +39,13 @@ interface CreditState {
   fetchPackages: () => Promise<void>;
   fetchTransactions: () => Promise<void>;
   deductCredits: (amount: number, type: string, description: string) => Promise<boolean>;
+  canCreateProject: () => boolean;
 }
 
 export const useCreditStore = create<CreditState>((set, get) => ({
   balance: 0,
+  hasActiveSubscription: false,
+  isInitialized: false,
   packages: [],
   transactions: [],
   isLoading: false,
@@ -43,20 +54,41 @@ export const useCreditStore = create<CreditState>((set, get) => ({
   fetchBalance: async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        set({ isInitialized: true });
+        return;
+      }
 
+      // maybeSingle() kullanıyoruz ki satır yoksa hata fırlatmasın
       const { data, error } = await supabase
         .from('user_credits')
-        .select('balance')
+        .select('balance, has_active_subscription')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+
       if (data) {
-        set({ balance: data.balance });
+        set({ 
+          balance: data.balance,
+          hasActiveSubscription: data.has_active_subscription ?? false
+        });
+      } else {
+        // Eğer kullanıcı için kredi satırı yoksa oluştur (onboarding)
+        const { data: newData, error: insertError } = await supabase
+          .from('user_credits')
+          .insert({ user_id: session.user.id, balance: 0, has_active_subscription: false })
+          .select()
+          .single();
+        
+        if (!insertError && newData) {
+          set({ balance: 0, hasActiveSubscription: false });
+        }
       }
     } catch (err) {
       console.error('Kredi bakiyesi alınamadı:', err);
+    } finally {
+      set({ isInitialized: true });
     }
   },
 
@@ -145,5 +177,11 @@ export const useCreditStore = create<CreditState>((set, get) => ({
       console.error('Kredi düşme hatası:', err);
       return false;
     }
+  },
+
+  /** Proje oluşturma hakkı var mı? (abonelik veya kredi) */
+  canCreateProject: () => {
+    const { balance } = get();
+    return balance >= PROJECT_CREDIT_COST;
   }
 }));

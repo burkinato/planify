@@ -531,6 +531,218 @@ html {
   animation: slide-down-menu 0.25s ease-out forwards;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   DASHBOARD — Premium Enterprise Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Dashboard Glassmorphism */
+.dash-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(37, 37, 38, 0.85) 0%,
+    rgba(30, 30, 30, 0.92) 100%
+  );
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+.light .dash-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(243, 243, 243, 0.95) 100%
+  );
+}
+
+/* Dashboard Sidebar Gradient */
+.dash-sidebar-bg {
+  background: linear-gradient(
+    180deg,
+    var(--color-surface-900) 0%,
+    rgba(30, 30, 30, 0.98) 100%
+  );
+}
+
+/* Dashboard Card Gradient Border on Hover */
+.dash-card {
+  position: relative;
+  background: var(--color-surface-900);
+  border: 1px solid var(--color-surface-600);
+  border-radius: 1rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dash-card:hover {
+  border-color: var(--color-surface-500);
+  transform: translateY(-2px);
+  box-shadow:
+    0 20px 40px -15px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+/* Active Menu Item Indicator */
+.dash-menu-active {
+  position: relative;
+}
+
+.dash-menu-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(180deg, var(--color-primary-400), var(--color-primary-600));
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.4);
+}
+
+/* Stagger Animation */
+@keyframes dash-stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dash-stagger > * {
+  opacity: 0;
+  animation: dash-stagger-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.dash-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.dash-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.dash-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.dash-stagger > *:nth-child(4) { animation-delay: 0.2s; }
+.dash-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+.dash-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+
+/* Metric Card Glow */
+.dash-metric-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-metric-glow::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.dash-metric-glow:hover::after {
+  opacity: 1;
+}
+
+.dash-metric-glow[data-glow="primary"]::after { background: rgba(249, 115, 22, 0.08); }
+.dash-metric-glow[data-glow="emerald"]::after { background: rgba(16, 185, 129, 0.08); }
+.dash-metric-glow[data-glow="amber"]::after { background: rgba(245, 158, 11, 0.08); }
+.dash-metric-glow[data-glow="indigo"]::after { background: rgba(99, 102, 241, 0.08); }
+
+/* Premium Header Gradient */
+.dash-header-gradient {
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-header-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(249, 115, 22, 0.03) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+/* Animated Premium Glow Border */
+@keyframes premium-glow-spin {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.premium-card-container {
+  position: relative;
+  border-radius: 1.5rem;
+  padding: 4px;
+  background: linear-gradient(
+    135deg, 
+    rgba(59, 130, 246, 0.8), /* Blue */
+    rgba(234, 179, 8, 0.6),  /* Gold */
+    rgba(59, 130, 246, 0.8), 
+    rgba(234, 179, 8, 0.6)
+  );
+  background-size: 300% 300%;
+  animation: premium-glow-spin 8s ease infinite;
+  box-shadow: 
+    0 0 60px rgba(59, 130, 246, 0.3),
+    0 0 30px rgba(234, 179, 8, 0.2);
+}
+
+.premium-card-inner {
+  background: var(--color-surface-950);
+  border-radius: calc(1.5rem - 4px);
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.light .premium-card-inner {
+  background: linear-gradient(180deg, #f4f8ff 0%, #ffffff 100%);
+}
+
+.premium-card-texture {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    repeating-linear-gradient(45deg, var(--color-primary-500) 0, var(--color-primary-500) 1px, transparent 1px, transparent 10px),
+    repeating-linear-gradient(-45deg, var(--color-primary-500) 0, var(--color-primary-500) 1px, transparent 1px, transparent 10px);
+  opacity: 0.03;
+  pointer-events: none;
+}
+
+/* Shimmer Loading */
+@keyframes dash-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.dash-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-800) 25%,
+    var(--color-surface-700) 50%,
+    var(--color-surface-800) 75%
+  );
+  background-size: 200% 100%;
+  animation: dash-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Subtle floating animation for decorative elements */
+@keyframes dash-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(1deg); }
+}
+
+.dash-float {
+  animation: dash-float 6s ease-in-out infinite;
+}
+
 /* Template Paper Export Mode */
 [data-template-paper] section {
   transition: box-shadow 0.2s, outline 0.2s, --tw-ring-shadow 0.2s;

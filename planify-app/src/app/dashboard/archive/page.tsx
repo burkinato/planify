@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Archive, CheckCircle2, FileText, Loader2, TriangleAlert } from 'lucide-react';
+import { Archive, CheckCircle2, FileText, Loader2, TriangleAlert, FolderKanban } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProjectCreationModal, type ProjectCreationDraft } from '@/components/dashboard/ProjectCreationModal';
 import { ProjectDossierGrid } from '@/components/dashboard/ProjectDossierGrid';
@@ -30,8 +30,11 @@ export default function ArchivePage() {
 
 function ArchiveLoading() {
   return (
-    <div className="flex justify-center py-24 bg-surface-900 border border-surface-600 rounded-lg">
-      <Loader2 className="w-8 h-8 text-surface-400 animate-spin" />
+    <div className="flex justify-center py-24 dash-card">
+      <div className="relative">
+        <div className="absolute inset-0 bg-primary-500/20 blur-xl rounded-full" />
+        <Loader2 className="w-8 h-8 text-primary-500 animate-spin relative z-10" />
+      </div>
     </div>
   );
 }
@@ -150,7 +153,7 @@ function ArchivePortal() {
         router.push(`/editor?id=${newProject.id}${layout ? `&template=${layout.slug}` : ''}`);
       }
     } catch {
-      toast.error('Proje oluşturulamadı');
+      toast.error('Proje oluşturulurken hata meydana geldi.');
     } finally {
       setIsCreating(false);
     }
@@ -165,52 +168,59 @@ function ArchivePortal() {
     if (!renamingTitle.trim()) return;
     try {
       await updateProject(id, { title: renamingTitle.trim() });
-      toast.success('Proje adı güncellendi');
+      toast.success('Proje adı başarıyla güncellendi');
       setRenamingId(null);
     } catch {
-      toast.error('Ad değiştirilemedi');
+      toast.error('Proje adı değiştirilemedi');
     }
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Bu denetim dosyasını silmek istediğinize emin misiniz?')) {
+    if (confirm('Bu projeyi kalıcı olarak silmek istediğinize emin misiniz?')) {
       void deleteProject(id);
     }
   };
 
   return (
     <>
-      <div className="space-y-6 animate-fade-in font-sans">
-        <section className="bg-surface-900 border border-surface-600 rounded-lg p-6 lg:p-7">
-          <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-surface-400">
-                Denetim Merkezi / Arşiv
-              </p>
-              <h1 className="mt-2 text-3xl font-medium tracking-tight text-surface-200">
-                Tahliye Planı Arşivi
-              </h1>
-              <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-surface-400">
-                Kullanıcıya ait tüm tahliye planlarını, denetim durumlarını, son çıktı kayıtlarını
-                ve proje kimlik bilgilerini geniş arşiv görünümünde yönetin.
-              </p>
+      <div className="space-y-8 animate-fade-in font-sans pb-12">
+        <section className="dash-header-gradient border border-surface-600/50 rounded-3xl p-8 lg:p-10 relative overflow-hidden">
+          <div className="absolute -right-20 -top-20 w-80 h-80 bg-primary-500/5 rounded-full blur-[100px] pointer-events-none" />
+          
+          <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6 relative z-10">
+            <div className="flex items-start gap-5">
+              <div className="w-14 h-14 bg-surface-900 border border-surface-600 rounded-2xl flex items-center justify-center shadow-xl shrink-0 mt-1">
+                <FolderKanban className="w-6 h-6 text-primary-500" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary-500 mb-1">
+                  Kontrol Paneli / Arşiv
+                </p>
+                <h1 className="text-3xl font-black tracking-tight text-surface-100">
+                  Proje Arşivi
+                </h1>
+                <p className="mt-2.5 max-w-2xl text-sm font-medium leading-relaxed text-surface-400">
+                  Tüm tahliye planlarınızı, denetim durumlarını ve son çıktısını aldığınız belgeleri 
+                  buradan yönetebilir, eski projelerinizi kolayca bulabilirsiniz.
+                </p>
+              </div>
             </div>
 
             <button
               onClick={handleStartCreation}
               disabled={isCreating}
-              className="h-11 px-5 bg-primary-500 text-white text-xs font-bold uppercase tracking-widest hover:bg-primary-600 rounded disabled:opacity-50 xl:self-start transition-colors"
+              className="h-12 px-6 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-[11px] font-black uppercase tracking-widest hover:from-primary-600 hover:to-primary-700 rounded-xl disabled:opacity-50 xl:self-start transition-all duration-300 shadow-lg shadow-primary-500/20 active:scale-[0.98]"
             >
-              Yeni Denetim Dosyası
+              Yeni Proje Başlat
             </button>
           </div>
         </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <ArchiveMetric icon={<Archive className="w-5 h-5" />} label="Toplam Plan" value={projects.length.toString()} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 dash-stagger">
+          <ArchiveMetric icon={<Archive className="w-5 h-5" />} label="Toplam Kayıt" value={projects.length.toString()} />
           <ArchiveMetric icon={<CheckCircle2 className="w-5 h-5" />} label="Denetime Hazır" value={readyCount.toString()} tone="success" />
-          <ArchiveMetric icon={<TriangleAlert className="w-5 h-5" />} label="Eksik Kontrol" value={missingCount.toString()} tone="warning" />
-          <ArchiveMetric icon={<FileText className="w-5 h-5" />} label="Çıktı Alınan" value={exportedCount.toString()} />
+          <ArchiveMetric icon={<TriangleAlert className="w-5 h-5" />} label="Eksik Bilgi" value={missingCount.toString()} tone="warning" />
+          <ArchiveMetric icon={<FileText className="w-5 h-5" />} label="Dışa Aktarılan" value={exportedCount.toString()} tone="blue" />
         </div>
 
         {isLoading ? (
@@ -219,9 +229,9 @@ function ArchivePortal() {
           <ProjectDossierGrid
             items={filteredAuditItems}
             searchTerm={searchTerm}
-            eyebrow="Arşiv"
-            title="Tüm tahliye planları"
-            description={`${filteredAuditItems.length} kayıt listeleniyor.`}
+            eyebrow="Tüm Kayıtlar"
+            title="Sistemdeki Projeler"
+            description={`${filteredAuditItems.length} proje listeleniyor`}
             isCreating={isCreating}
             renamingId={renamingId}
             renamingTitle={renamingTitle}
@@ -265,21 +275,26 @@ function ArchiveMetric({
   icon: React.ReactNode;
   label: string;
   value: string;
-  tone?: 'default' | 'success' | 'warning';
+  tone?: 'default' | 'success' | 'warning' | 'blue';
 }) {
-  const toneClass = tone === 'success'
-    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-    : tone === 'warning'
-      ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-      : 'bg-surface-800 text-surface-300 border-surface-600';
+  const toneMap = {
+    success: { bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/20', shadow: 'shadow-emerald-500/10' },
+    warning: { bg: 'bg-amber-500/10', text: 'text-amber-500', border: 'border-amber-500/20', shadow: 'shadow-amber-500/10' },
+    blue: { bg: 'bg-blue-500/10', text: 'text-blue-500', border: 'border-blue-500/20', shadow: 'shadow-blue-500/10' },
+    default: { bg: 'bg-surface-800', text: 'text-surface-300', border: 'border-surface-600', shadow: 'shadow-none' },
+  };
+
+  const currentTone = toneMap[tone];
 
   return (
-    <div className="bg-surface-900 border border-surface-600 rounded-lg p-4">
-      <div className={`w-10 h-10 border rounded flex items-center justify-center ${toneClass}`}>
+    <div className="dash-card p-6 group hover:shadow-xl transition-all duration-300">
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${currentTone.bg} ${currentTone.text} ${currentTone.border} shadow-lg ${currentTone.shadow} group-hover:scale-110 transition-transform duration-500`}>
         {icon}
       </div>
-      <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-surface-400">{label}</p>
-      <p className="mt-1 text-2xl font-medium text-surface-200">{value}</p>
+      <div className="mt-5">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-surface-500">{label}</p>
+        <p className="mt-1 text-3xl font-black text-surface-100 tracking-tight">{value}</p>
+      </div>
     </div>
   );
 }

@@ -3,13 +3,17 @@ import { createClient } from '@/lib/supabase/server';
 import { verifyPayTRWebhookHash, generateMerchantOid } from '@/lib/paytr';
 
 /**
- * PayTR Webhook/Notification Handler (Samet - P0 Fix)
- *
+ * PayTR Webhook/Notification Handler
+ * 
+ * Abonelik + Kredi Hibrit Sistem:
+ * - Abonelik ödemesi: 1 proje kredisi ekler + subscription aktif eder
+ * - Kredi paketi ödemesi: Paket miktarı kadar proje kredisi ekler
+ * 
  * PayTR ödeme sonucunu bu endpoint'e POST olarak bildirir.
  * Başarılı ödeme geldiğinde:
- * 1. Hash doğrulaması yap (merchant_key + merchant_salt)
+ * 1. Hash doğrulaması yap
  * 2. Duplicate kontrolü yap (idempotency)
- * 3. Supabase'de subscription'ı aktif et
+ * 3. Kredi ekle + gerekiyorsa subscription aktif et
  * 4. Payment history kaydını güncelle
  * 5. PayTR'ye "OK" yanıtı dön
  */
@@ -55,7 +59,7 @@ export async function POST(request: Request) {
       return new Response('PAYTR_IFRAME_FAILED REASON: bad hash', { status: 403 });
     }
 
-    // 2. Idempotency Check (Samet: Bora'nın P0 sorununu çöz)
+    // 2. Idempotency Check
     if (processedWebhooks.has(merchantOid)) {
       console.log('PayTR Webhook: Duplicate detected, already processed:', merchantOid);
       return new Response('OK', { status: 200 });
@@ -71,10 +75,10 @@ export async function POST(request: Request) {
 
     const supabaseAdmin = createSupabaseJS(supabaseUrl, supabaseServiceKey);
 
-    // 3. Get payment history record and related credit package
+    // 3. Get payment history record
     const { data: paymentRecord, error: fetchError } = await supabaseAdmin
       .from('payment_history')
-      .select('*, credit_packages:plan_id(id, name, price_try, credits)')
+      .select('*')
       .eq('merchant_oid', merchantOid)
       .single();
 
@@ -84,13 +88,64 @@ export async function POST(request: Request) {
     }
 
     if (status === 'success') {
-      // 4. Add credits to user's account
-      const pkg = paymentRecord.credit_packages;
       const userId = paymentRecord.user_id;
+      const paymentType = paymentRecord.payment_type; // 'subscription' | 'credit_package'
+      
+      let creditsToAdd = 0;
+      let transactionType = 'purchase';
+      let transactionDescription = '';
 
-      if (!pkg) {
-        console.error('Credit package not found for payment:', merchantOid);
-        return new Response('PACKAGE_NOT_FOUND', { status: 404 });
+      if (paymentType === 'subscription') {
+        // Abonelik ödemesi: 1 proje kredisi + subscription aktif et
+        creditsToAdd = 1;
+        transactionType = 'subscription';
+        transactionDescription = 'Planify Pro abonelik — 1 Proje Hakkı';
+
+        // Subscription oluştur/güncelle
+        const now = new Date();
+        const periodEnd = new Date(now);
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+        await supabaseAdmin
+          .from('subscriptions')
+          .upsert({
+            user_id: userId,
+            plan_id: paymentRecord.plan_id,
+            status: 'active',
+            payment_provider: 'paytr',
+            provider_subscription_id: merchantOid,
+            current_period_start: now.toISOString(),
+            current_period_end: periodEnd.toISOString(),
+            updated_at: now.toISOString(),
+          }, {
+            onConflict: 'user_id',
+          });
+
+        // user_credits tablosunda subscription durumunu güncelle
+        await supabaseAdmin
+          .from('user_credits')
+          .update({
+            has_active_subscription: true,
+            subscription_started_at: now.toISOString(),
+          })
+          .eq('user_id', userId);
+
+      } else {
+        // Kredi paketi ödemesi: Paket miktarı kadar kredi ekle
+        const { data: pkg } = await supabaseAdmin
+          .from('credit_packages')
+          .select('id, name, credits')
+          .eq('id', paymentRecord.plan_id)
+          .single();
+
+        if (!pkg) {
+          console.error('Credit package not found for payment:', merchantOid);
+          return new Response('PACKAGE_NOT_FOUND', { status: 404 });
+        }
+
+        creditsToAdd = pkg.credits;
+        transactionType = 'purchase';
+        transactionDescription = `${pkg.name} satın alımı — ${pkg.credits} Proje Hakkı`;
       }
 
       // Add to credit_transactions
@@ -98,9 +153,9 @@ export async function POST(request: Request) {
         .from('credit_transactions')
         .insert({
           user_id: userId,
-          amount: pkg.credits,
-          transaction_type: 'purchase',
-          description: `${pkg.name} satın alımı`,
+          amount: creditsToAdd,
+          transaction_type: transactionType,
+          description: transactionDescription,
         });
 
       if (txError) {
@@ -123,8 +178,8 @@ export async function POST(request: Request) {
         .from('user_credits')
         .upsert({
           user_id: userId,
-          balance: currentBalance + pkg.credits,
-          total_purchased: currentTotal + pkg.credits,
+          balance: currentBalance + creditsToAdd,
+          total_purchased: currentTotal + creditsToAdd,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id',
@@ -135,7 +190,7 @@ export async function POST(request: Request) {
         return new Response('CREDIT_UPDATE_ERROR', { status: 500 });
       }
 
-      // 6. Update payment history
+      // Update payment history
       const now = new Date();
       await supabaseAdmin
         .from('payment_history')
@@ -151,9 +206,9 @@ export async function POST(request: Request) {
       console.log('PayTR Webhook: Payment success processed', {
         merchantOid,
         userId,
-        package: pkg.name,
+        paymentType,
         amount: totalAmount,
-        addedCredits: pkg.credits
+        addedCredits: creditsToAdd
       });
 
     } else {
@@ -173,7 +228,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // 7. PayTR expects "OK" response
+    // PayTR expects "OK" response
     return new Response('OK', { status: 200 });
 
   } catch (error) {
