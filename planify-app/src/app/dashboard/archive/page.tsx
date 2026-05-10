@@ -6,6 +6,7 @@ import { Archive, CheckCircle2, FileText, Loader2, TriangleAlert, FolderKanban }
 import { toast } from 'sonner';
 import { ProjectCreationModal, type ProjectCreationDraft } from '@/components/dashboard/ProjectCreationModal';
 import { ProjectDossierGrid } from '@/components/dashboard/ProjectDossierGrid';
+import { DashboardMetrics } from '@/components/dashboard/DashboardMetrics';
 import { TemplateSelectorModal } from '@/components/editor/TemplateSelectorModal';
 import { analyzeProjectCompliance } from '@/lib/projects/compliance';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -183,45 +184,31 @@ function ArchivePortal() {
 
   return (
     <>
-      <div className="space-y-8 animate-fade-in font-sans pb-12">
-        <section className="dash-header-gradient border border-surface-600/50 rounded-3xl p-8 lg:p-10 relative overflow-hidden">
-          <div className="absolute -right-20 -top-20 w-80 h-80 bg-primary-500/5 rounded-full blur-[100px] pointer-events-none" />
-          
-          <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6 relative z-10">
-            <div className="flex items-start gap-5">
-              <div className="w-14 h-14 bg-surface-900 border border-surface-600 rounded-2xl flex items-center justify-center shadow-xl shrink-0 mt-1">
-                <FolderKanban className="w-6 h-6 text-primary-500" />
-              </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary-500 mb-1">
-                  Kontrol Paneli / Arşiv
-                </p>
-                <h1 className="text-3xl font-black tracking-tight text-surface-100">
-                  Proje Arşivi
-                </h1>
-                <p className="mt-2.5 max-w-2xl text-sm font-medium leading-relaxed text-surface-400">
-                  Tüm tahliye planlarınızı, denetim durumlarını ve son çıktısını aldığınız belgeleri 
-                  buradan yönetebilir, eski projelerinizi kolayca bulabilirsiniz.
-                </p>
-              </div>
+      <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in font-sans pb-12">
+        {/* Compact Header */}
+        <section className="px-1 pt-4">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">
+                Sistem / Arşiv
+              </p>
+              <h1 className="text-3xl font-black tracking-tighter text-slate-900 dark:text-surface-100">
+                Proje Arşivi
+              </h1>
             </div>
 
             <button
               onClick={handleStartCreation}
               disabled={isCreating}
-              className="h-12 px-6 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-[11px] font-black uppercase tracking-widest hover:from-primary-600 hover:to-primary-700 rounded-xl disabled:opacity-50 xl:self-start transition-all duration-300 shadow-lg shadow-primary-500/20 active:scale-[0.98]"
+              className="h-10 px-8 bg-blue-600 text-white text-[11px] font-black uppercase tracking-widest hover:bg-blue-700 rounded-xl disabled:opacity-50 transition-all shadow-md shadow-blue-500/20 active:scale-95 flex items-center gap-2"
             >
-              Yeni Proje Başlat
+              <FileText className="w-4 h-4" /> Yeni Proje Başlat
             </button>
           </div>
         </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 dash-stagger">
-          <ArchiveMetric icon={<Archive className="w-5 h-5" />} label="Toplam Kayıt" value={projects.length.toString()} />
-          <ArchiveMetric icon={<CheckCircle2 className="w-5 h-5" />} label="Denetime Hazır" value={readyCount.toString()} tone="success" />
-          <ArchiveMetric icon={<TriangleAlert className="w-5 h-5" />} label="Eksik Bilgi" value={missingCount.toString()} tone="warning" />
-          <ArchiveMetric icon={<FileText className="w-5 h-5" />} label="Dışa Aktarılan" value={exportedCount.toString()} tone="blue" />
-        </div>
+        {/* Using Unified DashboardMetrics */}
+        {!isLoading && <DashboardMetrics projects={projects} />}
 
         {isLoading ? (
           <ArchiveLoading />
@@ -278,22 +265,22 @@ function ArchiveMetric({
   tone?: 'default' | 'success' | 'warning' | 'blue';
 }) {
   const toneMap = {
-    success: { bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/20', shadow: 'shadow-emerald-500/10' },
-    warning: { bg: 'bg-amber-500/10', text: 'text-amber-500', border: 'border-amber-500/20', shadow: 'shadow-amber-500/10' },
-    blue: { bg: 'bg-blue-500/10', text: 'text-blue-500', border: 'border-blue-500/20', shadow: 'shadow-blue-500/10' },
-    default: { bg: 'bg-surface-800', text: 'text-surface-300', border: 'border-surface-600', shadow: 'shadow-none' },
+    success: { bg: 'bg-emerald-50 text-emerald-600', border: 'border-emerald-100' },
+    warning: { bg: 'bg-amber-50 text-amber-600', border: 'border-amber-100' },
+    blue: { bg: 'bg-blue-50 text-blue-600', border: 'border-blue-100' },
+    default: { bg: 'bg-slate-50 text-slate-500', border: 'border-slate-100' },
   };
 
   const currentTone = toneMap[tone];
 
   return (
-    <div className="dash-card p-6 group hover:shadow-xl transition-all duration-300">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${currentTone.bg} ${currentTone.text} ${currentTone.border} shadow-lg ${currentTone.shadow} group-hover:scale-110 transition-transform duration-500`}>
+    <div className="bg-white dark:bg-surface-950 border border-slate-200/60 dark:border-surface-600/20 rounded-2xl p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-all duration-300">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${currentTone.bg} ${currentTone.border} shrink-0`}>
         {icon}
       </div>
-      <div className="mt-5">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-surface-500">{label}</p>
-        <p className="mt-1 text-3xl font-black text-surface-100 tracking-tight">{value}</p>
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-surface-400 leading-none mb-1">{label}</p>
+        <p className="text-2xl font-black text-surface-900 dark:text-surface-100 tracking-tight leading-none">{value}</p>
       </div>
     </div>
   );

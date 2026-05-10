@@ -212,7 +212,50 @@ function DashboardPortal() {
         {!isLoading && <DashboardMetrics projects={projects} />}
 
         {isLoading ? (
-          <DashboardLoading />
+          <div className="animate-in fade-in duration-500">
+            <div className="flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-surface-600/30 mb-12 animate-pulse">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex-1 w-full px-6 py-2 flex flex-col">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-surface-800/50" />
+                      <div className="w-16 h-3 bg-surface-800/50 rounded" />
+                    </div>
+                    <div className="w-10 h-6 bg-surface-800/50 rounded" />
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                     <div className="w-1 h-1 rounded-full bg-surface-800/50" />
+                     <div className="w-24 h-2 bg-surface-800/50 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col divide-y divide-surface-600/30 relative animate-pulse mt-12">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-12 h-12 rounded-xl bg-surface-800/50 shrink-0" />
+                    <div className="space-y-2 flex-1">
+                      <div className="w-48 h-4 bg-surface-800/50 rounded" />
+                      <div className="w-32 h-2.5 bg-surface-800/50 rounded" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-6 sm:ml-auto shrink-0">
+                    <div className="hidden md:flex items-center gap-3">
+                       <div className="w-20 h-5 bg-surface-800/50 rounded-md" />
+                       <div className="w-10 h-3 bg-surface-800/50 rounded" />
+                    </div>
+                    <div className="w-px h-8 bg-surface-600/30 hidden sm:block" />
+                    <div className="flex items-center gap-2">
+                       <div className="w-16 h-9 bg-surface-800/50 rounded-lg" />
+                       <div className="w-9 h-9 bg-surface-800/50 rounded-lg" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         ) : (
           <div className="animate-in slide-in-from-bottom-8 duration-700">
             <ProjectDossierGrid

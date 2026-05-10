@@ -101,7 +101,7 @@ export default function RootLayout({
             <JsonLd />
             {children}
           </AuthProvider>
-          <Toaster theme="system" position="top-right" richColors />
+          <Toaster theme="system" position="bottom-right" className="font-sans" />
         </ThemeProvider>
       </body>
     </html>

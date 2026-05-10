@@ -180,21 +180,25 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="animate-fade-in font-sans space-y-8 pb-12">
-      <section className="dash-header-gradient border border-surface-600/50 rounded-3xl p-8 lg:p-10 relative overflow-hidden">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary-500/5 rounded-full blur-[120px] pointer-events-none" />
-        
-        <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-8 relative z-10">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary-500 mb-1">
-              Kontrol Paneli / Ayarlar
-            </p>
-            <h1 className="text-3xl font-black tracking-tight text-surface-100">
-              Hesap ve Firma Bilgileri
+    <div className="animate-fade-in font-sans space-y-10 pb-12">
+      {/* Clean Header */}
+      <section className="relative px-1">
+        <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-slate-50 dark:bg-surface-900 border border-slate-200/60 dark:border-surface-600/30 rounded-xl flex items-center justify-center shadow-sm">
+                <IdCard className="w-5 h-5 text-blue-600" />
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                Sistem / Ayarlar
+              </p>
+            </div>
+            <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-surface-100">
+              Hesap Bilgileri
             </h1>
-            <p className="mt-2.5 max-w-2xl text-sm font-medium leading-relaxed text-surface-400">
-              Bu alanda yer alan firma ve kişisel bilgileriniz oluşturduğunuz denetim projelerinde ve PDF çıktılarında 
-              <span className="text-surface-300"> kurum kimliği</span> olarak kullanılmaktadır.
+            <p className="max-w-2xl text-sm font-medium leading-relaxed text-slate-600">
+              Firma ve kişisel bilgileriniz, oluşturduğunuz denetim projelerinde ve 
+              çıktılarda <span className="text-blue-600 font-bold">kurum kimliği</span> olarak kullanılacaktır.
             </p>
           </div>
 
@@ -213,15 +217,15 @@ export default function ProfilePage() {
       </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-8 items-start dash-stagger">
-        <form onSubmit={handleProfileSubmit} className="dash-card overflow-hidden">
-          <div className="border-b border-surface-600/50 px-8 py-6 bg-surface-950/30">
+        <form onSubmit={handleProfileSubmit} className="bg-white dark:bg-surface-950 border border-slate-200/60 dark:border-surface-600/30 rounded-3xl overflow-hidden shadow-sm">
+          <div className="border-b border-slate-100 dark:border-surface-600/30 px-8 py-6 bg-slate-50/30 dark:bg-surface-900/30">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 text-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/5">
                 <IdCard className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-surface-100 tracking-tight">Resmi Kayıt Bilgileri</h2>
-                <p className="text-xs font-medium text-surface-400 mt-1">Sistem ve dökümanlar için kurum detayları</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-surface-100 tracking-tight">Resmi Kayıt Bilgileri</h2>
+                <p className="text-xs font-medium text-slate-500 mt-1">Sistem ve dökümanlar için kurum detayları</p>
               </div>
             </div>
           </div>
@@ -232,7 +236,7 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-7">
               <ProfileInput
                 label="Yetkili Ad Soyad"
-                icon={<UserCircle className="h-5 w-5 text-surface-400" />}
+                icon={<UserCircle className="h-5 w-5 text-slate-400" />}
                 value={formData.full_name}
                 onChange={(value) => setFormData({ ...formData, full_name: value })}
                 placeholder="Örn: Ahmet Yılmaz"
@@ -240,7 +244,7 @@ export default function ProfilePage() {
 
               <ProfileInput
                 label="Sistem E-posta Adresi"
-                icon={<Mail className="h-5 w-5 text-surface-400" />}
+                icon={<Mail className="h-5 w-5 text-slate-400" />}
                 value={formData.email}
                 disabled
                 type="email"
@@ -248,7 +252,7 @@ export default function ProfilePage() {
 
               <ProfileInput
                 label="Firma / Kurum Unvanı"
-                icon={<Building2 className="h-5 w-5 text-surface-400" />}
+                icon={<Building2 className="h-5 w-5 text-slate-400" />}
                 value={formData.company}
                 onChange={(value) => setFormData({ ...formData, company: value })}
                 placeholder="Örn: Güven İş OSGB Ltd. Şti."
@@ -256,7 +260,7 @@ export default function ProfilePage() {
 
               <ProfileInput
                 label="İletişim Numarası"
-                icon={<Phone className="h-5 w-5 text-surface-400" />}
+                icon={<Phone className="h-5 w-5 text-slate-400" />}
                 value={formData.phone}
                 onChange={(value) => setFormData({ ...formData, phone: value })}
                 placeholder="05XX XXX XX XX"
@@ -265,7 +269,7 @@ export default function ProfilePage() {
 
               <ProfileSelect
                 label="Cinsiyet Bilgisi"
-                icon={<Users className="h-5 w-5 text-surface-400" />}
+                icon={<Users className="h-5 w-5 text-slate-400" />}
                 value={formData.gender}
                 onChange={(value) => setFormData({ ...formData, gender: value })}
                 options={[
@@ -288,8 +292,8 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <span className="text-sm font-semibold text-surface-200 group-hover:text-surface-100 transition-colors">İletişim İzni</span>
-                  <p className="text-xs font-medium leading-relaxed text-surface-400">
+                  <span className="text-sm font-semibold text-slate-900 dark:text-surface-100 transition-colors">İletişim İzni</span>
+                  <p className="text-xs font-medium leading-relaxed text-slate-500">
                     Planify sistem güncellemeleri, yasal mevzuat değişiklikleri ve yeni özellikler hakkında bilgilendirme e-postaları almak istiyorum.
                   </p>
                 </div>
@@ -297,7 +301,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="px-8 py-6 border-t border-surface-600/50 bg-surface-950/30 flex justify-end">
+          <div className="px-8 py-6 border-t border-slate-100 dark:border-surface-600/30 bg-slate-50/30 dark:bg-surface-900/30 flex justify-end">
             <button
               type="submit"
               disabled={isSaving}
@@ -310,14 +314,14 @@ export default function ProfilePage() {
         </form>
 
         <aside className="space-y-8">
-          <div className="dash-card p-8">
+          <div className="bg-white dark:bg-surface-950 border border-slate-200/60 dark:border-surface-600/30 rounded-3xl p-8 shadow-sm">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/5 shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-500 flex items-center justify-center shadow-sm shrink-0">
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-surface-100 tracking-tight">Lisans Durumu</h2>
-                <p className="mt-1.5 text-xs font-medium text-surface-400 leading-relaxed">
+                <h2 className="text-lg font-bold text-surface-900 dark:text-surface-100 tracking-tight">Lisans Durumu</h2>
+                <p className="mt-1.5 text-xs font-medium text-surface-500 dark:text-surface-400 leading-relaxed">
                   {isPro
                     ? 'Premium lisansınız aktif durumdadır. Tüm özelliklere sınırsız erişiminiz bulunmaktadır.'
                     : 'Başlangıç paketini kullanıyorsunuz. Daha fazla proje hakkı için planınızı yükseltebilirsiniz.'}
@@ -330,15 +334,15 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <form onSubmit={handlePasswordSubmit} className="dash-card overflow-hidden">
-            <div className="border-b border-surface-600/50 px-8 py-6 bg-surface-950/30">
+          <form onSubmit={handlePasswordSubmit} className="bg-white dark:bg-surface-950 border border-slate-200/60 dark:border-surface-600/30 rounded-3xl overflow-hidden shadow-sm">
+            <div className="border-b border-slate-100 dark:border-surface-600/30 px-8 py-6 bg-slate-50/30 dark:bg-surface-900/30">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-surface-800 border border-surface-600 flex items-center justify-center text-surface-300">
+                <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-surface-800 border border-slate-100 dark:border-surface-600 flex items-center justify-center text-slate-400">
                   <ShieldAlert className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-surface-100 tracking-tight">Güvenlik</h2>
-                  <p className="text-xs font-medium text-surface-400 mt-1">Erişim şifresi değişikliği</p>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-surface-100 tracking-tight">Güvenlik</h2>
+                  <p className="text-xs font-medium text-slate-500 mt-1">Erişim şifresi değişikliği</p>
                 </div>
               </div>
             </div>
@@ -349,7 +353,7 @@ export default function ProfilePage() {
               <div className="space-y-5">
                 <ProfileInput
                   label="Yeni Güvenlik Şifresi"
-                  icon={<ShieldAlert className="h-5 w-5 text-surface-500" />}
+                  icon={<ShieldAlert className="h-5 w-5 text-slate-500" />}
                   value={passwordData.newPassword}
                   onChange={(value) => setPasswordData({ ...passwordData, newPassword: value })}
                   placeholder="En az 8 karakter uzunluğunda"
@@ -359,7 +363,7 @@ export default function ProfilePage() {
 
                 <ProfileInput
                   label="Şifre Doğrulama"
-                  icon={<ShieldAlert className="h-5 w-5 text-surface-500" />}
+                  icon={<ShieldAlert className="h-5 w-5 text-slate-500" />}
                   value={passwordData.confirmPassword}
                   onChange={(value) => setPasswordData({ ...passwordData, confirmPassword: value })}
                   placeholder="Yeni şifrenizi tekrar girin"
@@ -397,17 +401,19 @@ function SummaryItem({
   tone?: 'default' | 'success' | 'muted';
   icon?: React.ReactNode;
 }) {
-  const toneClass = tone === 'success'
-    ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20 text-emerald-500 shadow-sm shadow-emerald-500/5'
-    : tone === 'muted'
-      ? 'bg-surface-900 border-surface-600 text-surface-300'
-      : 'dash-glass border-surface-600/60 text-surface-100';
+  const toneMap = {
+    success: 'bg-emerald-50 border-emerald-100 text-emerald-600',
+    muted: 'bg-slate-50 border-slate-100 text-slate-500',
+    default: 'bg-white dark:bg-surface-950 border-slate-200/60 dark:border-surface-600/30 text-surface-900 dark:text-surface-100',
+  };
+
+  const toneClass = toneMap[tone];
 
   return (
-    <div className={`border rounded-xl p-4 min-w-0 ${toneClass}`}>
-      <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-70 mb-1">{label}</p>
+    <div className={`border rounded-2xl p-4 shadow-sm ${toneClass}`}>
+      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-surface-500 mb-1.5">{label}</p>
       <div className="flex items-center gap-1.5">
-        <p className="text-sm font-bold truncate">{value}</p>
+        <p className="text-sm font-bold truncate tracking-tight">{value}</p>
         {icon}
       </div>
       {helper && <p className="mt-1 text-[10px] font-bold opacity-60 uppercase tracking-wider">{helper}</p>}
@@ -455,11 +461,11 @@ function ProfileInput({
 }) {
   return (
     <div className="group">
-      <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-surface-500 mb-2 group-focus-within:text-primary-500 transition-colors">
+      <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-surface-400 mb-2 group-focus-within:text-blue-600 transition-colors">
         {label}
       </label>
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-primary-500">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-600 text-surface-400">
           {icon}
         </div>
         <input
@@ -471,8 +477,8 @@ function ProfileInput({
           autoComplete={autoComplete}
           className={`w-full h-12 pl-12 pr-4 border rounded-xl text-sm font-medium outline-none transition-all duration-300 shadow-sm ${
             disabled
-              ? 'bg-surface-900 border-surface-600/50 text-surface-500 cursor-not-allowed opacity-80'
-              : 'bg-surface-900 border-surface-600/80 text-surface-100 placeholder-surface-600 focus:bg-surface-950 focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(249,115,22,0.08)]'
+              ? 'bg-slate-50 dark:bg-surface-900 border-slate-200/60 dark:border-surface-600/30 text-surface-400 cursor-not-allowed'
+              : 'bg-white dark:bg-surface-950 border-slate-200 dark:border-surface-600/50 text-surface-900 dark:text-surface-100 placeholder-surface-300 focus:border-blue-600/50 focus:shadow-sm'
           }`}
         />
       </div>
@@ -495,20 +501,20 @@ function ProfileSelect({
 }) {
   return (
     <div className="group">
-      <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-surface-500 mb-2 group-focus-within:text-primary-500 transition-colors">
+      <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-surface-400 mb-2 group-focus-within:text-blue-600 transition-colors">
         {label}
       </label>
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-primary-500">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-600 text-surface-400">
           {icon}
         </div>
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full h-12 pl-12 pr-4 bg-surface-900 rounded-xl border border-surface-600/80 text-sm font-medium text-surface-100 outline-none transition-all duration-300 focus:bg-surface-950 focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(249,115,22,0.08)] appearance-none shadow-sm"
+          className="w-full h-12 pl-12 pr-4 bg-white dark:bg-surface-950 rounded-xl border border-slate-200 dark:border-surface-600/50 text-sm font-medium text-surface-900 dark:text-surface-100 outline-none transition-all duration-300 focus:border-blue-600/50 appearance-none shadow-sm"
         >
           {options.map((option) => (
-            <option key={option.value} value={option.value} className="bg-surface-900 text-surface-200">
+            <option key={option.value} value={option.value} className="bg-white dark:bg-surface-900 text-surface-700 dark:text-surface-200">
               {option.label}
             </option>
           ))}
