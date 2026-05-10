@@ -14,6 +14,7 @@ import { TemplateModulePanel } from './TemplateModulePanel';
 import { OnboardingWizard } from './onboarding/OnboardingWizard';
 import { EditorTour } from './onboarding/EditorTour';
 import { ModuleEditDrawer } from './ModuleEditDrawer';
+import { ModuleAddDrawer } from './ModuleAddDrawer';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
@@ -81,6 +82,7 @@ export default function EditorApp() {
     templateModules, innerZoom, innerPan, setProjectId,
     hasCompletedOnboarding, setOnboardingVisible,
     isModuleEditDrawerOpen, setIsModuleEditDrawerOpen,
+    isModuleAddDrawerOpen, setIsModuleAddDrawerOpen,
     setFocusedRegionId
   } = useEditorStore();
 
@@ -432,6 +434,10 @@ export default function EditorApp() {
                   setIsModuleEditDrawerOpen(false);
                   setFocusedRegionId(null);
                 }} 
+              />
+              <ModuleAddDrawer
+                isOpen={isModuleAddDrawerOpen}
+                onClose={() => setIsModuleAddDrawerOpen(false)}
               />
               <TemplateModulePanel
                 mobileMenu={mobileMenu}

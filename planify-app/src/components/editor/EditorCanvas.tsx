@@ -114,6 +114,7 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
   })));
 
   const [confirmDeleteDrawingId, setConfirmDeleteDrawingId] = useState<string | null>(null);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
 
   const themeConfig = THEME_CONFIGS[editorTheme];
   const stageHostRef = useRef<HTMLDivElement>(null);
@@ -314,7 +315,10 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
       if (e.code === 'Space') {
         if (!isSpacePressedRef.current) {
           isSpacePressedRef.current = true;
+          setIsSpacePressed(true);
           if (host) host.style.cursor = 'grab';
+          const stage = stageRef.current;
+          if (stage) stage.container().style.cursor = 'grab';
         }
         e.preventDefault();
         return;
@@ -342,8 +346,13 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         isSpacePressedRef.current = false;
+        setIsSpacePressed(false);
         if (host && !isPanningRef.current) {
           host.style.cursor = '';
+        }
+        const stage = stageRef.current;
+        if (stage && !isPanningRef.current) {
+          stage.container().style.cursor = '';
         }
       }
     };
@@ -421,6 +430,8 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
         const currentPan = state.pan;
         panStartRef.current = { x: e.clientX, y: e.clientY, panX: currentPan.x, panY: currentPan.y };
         host.style.cursor = 'grabbing';
+        const stage = stageRef.current;
+        if (stage) stage.container().style.cursor = 'grabbing';
         return;
       }
 
@@ -443,6 +454,8 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
       if (isPanningRef.current && e.buttons === 0) {
         isPanningRef.current = false;
         host.style.cursor = isSpacePressedRef.current ? 'grab' : '';
+        const stage = stageRef.current;
+        if (stage) stage.container().style.cursor = isSpacePressedRef.current ? 'grab' : '';
         return;
       }
 
@@ -457,6 +470,8 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
       if (isPanningRef.current) {
         isPanningRef.current = false;
         host.style.cursor = isSpacePressedRef.current ? 'grab' : '';
+        const stage = stageRef.current;
+        if (stage) stage.container().style.cursor = isSpacePressedRef.current ? 'grab' : '';
       }
     };
 
@@ -515,12 +530,15 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
   };
 
   const handleStageMouseDown = (e: CanvasStageEvent) => {
+    const stage = e.target.getStage();
     if (e.evt.button === 1 || (e.evt.button === 0 && (e.evt.altKey || isSpacePressedRef.current))) {
       e.evt.preventDefault();
       isInnerPanningRef.current = true;
       innerPanStartRef.current = { x: e.evt.clientX, y: e.evt.clientY, panX: innerPan.x, panY: innerPan.y };
-      const stage = e.target.getStage();
-      if (stage) stage.container().style.cursor = 'grabbing';
+      if (stage) {
+        stage.container().style.cursor = 'grabbing';
+        if (infiniteHostRef.current) infiniteHostRef.current.style.cursor = 'grabbing';
+      }
       return;
     }
 
@@ -535,8 +553,6 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
       if (clickedOnEmpty) setSelectedIds([]);
       return;
     }
-
-    const stage = e.target.getStage();
     if (!stage) return;
     const pos = getRelativePointerPosition(stage);
     if (!pos) return;
@@ -771,7 +787,10 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
     if (isInnerPanningRef.current) {
       isInnerPanningRef.current = false;
       const stage = e?.target?.getStage();
-      if (stage) stage.container().style.cursor = isSpacePressedRef.current ? 'grab' : 'default';
+      if (stage) {
+        stage.container().style.cursor = isSpacePressedRef.current ? 'grab' : 'default';
+        if (infiniteHostRef.current) infiniteHostRef.current.style.cursor = isSpacePressedRef.current ? 'grab' : 'default';
+      }
       return;
     }
 
@@ -1624,7 +1643,7 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
     return visibleElements.filter(el => el.type !== 'wall').map((el) => {
       const isSelected = selectedIds.includes(el.id);
       const isLocked = layers.find(l => l.id === el.layerId)?.locked;
-      const canInteract = tool === 'select' && !isLocked;
+      const canInteract = tool === 'select' && !isLocked && !isSpacePressed;
 
       if (el.type === 'rect') {
         return (
@@ -1741,7 +1760,7 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
               strokeWidth={2}
               shadowBlur={6}
               shadowOpacity={0.25}
-              draggable={tool === 'select' && !layers.find(l => l.id === el.layerId)?.locked}
+              draggable={tool === 'select' && !layers.find(l => l.id === el.layerId)?.locked && !isSpacePressed}
               onDragMove={(e) => {
                 if (e.evt.shiftKey) {
                   const otherX = pts[(1 - endpointIndex) * 2];
@@ -2032,7 +2051,7 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
                           return (
                             <Group
                               key={`wall-hatch-${el.id}`}
-                              draggable={tool === 'select' && !layers.find(l => l.id === el.layerId)?.locked}
+                              draggable={tool === 'select' && !layers.find(l => l.id === el.layerId)?.locked && !isSpacePressed}
                               onClick={(e) => {
                                 if (tool === 'eraser') {
                                   removeElements([el.id]);

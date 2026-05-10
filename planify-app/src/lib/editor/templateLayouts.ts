@@ -346,6 +346,7 @@ function toFiniteNumber(value: unknown, fallback: number): number {
 
 function moduleTypeToRegionType(type: TemplateModuleType): TemplateRegion['type'] {
   if (type === 'Header') return 'header';
+  if (type === 'Logo') return 'media';
   if (type === 'DrawingArea') return 'drawing';
   if (type === 'EmergencyCall') return 'emergency';
   if (type === 'Legend') return 'legend';
@@ -358,11 +359,13 @@ function moduleTypeToRegionType(type: TemplateModuleType): TemplateRegion['type'
 }
 
 function regionToModuleType(region: TemplateRegion): TemplateModuleType {
+  const id = (region.id || '').toLowerCase();
   if (region.type === 'header') return 'Header';
   if (region.type === 'drawing') return 'DrawingArea';
   if (region.type === 'emergency') return 'EmergencyCall';
   if (region.type === 'legend') return 'Legend';
-  if (region.type === 'assembly' || region.type === 'media') return 'AssemblyMap';
+  if (region.type === 'media' || id.includes('logo')) return 'Logo';
+  if (region.type === 'assembly') return 'AssemblyMap';
   if (region.type === 'approval') return 'ApprovalRevision';
   if (region.type === 'team') return 'EmergencyTeams';
   if (region.id.toLowerCase().includes('fire')) return 'FireInstructions';

@@ -1,32 +1,192 @@
 {
   "elements": [
     {
-      "id": "3cee0f5a-2db5-4c08-863e-193824df9dc0",
-      "type": "symbol",
-      "layerId": "default",
-      "x": 67,
-      "y": 94,
-      "symbolType": "exit"
-    },
-    {
-      "id": "0fcff5cd-bd16-4d51-85ba-d64a71de1830",
-      "type": "symbol",
-      "layerId": "default",
-      "x": 81,
-      "y": 256,
-      "symbolType": "exit"
-    },
-    {
-      "id": "39c12261-aeee-4399-b50c-e32530208c9d",
+      "id": "2427d609-8df6-464b-9410-ccbefb3f1db6",
       "type": "wall",
       "layerId": "default",
       "x": 0,
       "y": 0,
       "points": [
-        200,
-        450,
-        471.5,
-        450
+        40.17711558456154,
+        275.87134542558624,
+        212.17711558456153,
+        275.87134542558624
+      ],
+      "color": "#1e293b",
+      "thickness": 12,
+      "wallStyle": "hatch"
+    },
+    {
+      "id": "1babe3fc-e8dd-4135-b32e-e640715ad9a1",
+      "type": "wall",
+      "layerId": "default",
+      "x": 0,
+      "y": 0,
+      "points": [
+        212.17711558456153,
+        275.87134542558624,
+        212.17711558456153,
+        355.87134542558624
+      ],
+      "color": "#1e293b",
+      "thickness": 12,
+      "wallStyle": "hatch"
+    },
+    {
+      "id": "cbbeeeb3-a1ae-4852-a0fd-b3727c64fd6e",
+      "type": "wall",
+      "layerId": "default",
+      "x": 0,
+      "y": 0,
+      "points": [
+        212.17711558456153,
+        355.87134542558624,
+        40.17711558456154,
+        355.87134542558624
+      ],
+      "color": "#1e293b",
+      "thickness": 12,
+      "wallStyle": "hatch"
+    },
+    {
+      "id": "473ffc1e-41de-4683-894b-5d0cdd045908",
+      "type": "wall",
+      "layerId": "default",
+      "x": 0,
+      "y": 0,
+      "points": [
+        40.17711558456154,
+        355.87134542558624,
+        40.17711558456154,
+        275.87134542558624
+      ],
+      "color": "#1e293b",
+      "thickness": 12,
+      "wallStyle": "hatch"
+    },
+    {
+      "id": "546c06a1-03e3-4f55-9c2e-f28f5c5be132",
+      "type": "wall",
+      "layerId": "default",
+      "x": 0,
+      "y": 0,
+      "points": [
+        212.17711558456153,
+        355.87134542558624,
+        212.17711558456153,
+        479.37134542558624
+      ],
+      "color": "#1e293b",
+      "thickness": 12,
+      "wallStyle": "hatch"
+    },
+    {
+      "id": "11b88ba2-216e-4ebd-82b8-fae14bbdad5a",
+      "type": "wall",
+      "layerId": "default",
+      "x": 0,
+      "y": 0,
+      "points": [
+        212.17711558456153,
+        479.37134542558624,
+        40.177115584561534,
+        479.37134542558624
+      ],
+      "color": "#1e293b",
+      "thickness": 12,
+      "wallStyle": "hatch"
+    },
+    {
+      "id": "fe7761d3-3072-4d82-8892-5cf0081ac7d2",
+      "type": "wall",
+      "layerId": "default",
+      "x": 0,
+      "y": 0,
+      "points": [
+        40.177115584561534,
+        479.37134542558624,
+        40.177115584561534,
+        355.87134542558624
+      ],
+      "color": "#1e293b",
+      "thickness": 12,
+      "wallStyle": "hatch"
+    },
+    {
+      "id": "5a4f43a6-3a26-4d46-bcbd-20a18316bc1c",
+      "type": "wall",
+      "layerId": "default",
+      "x": 0,
+      "y": 0,
+      "points": [
+        212.17711558456153,
+        275.87134542558624,
+        339.17711558456153,
+        275.87134542558624
+      ],
+      "color": "#1e293b",
+      "thickness": 12,
+      "wallStyle": "hatch"
+    },
+    {
+      "id": "7b3cd96a-470b-4f34-9db1-e90f47fbd96e",
+      "type": "wall",
+      "layerId": "default",
+      "x": 0,
+      "y": 0,
+      "points": [
+        339.17711558456153,
+        275.87134542558624,
+        339.17711558456153,
+        355.87134542558624
+      ],
+      "color": "#1e293b",
+      "thickness": 12,
+      "wallStyle": "hatch"
+    },
+    {
+      "id": "f8d678f1-db48-4d35-9746-99f68d76bf1f",
+      "type": "wall",
+      "layerId": "default",
+      "x": 0,
+      "y": 0,
+      "points": [
+        339.17711558456153,
+        355.87134542558624,
+        521.6771155845615,
+        355.87134542558624
+      ],
+      "color": "#1e293b",
+      "thickness": 12,
+      "wallStyle": "hatch"
+    },
+    {
+      "id": "14ff820c-591c-45fc-8d07-f8cd00d1e9eb",
+      "type": "wall",
+      "layerId": "default",
+      "x": 0,
+      "y": 0,
+      "points": [
+        339.17711558456153,
+        275.87134542558624,
+        521.6771155845615,
+        275.87134542558624
+      ],
+      "color": "#1e293b",
+      "thickness": 12,
+      "wallStyle": "hatch"
+    },
+    {
+      "id": "a7a3d1f9-a65d-49b7-b239-67b3348215be",
+      "type": "wall",
+      "layerId": "default",
+      "x": 0,
+      "y": 0,
+      "points": [
+        521.6771155845615,
+        275.87134542558624,
+        521.6771155845615,
+        355.87134542558624
       ],
       "color": "#1e293b",
       "thickness": 12,
@@ -69,13 +229,13 @@
     {
       "id": "header",
       "type": "Header",
-      "label": "Başlık / Kimlik",
+      "label": "Başlık (Metin)",
       "tone": "green",
-      "x": 2,
+      "x": 13,
       "y": 2,
-      "w": 96,
+      "w": 85,
       "h": 9,
-      "zIndex": 20,
+      "zIndex": 21,
       "locked": false,
       "movable": true,
       "resizable": true,
@@ -83,15 +243,47 @@
       "requirement": "required"
     },
     {
+      "id": "emergency",
+      "type": "EmergencyCall",
+      "label": "Acil Numaralar",
+      "tone": "red",
+      "x": 2,
+      "y": 13,
+      "w": 18,
+      "h": 10,
+      "zIndex": 22,
+      "locked": false,
+      "movable": true,
+      "resizable": true,
+      "rendererVariant": "callout-red",
+      "requirement": "required"
+    },
+    {
+      "id": "hazards",
+      "type": "HazardUtilities",
+      "label": "Risk / Utility",
+      "tone": "red",
+      "x": 2,
+      "y": 25,
+      "w": 18,
+      "h": 19,
+      "zIndex": 23,
+      "locked": false,
+      "movable": true,
+      "resizable": true,
+      "rendererVariant": "risk-utility",
+      "requirement": "recommended"
+    },
+    {
       "id": "equipment",
       "type": "FireEquipmentInventory",
       "label": "Yangın Ekipmanı",
       "tone": "red",
       "x": 2,
-      "y": 45,
+      "y": 46,
       "w": 18,
       "h": 16,
-      "zIndex": 23,
+      "zIndex": 24,
       "locked": false,
       "movable": true,
       "resizable": true,
@@ -107,7 +299,7 @@
       "y": 64,
       "w": 18,
       "h": 16,
-      "zIndex": 24,
+      "zIndex": 25,
       "locked": false,
       "movable": true,
       "resizable": true,
@@ -123,7 +315,7 @@
       "y": 13,
       "w": 24,
       "h": 18,
-      "zIndex": 25,
+      "zIndex": 26,
       "locked": false,
       "movable": true,
       "resizable": true,
@@ -139,7 +331,7 @@
       "y": 33,
       "w": 24,
       "h": 18,
-      "zIndex": 26,
+      "zIndex": 27,
       "locked": false,
       "movable": true,
       "resizable": true,
@@ -155,7 +347,7 @@
       "y": 53,
       "w": 24,
       "h": 13,
-      "zIndex": 27,
+      "zIndex": 28,
       "locked": false,
       "movable": true,
       "resizable": true,
@@ -171,7 +363,7 @@
       "y": 83,
       "w": 76,
       "h": 14,
-      "zIndex": 28,
+      "zIndex": 29,
       "locked": false,
       "movable": true,
       "resizable": true,
@@ -208,5 +400,5 @@
   "invalidChildren": [],
   "invalidChildrenText": null,
   "location": "http://localhost:3000/editor?id=6c88ef5c-c45e-493c-b618-34d1bb5707ad",
-  "capturedAt": "2026-05-10T15:24:05.501Z"
+  "capturedAt": "2026-05-10T16:12:34.746Z"
 }

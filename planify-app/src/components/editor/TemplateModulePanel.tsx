@@ -168,64 +168,17 @@ function ModuleRow({ module, isSelected, onSelect, onEdit, templateState }: {
 
 /* ─── Add Module Button ─── */
 
-function AddModuleButton({ definition, alreadyExists, onAdd }: {
-  definition: typeof MODULE_DEFINITIONS[number];
-  alreadyExists: boolean;
-  onAdd: () => void;
-}) {
-  const [hovered, setHovered] = useState(false);
-  const IconComp = MODULE_ICONS[definition.type];
-  const colors = MODULE_COLORS[definition.type];
-
-  return (
-    <div className="relative" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-      <button
-        onClick={() => !alreadyExists && onAdd()}
-        disabled={alreadyExists}
-        className={cn(
-          'w-full flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all text-left',
-          alreadyExists
-            ? 'border-slate-800/40 bg-slate-900/20 opacity-30 cursor-not-allowed'
-            : 'border-slate-700/40 bg-slate-900/30 hover:border-cyan-500/30 hover:bg-slate-800/60 group'
-        )}
-      >
-        <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-          style={{ backgroundColor: alreadyExists ? '#1e293b' : colors.primary + '12', color: alreadyExists ? '#475569' : colors.primary }}
-        >
-          {IconComp && <IconComp size={13} />}
-        </div>
-        <div className="flex-1 min-w-0">
-          <span className={cn("text-[9px] font-bold block truncate", alreadyExists ? "text-slate-600" : "text-slate-300")}>
-            {definition.label}
-          </span>
-          {definition.requirement && (
-            <span className={cn('text-[6px] font-black uppercase tracking-wider px-1 py-px rounded border inline-block mt-0.5', REQ_BADGE[definition.requirement].cls)}>
-              {REQ_BADGE[definition.requirement].text}
-            </span>
-          )}
-        </div>
-        {!alreadyExists && <Plus className="w-3 h-3 text-slate-600 group-hover:text-cyan-400 transition-colors shrink-0" />}
-      </button>
-    </div>
-  );
-}
-
 /* ─── Main Panel ─── */
+
 
 export function TemplateModulePanel({ mobileMenu, setMobileMenu }: TemplateModulePanelProps) {
   const {
     templateModules, selectedTemplateModuleId, templateState,
-    addTemplateModule, setSelectedTemplateModuleId,
+    setSelectedTemplateModuleId,
     isModuleEditDrawerOpen, setIsModuleEditDrawerOpen,
+    isModuleAddDrawerOpen, setIsModuleAddDrawerOpen,
     setFocusedRegionId,
   } = useEditorStore();
-
-  const [showAddSection, setShowAddSection] = useState(false);
-
-  const handleAddModule = (type: TemplateModuleType) => {
-    addTemplateModule(type, { x: 5, y: 70, w: 90, h: 20 });
-  };
 
   const handleOpenEdit = (moduleId: string) => {
     setFocusedRegionId(moduleId);
@@ -271,7 +224,7 @@ export function TemplateModulePanel({ mobileMenu, setMobileMenu }: TemplateModul
               <div className="flex items-center justify-between mb-2 px-1">
                 <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-600">Kağıtta</span>
                 <button
-                  onClick={() => setShowAddSection(!showAddSection)}
+                  onClick={() => setIsModuleAddDrawerOpen(true)}
                   className="text-[8px] font-black uppercase tracking-wider text-cyan-500 hover:text-cyan-400 flex items-center gap-1 transition-colors"
                 >
                   <Plus className="w-3 h-3" />
@@ -292,32 +245,7 @@ export function TemplateModulePanel({ mobileMenu, setMobileMenu }: TemplateModul
             </div>
           )}
 
-          {/* Add Section */}
-          {(showAddSection || templateModules.length === 0) && (
-            <div className={cn("p-3 space-y-1.5", templateModules.length > 0 && "border-t border-slate-800/40")}>
-              <div className="flex items-center justify-between mb-1 px-1">
-                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-600">Modül Ekle</span>
-                {templateModules.length > 0 && (
-                  <button onClick={() => setShowAddSection(false)} className="text-slate-600 hover:text-slate-400">
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {MODULE_DEFINITIONS.map(def => {
-                  const exists = def.type === 'DrawingArea' && templateModules.some(m => m.type === 'DrawingArea');
-                  return (
-                    <AddModuleButton
-                      key={def.id}
-                      definition={def}
-                      alreadyExists={exists}
-                      onAdd={() => handleAddModule(def.type)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {/* Add Section removed in favor of ModuleAddDrawer */}
         </div>
 
         {/* Bottom: Edit shortcut for selected */}

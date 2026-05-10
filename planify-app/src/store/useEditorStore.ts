@@ -116,6 +116,7 @@ interface EditorState {
   tourVisible: boolean;
   tourStep: number;
   isModuleEditDrawerOpen: boolean;
+  isModuleAddDrawerOpen: boolean;
 
   // Actions
   setProjectId: (id: string | null) => void;
@@ -142,6 +143,7 @@ interface EditorState {
   setProjectMetadata: (metadata: Partial<ProjectMetadata>) => void;
   setFocusedRegionId: (id: string | null) => void;
   setIsModuleEditDrawerOpen: (open: boolean) => void;
+  setIsModuleAddDrawerOpen: (open: boolean) => void;
   setModuleSnapLines: (lines: Array<{ axis: 'x' | 'y'; pos: number }>) => void;
   setActiveLayer: (id: string) => void;
   toggleLayerVisibility: (id: string) => void;
@@ -225,6 +227,7 @@ const getInitialState = () => {
       tourVisible: false,
       tourStep: 0,
       isModuleEditDrawerOpen: false,
+      isModuleAddDrawerOpen: false,
     };
   }
 
@@ -258,6 +261,7 @@ const getInitialState = () => {
     tourVisible: false,
     tourStep: 0,
     isModuleEditDrawerOpen: false,
+    isModuleAddDrawerOpen: false,
   };
 };
 
@@ -555,6 +559,8 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     })),
 
     setIsModuleEditDrawerOpen: (isModuleEditDrawerOpen) => set({ isModuleEditDrawerOpen }),
+
+    setIsModuleAddDrawerOpen: (isModuleAddDrawerOpen) => set({ isModuleAddDrawerOpen }),
 
     setModuleSnapLines: (moduleSnapLines) => set({ moduleSnapLines }),
 
