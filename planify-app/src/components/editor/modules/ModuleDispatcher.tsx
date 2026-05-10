@@ -14,6 +14,7 @@ import { AccessibilityRefugeModule } from './AccessibilityRefugeModule';
 import { FireEquipmentModule } from './FireEquipmentModule';
 import { QrDocumentInfoModule } from './QrDocumentInfoModule';
 import { NotesModule } from './NotesModule';
+import { LogoModule } from './LogoModule';
 import { GenericModule } from './GenericModule';
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -48,8 +49,13 @@ export function ModuleDispatcher({ region, content, accent, compact }: ModuleDis
   }
 
   // Assembly / toplanma
-  if (region.type === 'assembly' || region.type === 'media') {
+  if (region.type === 'assembly') {
     return <AssemblyMapModule region={region} content={content} compact={compact} />;
+  }
+
+  // Logo / Media
+  if (region.type === 'media' || regionId.includes('logo')) {
+    return <LogoModule region={region} content={content} compact={compact} />;
   }
 
   // Approval / revision

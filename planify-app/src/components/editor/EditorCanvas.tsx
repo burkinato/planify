@@ -67,7 +67,7 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
     addElement, updateElement, updateElementsBatch, removeElements, setSelectedIds, scaleConfig, setScaleConfig, setTool,
     editorTheme, setZoom, setPan, activeTemplateLayout, projectTemplate, templateLayoutId, templateModules, selectedTemplateModuleId, templateState, focusedRegionId, setFocusedRegionId, setSelectedTemplateModuleId, addTemplateModule, updateTemplateModule, updateTemplateRegion, removeTemplateModule,
     innerZoom, innerPan, setInnerZoom, setInnerPan, projectMetadata, setProjectMetadata,
-    moduleSnapLines, setModuleSnapLines
+    moduleSnapLines, setModuleSnapLines, setIsModuleEditDrawerOpen
   } = useEditorStore(useShallow((s) => ({
     elements: s.elements,
     layers: s.layers,
@@ -110,6 +110,7 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
     removeTemplateModule: s.removeTemplateModule,
     moduleSnapLines: s.moduleSnapLines,
     setModuleSnapLines: s.setModuleSnapLines,
+    setIsModuleEditDrawerOpen: s.setIsModuleEditDrawerOpen,
   })));
 
   const [confirmDeleteDrawingId, setConfirmDeleteDrawingId] = useState<string | null>(null);
@@ -1914,15 +1915,8 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
                           >
                             <svg className="w-[16px] h-[16px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/></svg>
                           </div>
-                          {/* Right: Edit + Delete */}
+                           {/* Right: Delete Only (No drawer editing for drawing area) */}
                           <div className="pointer-events-auto flex items-center gap-1">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setFocusedRegionId(drawingRegion.id); }}
-                              className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-slate-600 hover:text-cyan-600 hover:border-cyan-400 hover:shadow-[0_4px_16px_rgba(8,145,178,0.2)] transition-all"
-                              title="Düzenle"
-                            >
-                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                            </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); setConfirmDeleteDrawingId(drawingRegion.id); }}
                               className="h-8 w-8 flex items-center justify-center rounded-lg border border-red-200 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-red-400 hover:text-red-600 hover:border-red-400 hover:bg-red-50 hover:shadow-[0_4px_16px_rgba(239,68,68,0.2)] transition-all"

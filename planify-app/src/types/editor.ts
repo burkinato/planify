@@ -40,6 +40,7 @@ export interface TemplateRegion {
 
 export type TemplateModuleType =
   | 'Header'
+  | 'Logo'
   | 'DrawingArea'
   | 'EmergencyCall'
   | 'EvacuationInstructions'

@@ -115,6 +115,7 @@ interface EditorState {
   hasCompletedOnboarding: boolean;
   tourVisible: boolean;
   tourStep: number;
+  isModuleEditDrawerOpen: boolean;
 
   // Actions
   setProjectId: (id: string | null) => void;
@@ -140,6 +141,7 @@ interface EditorState {
   updateTemplateRegion: (regionId: string, updates: TemplateRegionState) => void;
   setProjectMetadata: (metadata: Partial<ProjectMetadata>) => void;
   setFocusedRegionId: (id: string | null) => void;
+  setIsModuleEditDrawerOpen: (open: boolean) => void;
   setModuleSnapLines: (lines: Array<{ axis: 'x' | 'y'; pos: number }>) => void;
   setActiveLayer: (id: string) => void;
   toggleLayerVisibility: (id: string) => void;
@@ -222,6 +224,7 @@ const getInitialState = () => {
       hasCompletedOnboarding: false,
       tourVisible: false,
       tourStep: 0,
+      isModuleEditDrawerOpen: false,
     };
   }
 
@@ -254,6 +257,7 @@ const getInitialState = () => {
     hasCompletedOnboarding: localStorage.getItem('planify-onboarding-done') === 'true',
     tourVisible: false,
     tourStep: 0,
+    isModuleEditDrawerOpen: false,
   };
 };
 
@@ -549,6 +553,8 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       selectedTemplateModuleId: focusedRegionId,
       selectedIds: focusedRegionId ? [] : state.selectedIds,
     })),
+
+    setIsModuleEditDrawerOpen: (isModuleEditDrawerOpen) => set({ isModuleEditDrawerOpen }),
 
     setModuleSnapLines: (moduleSnapLines) => set({ moduleSnapLines }),
 

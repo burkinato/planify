@@ -26,6 +26,7 @@ export const PAGE_PRESETS: Record<PagePreset, PageDefinition> = {
 
 const MODULE_IDS: Record<TemplateModuleType, string> = {
   Header: 'header',
+  Logo: 'logo',
   DrawingArea: 'drawing',
   EmergencyCall: 'emergency',
   EvacuationInstructions: 'instructions',
@@ -45,7 +46,7 @@ export const MODULE_DEFINITIONS: TemplateModuleDefinition[] = [
   {
     id: 'mod-header',
     type: 'Header',
-    label: 'Başlık / Kimlik',
+    label: 'Başlık (Metin)',
     description: 'Logo, işyeri/proje adı, kat, tarih ve revizyon kimliği.',
     tone: 'green',
     requirement: 'required',
@@ -58,6 +59,22 @@ export const MODULE_DEFINITIONS: TemplateModuleDefinition[] = [
       title: 'ACIL DURUM TAHLİYE PLANI',
       body: 'Emergency Evacuation Plan',
       meta: 'İşyeri / Proje: __________  |  Kat/Bölüm: __________  |  Revizyon: 00',
+    },
+  },
+  {
+    id: 'mod-logo',
+    type: 'Logo',
+    label: 'Kurumsal Logo',
+    description: 'Projenin veya işyerinin logosu.',
+    tone: 'paper',
+    requirement: 'recommended',
+    defaultRegion: { x: 3, y: 3, w: 10, h: 10 },
+    minW: 5,
+    minH: 5,
+    rendererVariant: 'media-logo',
+    auditTags: ['logo', 'branding'],
+    defaultState: {
+      title: 'Logo',
     },
   },
   {

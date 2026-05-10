@@ -64,6 +64,7 @@ export function ModuleOverlay({
     setSelectedIds,
     language,
     setModuleSnapLines,
+    setIsModuleEditDrawerOpen,
   } = useEditorStore();
 
   const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
@@ -271,7 +272,11 @@ export function ModuleOverlay({
                   {/* Right: Edit + Delete */}
                   <div className="pointer-events-auto flex items-center gap-1">
                     <button
-                      onClick={(e) => { e.stopPropagation(); setFocusedRegionId(region.id); }}
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setFocusedRegionId(region.id);
+                        setIsModuleEditDrawerOpen(true); 
+                      }}
                       className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-slate-600 hover:text-cyan-600 hover:border-cyan-400 hover:shadow-[0_4px_16px_rgba(8,145,178,0.2)] transition-all"
                       title="Düzenle"
                     >
@@ -317,126 +322,6 @@ export function ModuleOverlay({
               </>
             )}
             
-            {/* Context Menu / Form for editing (only when focused) */}
-            {!isPreview && focused && (
-              <div
-                className={cn(
-                  "flex flex-col bg-white animate-fade-in relative z-10",
-                  isHeader
-                    ? "absolute left-0 top-full mt-3 w-[min(520px,92vw)] max-h-[70vh] rounded-2xl border border-emerald-200 shadow-2xl overflow-hidden"
-                    : "h-full overflow-hidden"
-                )}
-              >
-                <div className={cn(
-                  "flex items-center justify-between p-3 border-b shrink-0",
-                  isHeader ? "bg-emerald-50 border-emerald-100" :
-                  tone === 'red' ? "bg-red-50 border-red-100" :
-                  tone === 'blue' ? "bg-blue-50 border-blue-100" :
-                  tone === 'green' ? "bg-emerald-50 border-emerald-100" :
-                  "bg-slate-50 border-slate-200"
-                )}>
-                  <div className={cn(
-                    "text-[10px] font-black uppercase tracking-widest flex items-center gap-2",
-                    isHeader ? "text-emerald-700" :
-                    tone === 'red' ? "text-red-600" :
-                    tone === 'blue' ? "text-blue-600" :
-                    tone === 'green' ? "text-emerald-600" :
-                    "text-slate-500"
-                  )}>
-                    <div className={cn("w-1.5 h-3 rounded-full", 
-                      isHeader ? "bg-emerald-600" :
-                      tone === 'red' ? "bg-red-500" : 
-                      tone === 'blue' ? "bg-blue-500" : 
-                      tone === 'green' ? "bg-emerald-500" : 
-                      "bg-slate-400"
-                    )} />
-                    {isHeader ? (language === 'en' ? 'HEADER SETTINGS' : 'ŞABLON BAŞLIĞI') : region.label}
-                  </div>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); setFocusedRegionId(null); }} 
-                    className="w-6 h-6 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all active:scale-90"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" onWheel={(e) => e.stopPropagation()}>
-                  {isHeader ? (
-                    <>
-                      <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3">
-                        <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800">{t.modules.Header.title}</p>
-                        <p className="mt-1 text-[10px] font-semibold text-emerald-700/80">ISO 7010 / ISO 23601 uyumlu başlık rengi güvenlik yeşili olarak sabitlenmiştir.</p>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">{language === 'en' ? 'Footer Text' : 'Alt Bilgi'}</label>
-                        <input
-                          value={content.meta || ''}
-                          onChange={(event) => updateTemplateRegion(region.id, { meta: event.target.value.toUpperCase() })}
-                          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-sm font-black uppercase tracking-wide text-slate-900 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-sm"
-                          placeholder={language === 'en' ? 'E.G. 1ST FLOOR' : "ORN: 1. NORMAL KAT"}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">{language === 'en' ? 'Logo' : 'Başlık Logosu'}</label>
-                        {projectMetadata.logoUrl && (
-                          <div className="relative h-20 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2">
-                            <img src={projectMetadata.logoUrl} alt="Logo" className="h-full w-full object-contain" />
-                          </div>
-                        )}
-                        <div className="grid grid-cols-2 gap-2">
-                          <label className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 text-[10px] font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-100">
-                            <ImageUp className="h-4 w-4" />
-                            {isLogoLoading ? '...' : (language === 'en' ? 'SELECT LOGO' : 'LOGO SEÇ')}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              disabled={isLogoLoading}
-                              onChange={(event) => {
-                                void handleProjectLogoUpload(event.target.files?.[0] || null);
-                                event.currentTarget.value = '';
-                              }}
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => setProjectMetadata({ logoUrl: '' })}
-                            disabled={!projectMetadata.logoUrl}
-                            className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            {language === 'en' ? 'REMOVE' : 'KALDIR'}
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">{language === 'en' ? 'Title' : 'Başlık'}</label>
-                        <input
-                          value={content.title || ''}
-                          onChange={(event) => updateTemplateRegion(region.id, { title: event.target.value })}
-                          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-sm font-black uppercase tracking-wide text-slate-900 outline-none focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-500/10 transition-all shadow-sm"
-                          placeholder={region.label}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">{language === 'en' ? 'Content' : 'İçerik'}</label>
-                        <textarea
-                          value={content.body || ''}
-                          onChange={(event) => updateTemplateRegion(region.id, { body: event.target.value })}
-                          onWheel={(e) => e.stopPropagation()}
-                          rows={4}
-                          className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs font-bold leading-relaxed text-slate-700 outline-none focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-500/10 transition-all shadow-sm min-h-[100px]"
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Main Content Display (Visible even when not focused) */}
             <div className={cn(
               "pointer-events-none w-full h-full flex items-center relative",

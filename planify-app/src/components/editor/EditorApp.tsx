@@ -13,6 +13,7 @@ import { ExportModal } from './ExportModal';
 import { TemplateModulePanel } from './TemplateModulePanel';
 import { OnboardingWizard } from './onboarding/OnboardingWizard';
 import { EditorTour } from './onboarding/EditorTour';
+import { ModuleEditDrawer } from './ModuleEditDrawer';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
@@ -78,7 +79,9 @@ export default function EditorApp() {
     loadProject, templateLayoutId, projectTemplate, setTemplateLayout,
     elements, layers, activeTemplateLayout, scaleConfig, pagePreset, templateState,
     templateModules, innerZoom, innerPan, setProjectId,
-    hasCompletedOnboarding, setOnboardingVisible
+    hasCompletedOnboarding, setOnboardingVisible,
+    isModuleEditDrawerOpen, setIsModuleEditDrawerOpen,
+    setFocusedRegionId
   } = useEditorStore();
 
   useEffect(() => {
@@ -422,10 +425,19 @@ export default function EditorApp() {
             setContainerNode={handleContainerNode}
           />
           {!isPreview && (
-            <TemplateModulePanel
-              mobileMenu={mobileMenu}
-              setMobileMenu={setMobileMenu}
-            />
+            <>
+              <ModuleEditDrawer 
+                isOpen={isModuleEditDrawerOpen} 
+                onClose={() => {
+                  setIsModuleEditDrawerOpen(false);
+                  setFocusedRegionId(null);
+                }} 
+              />
+              <TemplateModulePanel
+                mobileMenu={mobileMenu}
+                setMobileMenu={setMobileMenu}
+              />
+            </>
           )}
 
         </div>

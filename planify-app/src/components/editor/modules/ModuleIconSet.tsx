@@ -189,6 +189,7 @@ export function NotesIcon({ className, size = defaultProps.size }: IconProps) {
 }
 
 /** DrawingArea — Kalem + grid */
+/** DrawingArea — Kalem + grid */
 export function DrawingAreaIcon({ className, size = defaultProps.size }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -202,12 +203,24 @@ export function DrawingAreaIcon({ className, size = defaultProps.size }: IconPro
   );
 }
 
+/** Logo — Resim/Logo ikonu */
+export function LogoIcon({ className, size = defaultProps.size }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  );
+}
+
 /* ─── Modül tipine göre ikon eşleşmesi ─── */
 
 import type { TemplateModuleType } from '@/types/editor';
 
 export const MODULE_ICONS: Record<TemplateModuleType, React.ComponentType<IconProps>> = {
   Header: HeaderIcon,
+  Logo: LogoIcon,
   DrawingArea: DrawingAreaIcon,
   EmergencyCall: EmergencyCallIcon,
   EvacuationInstructions: EvacuationIcon,
@@ -226,6 +239,7 @@ export const MODULE_ICONS: Record<TemplateModuleType, React.ComponentType<IconPr
 /** Modül tipine göre renk paleti */
 export const MODULE_COLORS: Record<TemplateModuleType, { primary: string; bg: string; border: string; text: string; light: string }> = {
   Header:                  { primary: '#059669', bg: 'bg-emerald-50',  border: 'border-emerald-200', text: 'text-emerald-700', light: 'bg-emerald-100' },
+  Logo:                    { primary: '#475569', bg: 'bg-slate-50',    border: 'border-slate-200',   text: 'text-slate-700',   light: 'bg-slate-100' },
   DrawingArea:             { primary: '#475569', bg: 'bg-slate-50',    border: 'border-slate-200',   text: 'text-slate-700',   light: 'bg-slate-100' },
   EmergencyCall:           { primary: '#dc2626', bg: 'bg-red-50',      border: 'border-red-200',     text: 'text-red-700',     light: 'bg-red-100' },
   EvacuationInstructions:  { primary: '#059669', bg: 'bg-emerald-50',  border: 'border-emerald-200', text: 'text-emerald-700', light: 'bg-emerald-100' },

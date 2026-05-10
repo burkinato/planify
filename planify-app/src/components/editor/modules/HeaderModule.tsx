@@ -37,20 +37,8 @@ export function HeaderModule({ region, content, accent, compact }: Props) {
       className="flex h-full w-full items-center justify-between px-4 py-2 overflow-hidden"
       style={{ background: headerColor }}
     >
-      {/* ── Logo ── */}
-      {projectMetadata.logoUrl ? (
-        <div className="flex-shrink-0 flex items-center justify-center h-[75%] aspect-square rounded-2xl bg-white/10 border border-white/15 shadow-inner relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
-          <Image src={projectMetadata.logoUrl} alt="Logo" fill className="object-contain drop-shadow-md p-1" style={{ imageRendering: 'auto' }} />
-        </div>
-      ) : (
-        <div className="flex-shrink-0 flex items-center justify-center h-[60%] aspect-square rounded-xl bg-white/10 border border-white/15">
-          <ShieldCheck className="w-1/2 h-1/2 text-white/50" />
-        </div>
-      )}
-
       {/* ── Title Area ── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 min-w-0">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 min-w-0">
         <div
           className={cn(
             'text-white uppercase tracking-[-0.01em] drop-shadow-md transition-all duration-200 truncate max-w-full text-center',
@@ -106,8 +94,6 @@ export function HeaderModule({ region, content, accent, compact }: Props) {
         </div>
       </div>
 
-      {/* ── Right spacer ── */}
-      <div className="flex-shrink-0 w-[60px]" />
     </div>
   );
 }
