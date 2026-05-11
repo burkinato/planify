@@ -1,50 +1,53 @@
 const fs = require('fs');
-const file = 'C:/Users/pixor/Desktop/planify/planify-app/src/components/editor/EditorCanvas.tsx';
-let content = fs.readFileSync(file, 'utf8');
+let code = fs.readFileSync('planify-app/src/components/editor/EditorCanvas.tsx', 'utf8');
 
-content = content.replace(
-  "import { GridRenderer } from './canvas/GridRenderer';",
-  "import { GridRenderer } from './canvas/GridRenderer';\nimport { CanvasElementsRenderer } from './canvas/CanvasElementsRenderer';"
-);
+const mousedownStart = code.indexOf('  const handleStageMouseDown = (e: CanvasStageEvent) => {');
+const calculateSnapStart = code.indexOf('  const calculateSnapToWall = (el: EditorElement');
+const mouseUpStart = code.indexOf('  const handleStageMouseUp = (e: CanvasStageEvent) => {');
+const handleWheelStart = code.indexOf('  // handleWheel is called by the Konva Stage');
 
-const startMarker = '  const selectOrErase = ';
-const startIdx = content.indexOf(startMarker);
-const endMarker = '  return (\n    <main';
-const endIdx = content.indexOf(endMarker, startIdx);
+if (mousedownStart > -1 && calculateSnapStart > -1 && mouseUpStart > -1 && handleWheelStart > -1) {
+  const hookCall = `  const {
+    handleStageMouseDown,
+    handleStageMouseMove,
+    handleStageMouseUp,
+    isDrawing,
+    currentLine,
+    setCurrentLine,
+    orthoLine,
+    alignLine,
+  } = useCanvasInteraction({
+    stageRef,
+    infiniteHostRef,
+    isSpacePressedRef,
+    isInnerPanningRef,
+    innerPanStartRef,
+    tool,
+    toolOptions,
+    wallElements,
+    zoom,
+    innerZoom,
+    innerPan,
+    setInnerPan,
+    scaleConfig,
+    setDimInput,
+    setScaleModal,
+    findSnapPoint,
+    getRelativePointerPosition,
+    calculateSnapToWall,
+    toDisplayUnit,
+  });
 
-if (startIdx !== -1 && endIdx !== -1) {
-  content = content.substring(0, startIdx) + content.substring(endIdx);
+`;
+  
+  const part1 = code.substring(0, mousedownStart);
+  const part2 = code.substring(calculateSnapStart, mouseUpStart);
+  const part3 = code.substring(handleWheelStart);
+
+  code = part1 + part2 + hookCall + part3;
+
+  fs.writeFileSync('planify-app/src/components/editor/EditorCanvas.tsx', code);
+  console.log('Success');
 } else {
-  console.log("Could not find start/end markers for removal.");
-  process.exit(1);
+  console.log('Error finding indices');
 }
-
-const jsxStartMarker = '{/* Wall Rendering Passes (CAD-like) */}';
-const jsxEndMarker = '{renderedOtherElements}';
-const jsxStartIdx = content.indexOf(jsxStartMarker);
-const jsxEndIdx = content.indexOf(jsxEndMarker, jsxStartIdx) + jsxEndMarker.length;
-
-if (jsxStartIdx !== -1 && jsxEndIdx > jsxStartIdx) {
-  const newJsx = `<CanvasElementsRenderer
-                          elements={elements}
-                          layers={layers}
-                          selectedIds={selectedIds}
-                          themeConfig={themeConfig}
-                          editorTheme={editorTheme}
-                          tool={tool}
-                          isSpacePressed={isSpacePressed}
-                          customSymbols={customSymbols}
-                          updateElement={updateElement}
-                          updateElementsBatch={updateElementsBatch}
-                          removeElements={removeElements}
-                          setSelectedIds={setSelectedIds}
-                          calculateSnapToWall={calculateSnapToWall}
-                        />`;
-  content = content.substring(0, jsxStartIdx) + newJsx + content.substring(jsxEndIdx);
-} else {
-  console.log("Could not find JSX markers.");
-  process.exit(1);
-}
-
-fs.writeFileSync(file, content);
-console.log("Success");
