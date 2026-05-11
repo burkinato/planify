@@ -479,5 +479,3 @@ export function ModuleOverlay({
     </>
   );
 }
-);
-}

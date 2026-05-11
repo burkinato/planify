@@ -159,6 +159,7 @@ export default function EditorApp() {
             page_preset: proj.page_preset ?? null,
             template_state: proj.template_state ?? null,
           });
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setHasLoadedProject(true);
         }
       }
