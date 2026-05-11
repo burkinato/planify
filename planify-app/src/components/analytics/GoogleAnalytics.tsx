@@ -52,6 +52,6 @@ function AnalyticsEvents({ GA_MEASUREMENT_ID }: { GA_MEASUREMENT_ID: string }) {
 // Global declaration for gtag
 declare global {
   interface Window {
-    gtag: (command: string, id: string, config?: any) => void;
+    gtag: (command: string, id: string, config?: Record<string, unknown>) => void;
   }
 }

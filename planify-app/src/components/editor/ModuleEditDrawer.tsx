@@ -197,7 +197,7 @@ export function ModuleEditDrawer({ isOpen, onClose }: Props) {
             {TONES.map(t => (
               <button
                 key={t.value} title={t.label} type="button"
-                onClick={() => updateTemplateModule(mod.id, { tone: t.value as any })}
+                onClick={() => updateTemplateModule(mod.id, { tone: t.value as 'neutral' | 'blue' | 'red' | 'amber' | 'emerald' })}
                 className={cn(
                   "w-7 h-7 rounded-lg transition-all hover:scale-110",
                   t.bg,

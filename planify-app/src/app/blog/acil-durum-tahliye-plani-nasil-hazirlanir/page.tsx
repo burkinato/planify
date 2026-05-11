@@ -45,16 +45,16 @@ export default function BlogPost() {
       </section>
 
       <section className="mb-12">
-        <h2 className="text-2xl font-black text-slate-900 mb-6">3. "Buradasınız" Noktasının Önemi</h2>
+        <h2 className="text-2xl font-black text-slate-900 mb-6">3. &quot;Buradasınız&quot; Noktasının Önemi</h2>
         <p className="text-slate-600 mb-4">
-          Bir tahliye planının en kritik öğesi "Buradasınız" (You Are Here) işaretidir. Planın asıldığı konuma göre bu noktanın doğru yerleştirilmesi, panik anında yön bulmayı sağlar.
+          Bir tahliye planının en kritik öğesi &quot;Buradasınız&quot; (You Are Here) işaretidir. Planın asıldığı konuma göre bu noktanın doğru yerleştirilmesi, panik anında yön bulmayı sağlar.
         </p>
       </section>
 
       <section className="mb-12 bg-indigo-50 p-8 rounded-2xl border border-indigo-100">
         <h3 className="text-xl font-black text-indigo-900 mb-4">Planify ile Hızlı Çözüm</h3>
         <p className="text-indigo-800/80 mb-6 font-medium">
-          Tüm bu standartları manuel olarak takip etmek yerine, Planify'ın akıllı editörünü kullanarak ISO uyumlu planlarınızı otomatik olarak oluşturabilirsiniz.
+          Tüm bu standartları manuel olarak takip etmek yerine, Planify&apos;ın akıllı editörünü kullanarak ISO uyumlu planlarınızı otomatik olarak oluşturabilirsiniz.
         </p>
         <a href="/register" className="inline-block px-6 py-3 bg-indigo-600 text-white text-sm font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all">
           Hemen Çizmeye Başla

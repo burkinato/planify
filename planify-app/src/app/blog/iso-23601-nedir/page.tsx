@@ -58,7 +58,7 @@ export default function IsoGuide() {
             <div className="w-8 h-8 shrink-0 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-sm">3</div>
             <div>
               <h4 className="font-black text-slate-900">Boyut</h4>
-              <p className="text-slate-600 text-sm">Minimum plan boyutu ISO 23601'e göre A3'tür. Daha küçük boyutlar denetimden geçmeyebilir.</p>
+              <p className="text-slate-600 text-sm">Minimum plan boyutu ISO 23601&apos;e göre A3&apos;tür. Daha küçük boyutlar denetimden geçmeyebilir.</p>
             </div>
           </div>
         </div>

@@ -205,7 +205,7 @@ export default function EditorApp() {
         let thumbnail_url = undefined;
         // Only generate thumbnail every 30 seconds or if it's the first save
         const now = Date.now();
-        const lastThumbnailTime = (window as any)._lastThumbnailTime || 0;
+        const lastThumbnailTime = (window as unknown as { _lastThumbnailTime?: number })._lastThumbnailTime || 0;
         if (now - lastThumbnailTime > 30000 && stageRef.current) {
           try {
             thumbnail_url = stageRef.current.toDataURL({
@@ -213,7 +213,7 @@ export default function EditorApp() {
               mimeType: 'image/jpeg',
               quality: 0.5
             });
-            (window as any)._lastThumbnailTime = now;
+            (window as unknown as { _lastThumbnailTime?: number })._lastThumbnailTime = now;
           } catch (e) {
             console.warn('Thumbnail generation failed', e);
           }

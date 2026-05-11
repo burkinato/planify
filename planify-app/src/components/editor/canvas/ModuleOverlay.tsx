@@ -393,7 +393,7 @@ export function ModuleOverlay({
                       fontSize: content.titleSize ? `${content.titleSize}px` : 'max(8px, min(3.5cqw, 15cqh))',
                       fontWeight: content.titleWeight || 'black',
                     }}>
-                      {content.title || (t.modules[region.type as keyof typeof t.modules] as any)?.title || region.label}
+                      {content.title || (t.modules[region.type as keyof typeof t.modules] as { title?: string })?.title || region.label}
                     </div>
                   </div>
                   
@@ -478,4 +478,6 @@ export function ModuleOverlay({
       />
     </>
   );
+}
+);
 }

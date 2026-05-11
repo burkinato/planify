@@ -88,7 +88,7 @@ function ModuleRow({ module, isSelected, onSelect, onEdit, templateState }: {
   isSelected: boolean;
   onSelect: () => void;
   onEdit: () => void;
-  templateState: any;
+  templateState: Record<string, unknown>;
 }) {
   const [hovered, setHovered] = useState(false);
   const { removeTemplateModule } = useEditorStore();

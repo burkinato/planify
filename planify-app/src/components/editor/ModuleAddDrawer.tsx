@@ -123,7 +123,7 @@ export function ModuleAddDrawer({ isOpen, onClose }: Props) {
                         addTemplateModule(def.type);
                         onClose();
                      }}
-                     style={{ "--idx": idx } as any}
+                     style={{ "--idx": idx } as React.CSSProperties}
                      className={cn(
                        "group relative flex items-center gap-4 p-3 rounded-2xl border border-slate-800 bg-slate-800/30 text-left transition-all duration-300 hover:border-cyan-500/30 hover:bg-slate-800/50 hover:shadow-xl hover:shadow-cyan-900/5",
                        alreadyExists && "opacity-40 cursor-not-allowed grayscale",
