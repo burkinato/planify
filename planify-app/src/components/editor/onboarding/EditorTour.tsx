@@ -49,6 +49,7 @@ export function EditorTour() {
       const el = document.querySelector(step.target);
       if (el) {
         const rect = el.getBoundingClientRect();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCoords({
           top: rect.top,
           left: rect.left,

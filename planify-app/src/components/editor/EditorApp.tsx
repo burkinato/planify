@@ -354,6 +354,7 @@ export default function EditorApp() {
   // Smooth preloader fade-out effect
   useEffect(() => {
     if (!isLoading && (!projectId || !isInitialLoading)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreloaderOpacity(0);
       const timer = setTimeout(() => setShowPreloader(false), 500);
       return () => clearTimeout(timer);
@@ -371,6 +372,7 @@ export default function EditorApp() {
         return () => clearTimeout(timer);
       }
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsInitialLoading(false);
     }
   }, [projectId, hasLoadedProject]);
@@ -381,7 +383,8 @@ export default function EditorApp() {
       const absoluteTimer = setTimeout(() => {
         if (isInitialLoading) {
           console.warn('Absolute fallback triggered: 3 seconds passed. Forcing preloader off.');
-          setIsInitialLoading(false);
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsInitialLoading(false);
           
           const currentProj = useProjectStore.getState().projects.find(p => p.id === projectId);
           if (currentProj && !hasLoadedProject) {

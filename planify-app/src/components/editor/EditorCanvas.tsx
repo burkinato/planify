@@ -493,7 +493,7 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
-  }, []);
+  }, [stageRef]);
 
   const snapToGrid = (val: number) => Math.round(val / GRID_SIZE) * GRID_SIZE;
 
@@ -1512,8 +1512,8 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
     const aspect = startW / startH;
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
-      let deltaW = ((moveEvent.clientX - startX) / paperRect.width) * 100;
-      let deltaH = ((moveEvent.clientY - startY) / paperRect.height) * 100;
+      const deltaW = ((moveEvent.clientX - startX) / paperRect.width) * 100;
+      const deltaH = ((moveEvent.clientY - startY) / paperRect.height) * 100;
       
       let newW = startW;
       let newH = startH;
@@ -1642,12 +1642,10 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
     templateState,
   ]);
 
-  const memoizedWallData = useMemo(() => {
-    return wallElements.map(el => ({
-      el,
-      rpts: computeRenderPoints(el, wallElements)
-    }));
-  }, [wallElements]);
+  const memoizedWallData = wallElements.map(el => ({
+    el,
+    rpts: computeRenderPoints(el, wallElements)
+  }));
 
   const renderedOtherElements = useMemo(() => {
     return visibleElements.filter(el => el.type !== 'wall').map((el) => {
@@ -1759,60 +1757,58 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleElements, selectedIds, layers, tool, themeConfig, customSymbols, editorTheme]);
 
-  const wallEndpointHandles = useMemo(() => {
-    return wallElements
-      .filter((el) => selectedIds.includes(el.id))
-      .flatMap((el) => {
-        const pts = wallPoints(el);
+  const wallEndpointHandles = wallElements
+    .filter((el) => selectedIds.includes(el.id))
+    .flatMap((el) => {
+      const pts = wallPoints(el);
 
-        return ([0, 1] as const).map((endpointIndex) => {
-          const x = pts[endpointIndex * 2];
-          const y = pts[endpointIndex * 2 + 1];
+      return ([0, 1] as const).map((endpointIndex) => {
+        const x = pts[endpointIndex * 2];
+        const y = pts[endpointIndex * 2 + 1];
 
-          return (
-            <Circle
-              key={`wall-handle-${el.id}-${endpointIndex}`}
-              x={x}
-              y={y}
-              radius={7}
-              fill="white"
-              stroke={themeConfig.accent}
-              strokeWidth={2}
-              shadowBlur={6}
-              shadowOpacity={0.25}
-              draggable={tool === 'select' && !layers.find(l => l.id === el.layerId)?.locked && !isSpacePressed}
-              onDragMove={(e) => {
-                if (e.evt.shiftKey) {
-                  const otherX = pts[(1 - endpointIndex) * 2];
-                  const otherY = pts[(1 - endpointIndex) * 2 + 1];
-                  const dx = e.target.x() - otherX;
-                  const dy = e.target.y() - otherY;
+        return (
+          <Circle
+            key={`wall-handle-${el.id}-${endpointIndex}`}
+            x={x}
+            y={y}
+            radius={7}
+            fill="white"
+            stroke={themeConfig.accent}
+            strokeWidth={2}
+            shadowBlur={6}
+            shadowOpacity={0.25}
+            draggable={tool === 'select' && !layers.find(l => l.id === el.layerId)?.locked && !isSpacePressed}
+            onDragMove={(e) => {
+              if (e.evt.shiftKey) {
+                const otherX = pts[(1 - endpointIndex) * 2];
+                const otherY = pts[(1 - endpointIndex) * 2 + 1];
+                const dx = e.target.x() - otherX;
+                const dy = e.target.y() - otherY;
 
-                  if (Math.abs(dx) > Math.abs(dy)) {
-                    e.target.y(otherY);
-                  } else {
-                    e.target.x(otherX);
-                  }
+                if (Math.abs(dx) > Math.abs(dy)) {
+                  e.target.y(otherY);
+                } else {
+                  e.target.x(otherX);
                 }
-              }}
-              onDragEnd={(e) => {
-                const originalX = pts[endpointIndex * 2];
-                const originalY = pts[endpointIndex * 2 + 1];
-                const { updates } = buildWallEndpointUpdates(
-                  el,
-                  wallElements,
-                  endpointIndex,
-                  { x: e.target.x(), y: e.target.y() }
-                );
+              }
+            }}
+            onDragEnd={(e) => {
+              const originalX = pts[endpointIndex * 2];
+              const originalY = pts[endpointIndex * 2 + 1];
+              const { updates } = buildWallEndpointUpdates(
+                el,
+                wallElements,
+                endpointIndex,
+                { x: e.target.x(), y: e.target.y() }
+              );
 
-                if (updates.length > 0) updateElementsBatch(updates);
-                else e.target.position({ x: originalX, y: originalY });
-              }}
-            />
-          );
-        });
+              if (updates.length > 0) updateElementsBatch(updates);
+              else e.target.position({ x: originalX, y: originalY });
+            }}
+          />
+        );
       });
-  }, [layers, selectedIds, themeConfig.accent, tool, updateElementsBatch, wallElements]);
+    });
 
   return (
     <main
@@ -1948,6 +1944,7 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
                         <div className="absolute -top-11 left-0 right-0 z-50 flex items-center justify-between pointer-events-none">
                           {/* Left: Move handle */}
                           <div
+                            // eslint-disable-next-line react-hooks/refs
                             onPointerDown={(event) => handleModuleDragPointerDown(event, drawingRegion.id)}
                             className="pointer-events-auto h-8 w-8 flex items-center justify-center cursor-move rounded-lg border border-slate-200 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-slate-600 hover:text-cyan-600 hover:border-cyan-400 hover:shadow-[0_4px_16px_rgba(8,145,178,0.2)] transition-all"
                             title="Taşı (Tutup Sürükleyin)"
@@ -2006,6 +2003,7 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
                         setSelectedTemplateModuleId(drawingRegion.id);
                         if (selectedIds.length > 0) setSelectedIds([]);
                       }
+                      // eslint-disable-next-line react-hooks/refs
                       handleStageMouseDown(e);
                     }}
                     onMouseMove={handleStageMouseMove}

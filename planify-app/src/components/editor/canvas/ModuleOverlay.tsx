@@ -19,7 +19,7 @@ export interface ModuleOverlayProps {
   paperRegions: TemplateRegion[];
   mergedTemplateState: any;
   isPreview: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   stageHostRef: React.RefObject<HTMLDivElement | null>;
   isLogoLoading: boolean;
   uploadingRegionId: string | null;
@@ -29,7 +29,7 @@ export interface ModuleOverlayProps {
   handleProjectLogoUpload: (file: File | null) => Promise<void>;
   handleRegionImageUpload: (regionId: string, file: File | null) => Promise<void>;
   clearRegionImage: (regionId: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   logoFileInputRef: React.RefObject<HTMLInputElement | null>;
   visibleElements: EditorElement[];
 }
@@ -134,8 +134,8 @@ export function ModuleOverlay({
     const aspect = startW / startH;
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
-      let deltaW = ((moveEvent.clientX - startX) / paperRect.width) * 100;
-      let deltaH = ((moveEvent.clientY - startY) / paperRect.height) * 100;
+      const deltaW = ((moveEvent.clientX - startX) / paperRect.width) * 100;
+      const deltaH = ((moveEvent.clientY - startY) / paperRect.height) * 100;
       
       let newW = startW;
       let newH = startH;
