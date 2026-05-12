@@ -24,7 +24,7 @@ const POSTS = [
     catCls: 'bg-cyan-100 text-cyan-700',
     gradFrom: '#0891b2',
     gradTo: '#164e63',
-    title: 'AutoCAD vs Planify: Tahliye Planında Hangi Araç Daha İyi?',
+    title: 'AutoCAD vs KolayTahliye: Tahliye Planında Hangi Araç Daha İyi?',
     excerpt: 'Karmaşık genel amaçlı yazılımlar yerine neden sektöre özel çözümlerin öne geçtiğini karşılaştırmalı inceliyoruz.',
     date: '2 Nisan 2026',
     read: '4 dk okuma',

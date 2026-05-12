@@ -1,5 +1,5 @@
 -- ================================================================
--- Planify — Migration: Add subscription fields to profiles
+-- KolayTahliye — Migration: Add subscription fields to profiles
 -- ================================================================
 
 -- 1. Profiles tablosuna abonelik alanlarını ekle

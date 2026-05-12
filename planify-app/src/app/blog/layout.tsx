@@ -29,7 +29,7 @@ export default function BlogLayout({ children }: { children: React.ReactNode }) 
       <footer className="bg-slate-900 text-white py-12 mt-20">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h3 className="text-2xl font-black mb-4">Profesyonel Tahliye Planları Hazırlamaya Hazır mısınız?</h3>
-          <p className="text-slate-400 mb-8 max-w-lg mx-auto">Planify ile dakikalar içinde ISO standartlarına uygun planlar oluşturun.</p>
+          <p className="text-slate-400 mb-8 max-w-lg mx-auto">KolayTahliye ile dakikalar içinde ISO standartlarına uygun planlar oluşturun.</p>
           <Link href="/register" className="inline-flex px-8 py-4 bg-white text-slate-900 text-sm font-black uppercase tracking-widest rounded-2xl hover:bg-slate-100 transition-all">
             Hemen Kaydolun
           </Link>

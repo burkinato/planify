@@ -1,10 +1,10 @@
-export const AUTH_SESSION_COOKIE_NAME = 'planify_auth_active';
-export const ADMIN_AUTH_SESSION_COOKIE_NAME = 'planify_admin_auth_active';
-export const AUTH_REMEMBERED_EMAIL_KEY = 'planify_auth_remembered_email';
-export const AUTH_PERSISTENCE_KEY = 'planify_auth_persistence';
-export const ADMIN_AUTH_PERSISTENCE_KEY = 'planify_admin_auth_persistence';
-export const AUTH_BROWSER_SESSION_KEY = 'planify_auth_browser_session';
-export const ADMIN_AUTH_BROWSER_SESSION_KEY = 'planify_admin_auth_browser_session';
+export const AUTH_SESSION_COOKIE_NAME = 'KolayTahliye_auth_active';
+export const ADMIN_AUTH_SESSION_COOKIE_NAME = 'KolayTahliye_admin_auth_active';
+export const AUTH_REMEMBERED_EMAIL_KEY = 'KolayTahliye_auth_remembered_email';
+export const AUTH_PERSISTENCE_KEY = 'KolayTahliye_auth_persistence';
+export const ADMIN_AUTH_PERSISTENCE_KEY = 'KolayTahliye_admin_auth_persistence';
+export const AUTH_BROWSER_SESSION_KEY = 'KolayTahliye_auth_browser_session';
+export const ADMIN_AUTH_BROWSER_SESSION_KEY = 'KolayTahliye_admin_auth_browser_session';
 
 export const AUTH_PERSISTENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 export const DEFAULT_AUTH_REDIRECT_PATH = '/dashboard';
@@ -24,7 +24,7 @@ export function getSafeRedirectPath(
   }
 
   try {
-    const url = new URL(value, 'https://planify.local');
+    const url = new URL(value, 'https://KolayTahliye.local');
     const redirectPath = `${url.pathname}${url.search}${url.hash}`;
 
     if (isAuthPagePath(url.pathname)) {

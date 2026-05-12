@@ -4,11 +4,11 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type Konva from 'konva';
 import '@/lib/editor/konva-init';
 // Register Konva nodes for react-konva to prevent "Konva has no node with the type X" errors
-import { Stage, Layer, Rect, Line, Text, Group, Circle, Image as KonvaImage, Shape, Arrow } from 'react-konva';
+import { Stage, Layer, Rect, Line, Text, Group, Circle, Shape, Arrow } from 'react-konva';
 import { useEditorStore, useShallow } from '@/store/useEditorStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { SYMBOLS, SNAP_DISTANCE, GRID_SIZE, THEME_CONFIGS, type EditorElement, type EditorTheme, type WallToolOptions, type DoorToolOptions, type WindowToolOptions, type StairsToolOptions, type ElevatorToolOptions, type ColumnToolOptions, type TextToolOptions } from '@/types/editor';
-import { ImageUp, Layers, Trash2 } from 'lucide-react';
+import { SYMBOLS, SNAP_DISTANCE, GRID_SIZE, THEME_CONFIGS, type EditorElement } from '@/types/editor';
+import { Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getTemplateModules, mergeTemplateState, modulesToRegions } from '@/lib/editor/templateLayouts';
 import { getTemplateRegionAssetUrl, uploadTemplateRegionAsset } from '@/lib/editor/templateAssets';
@@ -53,23 +53,19 @@ interface EditorCanvasProps {
 
 
 
-const clampNumber = (value: number | undefined, min: number, max: number) => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
-  return Math.max(min, Math.min(max, value));
-};
-
-export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRef, setContainerNode, projectId }: EditorCanvasProps) {
-  const DEFAULT_PLAN_HEADER = 'ACİL DURUM TAHLİYE PLANI';
-  const ISO_HEADER_GREEN = '#008F4C';
-  const { profile, user } = useAuthStore();
+export function EditorCanvas({ isPreview, mobileMenu, setMobileMenu, stageRef, setContainerNode, projectId }: EditorCanvasProps) {
+  const { profile, user } = useAuthStore(useShallow(state => ({
+    profile: state.profile,
+    user: state.user
+  })));
   const subscriptionTier = profile?.subscription_tier || 'free';
 
   const {
     elements, layers, tool, toolOptions, zoom, pan, gridVisible, selectedIds, customSymbols,
-    addElement, updateElement, updateElementsBatch, removeElements, setSelectedIds, scaleConfig, setScaleConfig, setTool,
+    addElement, updateElement, updateElementsBatch, removeElements, setSelectedIds, scaleConfig, setScaleConfig,
     editorTheme, setZoom, setPan, activeTemplateLayout, projectTemplate, templateLayoutId, templateModules, selectedTemplateModuleId, templateState, focusedRegionId, setFocusedRegionId, setSelectedTemplateModuleId, addTemplateModule, updateTemplateModule, updateTemplateRegion, removeTemplateModule,
     innerZoom, innerPan, setInnerZoom, setInnerPan, projectMetadata, setProjectMetadata,
-    moduleSnapLines, setModuleSnapLines, setIsModuleEditDrawerOpen
+    moduleSnapLines, setModuleSnapLines
   } = useEditorStore(useShallow((s) => ({
     elements: s.elements,
     layers: s.layers,
@@ -87,7 +83,6 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
     setSelectedIds: s.setSelectedIds,
     scaleConfig: s.scaleConfig,
     setScaleConfig: s.setScaleConfig,
-    setTool: s.setTool,
     editorTheme: s.editorTheme,
     setZoom: s.setZoom,
     setPan: s.setPan,
@@ -112,7 +107,6 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
     removeTemplateModule: s.removeTemplateModule,
     moduleSnapLines: s.moduleSnapLines,
     setModuleSnapLines: s.setModuleSnapLines,
-    setIsModuleEditDrawerOpen: s.setIsModuleEditDrawerOpen,
   })));
 
   const [confirmDeleteDrawingId, setConfirmDeleteDrawingId] = useState<string | null>(null);
@@ -168,7 +162,6 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
   const visibleElements = elements.filter(el => visibleLayers.includes(el.layerId));
   const wallElements = visibleElements.filter((el): el is WallElement => el.type === 'wall' && !!el.points && el.points.length >= 4);
 
-  const [isFocused, setIsFocused] = useState(true);
   const isInnerPanningRef = useRef(false);
   const innerPanStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
 
@@ -1105,17 +1098,17 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
 
   const handlePaperDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     if (
-      event.dataTransfer.types.includes('application/planify-module') ||
-      event.dataTransfer.types.includes('application/planify-existing-module')
+      event.dataTransfer.types.includes('application/KolayTahliye-module') ||
+      event.dataTransfer.types.includes('application/KolayTahliye-existing-module')
     ) {
       event.preventDefault();
-      event.dataTransfer.dropEffect = event.dataTransfer.types.includes('application/planify-existing-module') ? 'move' : 'copy';
+      event.dataTransfer.dropEffect = event.dataTransfer.types.includes('application/KolayTahliye-existing-module') ? 'move' : 'copy';
     }
   };
 
   const handlePaperDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    const moduleType = event.dataTransfer.getData('application/planify-module');
-    const existingModuleId = event.dataTransfer.getData('application/planify-existing-module');
+    const moduleType = event.dataTransfer.getData('application/KolayTahliye-module');
+    const existingModuleId = event.dataTransfer.getData('application/KolayTahliye-existing-module');
     if (!moduleType && !existingModuleId) return;
 
     event.preventDefault();
@@ -1123,7 +1116,7 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
 
     let offset = { x: 0, y: 0 };
     try {
-      const rawOffset = event.dataTransfer.getData('application/planify-module-offset');
+      const rawOffset = event.dataTransfer.getData('application/KolayTahliye-module-offset');
       if (rawOffset) offset = JSON.parse(rawOffset) as { x: number; y: number };
     } catch {
       offset = { x: 0, y: 0 };
@@ -1693,7 +1686,7 @@ export function EditorCanvas({ id, isPreview, mobileMenu, setMobileMenu, stageRe
                         setSelectedTemplateModuleId(drawingRegion.id);
                         if (selectedIds.length > 0) setSelectedIds([]);
                       }
-                      // eslint-disable-next-line react-hooks/refs
+                       
                       handleStageMouseDown(e);
                     }}
                     onMouseMove={handleStageMouseMove}

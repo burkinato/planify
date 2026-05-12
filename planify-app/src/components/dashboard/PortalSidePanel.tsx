@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, BadgeCheck, FileDown, LayoutTemplate, ShieldCheck, Sparkles, User, Settings, LogOut } from 'lucide-react';
+import { ArrowRight, FileDown, LayoutTemplate, ShieldCheck, Sparkles, User } from 'lucide-react';
 import type { Profile } from '@/store/useAuthStore';
 import type { ProjectExport } from '@/store/useProjectStore';
 import type { TemplateLayout } from '@/types/editor';

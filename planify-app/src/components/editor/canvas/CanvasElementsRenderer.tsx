@@ -26,7 +26,7 @@ interface CanvasElementsRendererProps {
   isSpacePressed: boolean;
   customSymbols: { id: string; url: string; name: string }[];
   updateElement: (id: string, updates: Partial<EditorElement>) => void;
-  updateElementsBatch: (updates: {id: string, updates: Partial<EditorElement>}[]) => void;
+  updateElementsBatch: (updates: { id: string; changes: Partial<EditorElement> }[]) => void;
   removeElements: (ids: string[]) => void;
   setSelectedIds: (ids: string[]) => void;
   calculateSnapToWall: (el: EditorElement, newX: number, newY: number) => { snappedX: number; snappedY: number; rotation: number; wallId?: string };

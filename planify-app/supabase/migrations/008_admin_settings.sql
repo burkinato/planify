@@ -1,5 +1,5 @@
 -- ================================================================
--- Planify — Migration: Admin Settings & Pricing
+-- KolayTahliye — Migration: Admin Settings & Pricing
 -- ================================================================
 
 CREATE TABLE IF NOT EXISTS public.admin_settings (

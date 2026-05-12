@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
+import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';
 import { 
-  Sparkles, MousePointer2, Layout, FileDown, 
+  Sparkles, MousePointer2, FileDown, 
   ChevronRight, ChevronLeft, Check, X, ShieldCheck, PlayCircle
 } from 'lucide-react';
 import { getDemoProject } from '@/lib/editor/demoProject';
@@ -20,7 +21,7 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    title: 'Planify\'a Hoş Geldiniz',
+    title: 'KolayTahliye\'a Hoş Geldiniz',
     description: 'Türkiye\'nin ilk dijital tahliye planı editörü ile tanışın. ISO 7010 ve ISO 23601 standartlarına tam uyumlu planları dakikalar içinde hazırlayın.',
     icon: Sparkles,
     color: 'from-indigo-600 to-violet-600',
@@ -40,7 +41,12 @@ const STEPS: Step[] = [
 ];
 
 export function OnboardingWizard() {
-  const { onboardingVisible, completeOnboarding, language, loadProject } = useEditorStore();
+  const { onboardingVisible, completeOnboarding, language, loadProject } = useEditorStore(useShallow(state => ({
+    onboardingVisible: state.onboardingVisible,
+    completeOnboarding: state.completeOnboarding,
+    language: state.language,
+    loadProject: state.loadProject
+  })));
   const [currentStep, setCurrentStep] = useState(0);
 
   // Track start once
@@ -71,7 +77,7 @@ export function OnboardingWizard() {
       demo: 'Start with Demo',
       skip: 'Skip',
       steps: [
-        { title: 'Welcome to Planify', desc: 'Meet Turkey\'s first digital evacuation plan editor. Create ISO 7010 and ISO 23601 compliant plans in minutes.' },
+        { title: 'Welcome to KolayTahliye', desc: 'Meet Turkey\'s first digital evacuation plan editor. Create ISO 7010 and ISO 23601 compliant plans in minutes.' },
         { title: 'Smart Tools', desc: 'Draw your architecture using tools in the left panel. Drag and drop emergency equipment from the symbol library. Everything is automatically added to the legend.' },
         { title: 'Professional Output', desc: 'When your drawing is done, export it in high-resolution PDF or PNG format with one click. Title block and legend info are auto-formatted.' }
       ]

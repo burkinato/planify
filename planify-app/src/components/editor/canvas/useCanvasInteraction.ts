@@ -22,15 +22,15 @@ export interface UseCanvasInteractionArgs {
   isInnerPanningRef: React.MutableRefObject<boolean>;
   innerPanStartRef: React.MutableRefObject<{ x: number; y: number; panX: number; panY: number }>;
   tool: string;
-  toolOptions: any;
+  toolOptions: Record<string, unknown>;
   wallElements: WallElement[];
   zoom: number;
   innerZoom: number;
   innerPan: { x: number; y: number };
   setInnerPan: (pan: { x: number; y: number }) => void;
-  scaleConfig: any;
-  setDimInput: React.Dispatch<React.SetStateAction<any>>;
-  setScaleModal: React.Dispatch<React.SetStateAction<any>>;
+  scaleConfig: Record<string, unknown>;
+  setDimInput: React.Dispatch<React.SetStateAction<unknown>>;
+  setScaleModal: React.Dispatch<React.SetStateAction<unknown>>;
   findSnapPoint: (pos: { x: number; y: number }, excludeWallId?: string) => { x: number; y: number };
   getRelativePointerPosition: (stage: Konva.Stage) => { x: number; y: number } | null;
   calculateSnapToWall: (el: EditorElement, newX: number, newY: number) => { points?: number[]; x: number; y: number; rotation?: number };
@@ -50,7 +50,6 @@ export function useCanvasInteraction({
   innerZoom,
   innerPan,
   setInnerPan,
-  scaleConfig,
   setDimInput,
   setScaleModal,
   findSnapPoint,

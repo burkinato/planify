@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Search, LayoutDashboard } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProjectCreationModal, type ProjectCreationDraft } from '@/components/dashboard/ProjectCreationModal';
 import { ProjectDossierGrid } from '@/components/dashboard/ProjectDossierGrid';
@@ -39,7 +39,7 @@ function DashboardLoading() {
         <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
       </div>
       <p className="text-[9px] font-bold text-surface-400 uppercase tracking-widest animate-pulse">
-        Planify Hazırlanıyor
+        KolayTahliye Hazırlanıyor
       </p>
     </div>
   );

@@ -2,7 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import { useEditorStore } from '@/store/useEditorStore';
 import type { TemplateRegion, TemplateRegionState } from '@/types/editor';
-import { ShieldCheck, ImageUp } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -16,14 +16,8 @@ interface Props {
   compact?: boolean;
 }
 
-export function LogoModule({ region, content, compact }: Props) {
-  const { projectMetadata, setProjectMetadata } = useEditorStore();
-  
-  const handleUploadClick = () => {
-    // Logo yükleme işlemi ProjectMetadata üzerinden yapıldığı için 
-    // editör içindeki dosya yükleyiciyi tetiklemek gerekebilir.
-    // Şimdilik sadece görseli render ediyoruz.
-  };
+export function LogoModule({ compact }: Props) {
+  const { projectMetadata } = useEditorStore();
 
   return (
     <div className={cn(

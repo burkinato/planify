@@ -78,7 +78,15 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '42P01') {
+          // Table doesn't exist yet, graceful fallback
+          console.warn('Plans table not found, fallback to empty plans array.');
+          set({ plans: [] });
+          return;
+        }
+        throw error;
+      }
 
       const plans: Plan[] = (data || []).map((p: Record<string, unknown>) => ({
         ...p,

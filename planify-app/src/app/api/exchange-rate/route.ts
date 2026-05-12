@@ -8,8 +8,8 @@ export async function GET(request: Request) {
   try {
     // 1. Security Check
     const authHeader = request.headers.get('x-system-key');
-    const isSystemKeyValid = authHeader && authHeader === process.env.PLANIFY_SYSTEM_KEY;
-    
+    const isSystemKeyValid = authHeader && authHeader === process.env.KOLAYTAHLIYE_SYSTEM_KEY;
+
     let isAdmin = false;
     if (!isSystemKeyValid) {
       const supabase = await createClient(true);

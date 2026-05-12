@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/api/', '/pxadmin/', '/auth/callback'],
     },
-    sitemap: 'https://planify.com.tr/sitemap.xml',
+    sitemap: 'https://kolaytahliye.com/sitemap.xml',
   };
 }

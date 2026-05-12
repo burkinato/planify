@@ -1,7 +1,6 @@
 'use client';
 
-import { ArrowRight, Building2, FileText, X, Sparkles, ShieldCheck, FolderKanban } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ArrowRight, X, ShieldCheck, FolderKanban } from 'lucide-react';
 
 export interface ProjectCreationDraft {
   title: string;

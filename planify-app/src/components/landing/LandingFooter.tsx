@@ -11,7 +11,7 @@ export default function LandingFooter() {
         <div className="hero-orb w-80 h-80 bg-indigo-500/30 bottom-0 left-0" style={{ animationDelay: '4s' }} />
         <div className="relative max-w-4xl mx-auto text-center space-y-8">
           <h2 className="text-4xl md:text-5xl font-black text-white leading-tight">
-            Profesyonellerin Tercihi Planify ile<br />Planlarınızı Hemen Oluşturun
+            Profesyonellerin Tercihi KolayTahliye ile<br />Planlarınızı Hemen Oluşturun
           </h2>
           <p className="text-xl text-blue-100 max-w-2xl mx-auto">
             Türkiye genelinde 580+ uzmanın güvendiği platform. İlk projenizi 12 dakikada çizin, denetime hazır hale getirin.
@@ -52,7 +52,7 @@ export default function LandingFooter() {
             {/* Links */}
             {[
               { title: 'Ürün', links: [{ label: 'Özellikler', href: '/#features' }, { label: 'Fiyatlandırma', href: '/#pricing' }, { label: 'Şablonlar', href: '/#showcase' }, { label: 'Nasıl Çalışır', href: '/#how' }] },
-              { title: 'Destek', links: [{ label: 'Yardım Merkezi', href: '#' }, { label: 'Başlarken', href: '/register' }, { label: 'İletişim', href: 'mailto:destek@planify.com.tr' }, { label: 'SSS', href: '/#pricing' }] },
+              { title: 'Destek', links: [{ label: 'Yardım Merkezi', href: '#' }, { label: 'Başlarken', href: '/register' }, { label: 'İletişim', href: 'mailto:destek@KolayTahliye.com.tr' }, { label: 'SSS', href: '/#pricing' }] },
               { title: 'Yasal', links: [{ label: 'Kullanım Koşulları', href: '/legal/terms' }, { label: 'Gizlilik Politikası', href: '/legal/privacy' }, { label: 'KVKK Metni', href: '/legal/kvkk' }, { label: 'Çerez Politikası', href: '/legal/cookies' }] },
             ].map(({ title, links }) => (
               <div key={title}>
@@ -70,7 +70,7 @@ export default function LandingFooter() {
 
           {/* Bottom bar */}
           <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-            <p>&copy; {new Date().getFullYear()} Planify. Tüm hakları saklıdır.</p>
+            <p>&copy; {new Date().getFullYear()} KolayTahliye. Tüm hakları saklıdır.</p>
             <div className="flex items-center gap-2 text-xs text-slate-500">
               <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
               Tüm sistemler çalışıyor

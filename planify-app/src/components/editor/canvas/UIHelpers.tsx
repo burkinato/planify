@@ -30,7 +30,7 @@ export const WatermarkGroup = React.memo(({ width, height, tier }: { width: numb
         Array.from({ length: cols }).map((_, c) => (
           <Text
             key={`${r}-${c}`}
-            text="PLANIFY"
+            text="KOLAYTAHLÝYE"
             x={c * patternSize}
             y={r * patternSize}
             fontSize={40}

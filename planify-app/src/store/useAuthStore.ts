@@ -16,6 +16,7 @@ export interface Profile {
   subscription_tier: 'free' | 'pro';
   subscription_status: string;
   marketing_consent: boolean;
+  last_session_id: string | null;
 }
 
 interface AuthState {
@@ -25,12 +26,15 @@ interface AuthState {
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
+  localSessionId: string | null;
   setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
   setProfile: (profile: Profile | null) => void;
   initialize: () => Promise<void>;
   fetchProfile: (userId: string) => Promise<Profile | null>;
   signOut: () => Promise<void>;
+  updateSessionId: (userId: string, sessionId: string) => Promise<void>;
+  logLogin: () => Promise<void>;
 }
 
 interface AuthStoreRuntime {
@@ -39,7 +43,7 @@ interface AuthStoreRuntime {
 }
 
 type AuthStoreGlobal = typeof globalThis & {
-  __planifyAuthStoreRuntime?: AuthStoreRuntime;
+  __KolayTahliyeAuthStoreRuntime?: AuthStoreRuntime;
 };
 
 let initializePromise: Promise<void> | null = null;
@@ -48,14 +52,14 @@ let hasBoundAuthSubscription = false;
 function getAuthStoreRuntime() {
   const root = globalThis as AuthStoreGlobal;
 
-  if (!root.__planifyAuthStoreRuntime) {
-    root.__planifyAuthStoreRuntime = {
+  if (!root.__KolayTahliyeAuthStoreRuntime) {
+    root.__KolayTahliyeAuthStoreRuntime = {
       unsubscribe: null,
       profileRequests: new Map<string, Promise<Profile | null>>(),
     };
   }
 
-  return root.__planifyAuthStoreRuntime;
+  return root.__KolayTahliyeAuthStoreRuntime;
 }
 
 function isPasswordRecoveryRoute() {
@@ -130,7 +134,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
         const normalizedSession = normalizeSession(nextSession);
         const user = syncSessionState(set, normalizedSession);
 
-        if (user) {
+        if (user && nextSession) {
+          const sid = nextSession.access_token.slice(-10);
+          void get().updateSessionId(user.id, sid);
+          
+          // Giriş yapıldığında logla
+          if (event === 'SIGNED_IN') {
+            void get().logLogin();
+          }
+
           scheduleProfileHydration(user.id, get().fetchProfile);
         }
       } catch (error) {
@@ -149,14 +161,50 @@ export const useAuthStore = create<AuthState>((set, get) => {
     isLoading: true,
     isInitialized: false,
     error: null,
+    localSessionId: null,
     setUser: (user) => set({ user }),
     setSession: (session) => set({ session }),
     setProfile: (profile) => set({ profile }),
 
+    updateSessionId: async (userId: string, sessionId: string) => {
+      const supabase = createClient();
+      try {
+        await supabase
+          .from('profiles')
+          .update({ last_session_id: sessionId })
+          .eq('id', userId);
+        
+        set({ localSessionId: sessionId });
+      } catch (err) {
+        console.error('Session update error:', err);
+      }
+    },
+
+    logLogin: async () => {
+      try {
+        await fetch('/api/auth/log-login', { method: 'POST' });
+      } catch (err) {
+        console.error('Login log call failed:', err);
+      }
+    },
+
     fetchProfile: async (userId: string) => {
       const currentProfile = get().profile;
-      if (currentProfile?.id === userId) {
-        return currentProfile;
+      
+      // Session hijacking check: If we have a profile, check if session is still valid
+      if (currentProfile?.id === userId && get().localSessionId) {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('profiles')
+          .select('last_session_id')
+          .eq('id', userId)
+          .single();
+        
+        if (data && data.last_session_id !== get().localSessionId) {
+          console.warn('Başka bir cihazdan giriş yapıldı. Oturum sonlandırılıyor.');
+          await get().signOut();
+          return null;
+        }
       }
 
       const runtime = getAuthStoreRuntime();
@@ -187,9 +235,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
           return profile;
         } catch (error: unknown) {
-          // PGRST116 means no rows found. If profile is missing, try to create a fallback one.
           if (isPostgrestError(error) && error.code === 'PGRST116') {
-            console.warn('Profile not found for user, attempting to create fallback profile...');
+            console.warn('Profile not found, creating fallback...');
             try {
               const currentUser = get().user;
               const { data: newProfile, error: insertError } = await supabase
@@ -256,7 +303,13 @@ export const useAuthStore = create<AuthState>((set, get) => {
           const normalizedSession = normalizeSession(session);
           const user = syncSessionState(set, normalizedSession);
 
-          if (user) {
+          if (user && session) {
+            const sid = session.access_token.slice(-10);
+            set({ localSessionId: sid });
+            
+            // App ilk yüklendiğinde de logla (session hala aktifse)
+            void get().logLogin();
+            
             await get().fetchProfile(user.id);
           }
         } catch (error) {
@@ -290,6 +343,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
         isLoading: false,
         isInitialized: true,
         error: null,
+        localSessionId: null
       });
     },
   };

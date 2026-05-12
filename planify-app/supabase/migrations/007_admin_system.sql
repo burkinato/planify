@@ -1,5 +1,5 @@
 -- ================================================================
--- Planify — Migration: Admin System & Finance
+-- KolayTahliye — Migration: Admin System & Finance
 -- ================================================================
 
 -- 1. Finance Table (Revenue/Expense Tracking)

@@ -21,14 +21,6 @@ import type {
   TemplateRegionState,
   ProjectMetadata,
   ToolOptions,
-  WallToolOptions,
-  DoorToolOptions,
-  WindowToolOptions,
-  StairsToolOptions,
-  ElevatorToolOptions,
-  ColumnToolOptions,
-  TextToolOptions,
-  RouteToolOptions,
 } from '@/types/editor';
 import {
   sanitizeDebugEditorStatePayload,
@@ -48,27 +40,7 @@ import {
 } from '@/lib/editor/templateLayouts';
 
 // Samet (P1 Fix): Debounce utility for localStorage writes
-let saveElementsTimer: ReturnType<typeof setTimeout> | null = null;
-let saveLayersTimer: ReturnType<typeof setTimeout> | null = null;
 const DEBOUNCE_DELAY = 500; // 500ms debounce for localStorage writes
-
-const debouncedSaveElements = (elements: EditorElement[]) => {
-  if (saveElementsTimer) clearTimeout(saveElementsTimer);
-  saveElementsTimer = setTimeout(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('planify-elements', JSON.stringify(elements));
-    }
-  }, DEBOUNCE_DELAY);
-};
-
-const debouncedSaveLayers = (layers: LayerDef[]) => {
-  if (saveLayersTimer) clearTimeout(saveLayersTimer);
-  saveLayersTimer = setTimeout(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('planify-layers', JSON.stringify(layers));
-    }
-  }, DEBOUNCE_DELAY);
-};
 
 interface HistorySnapshot {
   elements: EditorElement[];
@@ -117,9 +89,11 @@ interface EditorState {
   tourStep: number;
   isModuleEditDrawerOpen: boolean;
   isModuleAddDrawerOpen: boolean;
+  syncStatus: 'saved' | 'saving' | 'error' | 'unsaved' | null;
 
   // Actions
   setProjectId: (id: string | null) => void;
+  setSyncStatus: (status: 'saved' | 'saving' | 'error' | 'unsaved' | null) => void;
   setTool: (tool: EditorTool) => void;
   setSelectedIds: (ids: string[]) => void;
   setZoom: (zoom: number) => void;
@@ -233,31 +207,31 @@ const getInitialState = () => {
 
   // Migration code removed - was non-functional (oldKey and newKey were identical)
 
-  const layers = sanitizeLayers(JSON.parse(localStorage.getItem('planify-layers') || JSON.stringify([DEFAULT_LAYER])));
+  const layers = sanitizeLayers(JSON.parse(localStorage.getItem('KolayTahliye-layers') || JSON.stringify([DEFAULT_LAYER])));
 
   return {
-    elements: sanitizeEditorElements(JSON.parse(localStorage.getItem('planify-elements') || '[]'), layers),
+    elements: sanitizeEditorElements(JSON.parse(localStorage.getItem('KolayTahliye-elements') || '[]'), layers),
     layers,
-    customSymbols: JSON.parse(localStorage.getItem('planify-custom-symbols') || '[]'),
-    scaleConfig: sanitizeScaleConfig(JSON.parse(localStorage.getItem('planify-scale') || JSON.stringify({ pixelsPerMeter: 50, unit: 'm' }))),
-    editorTheme: (localStorage.getItem('planify-theme') as EditorTheme) || 'dark',
-    projectTemplate: (localStorage.getItem('planify-template') as ProjectTemplate) || 'blank',
-    templateLayoutId: localStorage.getItem('planify-template-layout-id'),
+    customSymbols: JSON.parse(localStorage.getItem('KolayTahliye-custom-symbols') || '[]'),
+    scaleConfig: sanitizeScaleConfig(JSON.parse(localStorage.getItem('KolayTahliye-scale') || JSON.stringify({ pixelsPerMeter: 50, unit: 'm' }))),
+    editorTheme: (localStorage.getItem('KolayTahliye-theme') as EditorTheme) || 'dark',
+    projectTemplate: (localStorage.getItem('KolayTahliye-template') as ProjectTemplate) || 'blank',
+    templateLayoutId: localStorage.getItem('KolayTahliye-template-layout-id'),
     activeTemplateLayout: null as TemplateLayout | null,
-    pagePreset: normalizePagePreset(localStorage.getItem('planify-preset')),
-    templateModules: sanitizeTemplateModules(JSON.parse(localStorage.getItem('planify-template-modules') || '[]')),
+    pagePreset: normalizePagePreset(localStorage.getItem('KolayTahliye-preset')),
+    templateModules: sanitizeTemplateModules(JSON.parse(localStorage.getItem('KolayTahliye-template-modules') || '[]')),
     selectedTemplateModuleId: null as string | null,
-    templateState: sanitizeTemplateState(JSON.parse(localStorage.getItem('planify-template-state') || '{}')),
-    projectMetadata: JSON.parse(localStorage.getItem('planify-project-metadata') || JSON.stringify({ name: 'PROJE DOSYASI', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00', floor: '', scale: '100' })),
-    innerZoom: parseFloat(localStorage.getItem('planify-inner-zoom') || '1') || 1,
-    innerPan: JSON.parse(localStorage.getItem('planify-inner-pan') || '{"x":0,"y":0}'),
+    templateState: sanitizeTemplateState(JSON.parse(localStorage.getItem('KolayTahliye-template-state') || '{}')),
+    projectMetadata: JSON.parse(localStorage.getItem('KolayTahliye-project-metadata') || JSON.stringify({ name: 'PROJE DOSYASI', author: '', date: new Date().toLocaleDateString('tr-TR'), revision: '00', floor: '', scale: '100' })),
+    innerZoom: parseFloat(localStorage.getItem('KolayTahliye-inner-zoom') || '1') || 1,
+    innerPan: JSON.parse(localStorage.getItem('KolayTahliye-inner-pan') || '{"x":0,"y":0}'),
     moduleSnapLines: [],
     projectId: null as string | null,
     toolOptions: getDefaultToolOptions(),
     recentTools: [] as EditorTool[],
-    language: (localStorage.getItem('planify-language') as 'tr' | 'en') || 'tr',
+    language: (localStorage.getItem('KolayTahliye-language') as 'tr' | 'en') || 'tr',
     onboardingVisible: false,
-    hasCompletedOnboarding: localStorage.getItem('planify-onboarding-done') === 'true',
+    hasCompletedOnboarding: localStorage.getItem('KolayTahliye-onboarding-done') === 'true',
     tourVisible: false,
     tourStep: 0,
     isModuleEditDrawerOpen: false,
@@ -268,7 +242,7 @@ const getInitialState = () => {
 // Persistence helpers
 const saveElements = (elements: EditorElement[], projectId: string | null) => {
   if (typeof window === 'undefined') return;
-  const key = projectId ? `planify-elements-${projectId}` : 'planify-elements';
+  const key = projectId ? `KolayTahliye-elements-${projectId}` : 'KolayTahliye-elements';
   
   if (saveElementsTimer) clearTimeout(saveElementsTimer);
   saveElementsTimer = setTimeout(() => {
@@ -278,13 +252,13 @@ const saveElements = (elements: EditorElement[], projectId: string | null) => {
 
 const saveLayers = (layers: LayerDef[], projectId: string | null) => {
   if (typeof window === 'undefined') return;
-  const key = projectId ? `planify-layers-${projectId}` : 'planify-layers';
+  const key = projectId ? `KolayTahliye-layers-${projectId}` : 'KolayTahliye-layers';
   localStorage.setItem(key, JSON.stringify(layers));
 };
 
 const saveTemplateModules = (modules: TemplateModuleInstance[], projectId: string | null) => {
   if (typeof window !== 'undefined') {
-    const key = projectId ? `planify-template-modules-${projectId}` : 'planify-template-modules';
+    const key = projectId ? `KolayTahliye-template-modules-${projectId}` : 'KolayTahliye-template-modules';
     localStorage.setItem(key, JSON.stringify(modules));
   }
 };
@@ -319,8 +293,10 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     advancedType: null,
     projectId: null,
     language: 'tr',
+    syncStatus: null,
 
     setProjectId: (projectId) => set({ projectId }),
+    setSyncStatus: (syncStatus) => set({ syncStatus }),
     setTool: (tool) => set((state) => {
       const recentTools = tool === 'select' ? state.recentTools :
         [tool, ...state.recentTools.filter(t => t !== tool)].slice(0, 5);
@@ -358,21 +334,21 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     setScaleConfig: (scaleConfig) => {
       set({ scaleConfig });
       if (typeof window !== 'undefined') {
-        localStorage.setItem('planify-scale', JSON.stringify(scaleConfig));
+        localStorage.setItem('KolayTahliye-scale', JSON.stringify(scaleConfig));
       }
     },
 
     setEditorTheme: (theme) => {
       set({ editorTheme: theme });
       if (typeof window !== 'undefined') {
-        localStorage.setItem('planify-theme', theme);
+        localStorage.setItem('KolayTahliye-theme', theme);
       }
     },
 
     setProjectTemplate: (template) => {
       set({ projectTemplate: template });
       if (typeof window !== 'undefined') {
-        localStorage.setItem('planify-template', template);
+        localStorage.setItem('KolayTahliye-template', template);
       }
     },
 
@@ -398,14 +374,14 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       });
       if (typeof window !== 'undefined') {
         if (normalizedLayout) {
-          localStorage.setItem('planify-template-layout-id', normalizedLayout.id);
-          localStorage.setItem('planify-template', normalizedLayout.slug);
-          localStorage.setItem('planify-preset', normalizedLayout.page_preset);
+          localStorage.setItem('KolayTahliye-template-layout-id', normalizedLayout.id);
+          localStorage.setItem('KolayTahliye-template', normalizedLayout.slug);
+          localStorage.setItem('KolayTahliye-preset', normalizedLayout.page_preset);
       saveTemplateModules(templateModules, get().projectId);
         } else {
-          localStorage.removeItem('planify-template-layout-id');
-          localStorage.setItem('planify-template', 'blank');
-          localStorage.removeItem('planify-template-modules');
+          localStorage.removeItem('KolayTahliye-template-layout-id');
+          localStorage.setItem('KolayTahliye-template', 'blank');
+          localStorage.removeItem('KolayTahliye-template-modules');
         }
       }
     },
@@ -414,7 +390,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       const pagePreset = normalizePagePreset(preset);
       set({ pagePreset });
       if (typeof window !== 'undefined') {
-        localStorage.setItem('planify-preset', pagePreset);
+        localStorage.setItem('KolayTahliye-preset', pagePreset);
       }
     },
 
@@ -468,7 +444,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       });
       saveTemplateModules(nextModules, get().projectId);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('planify-template-state', JSON.stringify(nextTemplateState));
+        localStorage.setItem('KolayTahliye-template-state', JSON.stringify(nextTemplateState));
       }
     },
 
@@ -526,7 +502,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     setTemplateState: (templateState) => {
       set({ templateState });
       if (typeof window !== 'undefined') {
-        localStorage.setItem('planify-template-state', JSON.stringify(templateState));
+        localStorage.setItem('KolayTahliye-template-state', JSON.stringify(templateState));
       }
     },
 
@@ -540,7 +516,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       };
       set({ templateState });
       if (typeof window !== 'undefined') {
-        localStorage.setItem('planify-template-state', JSON.stringify(templateState));
+        localStorage.setItem('KolayTahliye-template-state', JSON.stringify(templateState));
       }
     },
 
@@ -548,7 +524,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       const projectMetadata = { ...get().projectMetadata, ...updates };
       set({ projectMetadata });
       if (typeof window !== 'undefined') {
-        localStorage.setItem('planify-project-metadata', JSON.stringify(projectMetadata));
+        localStorage.setItem('KolayTahliye-project-metadata', JSON.stringify(projectMetadata));
       }
     },
 
@@ -619,7 +595,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
       const newCustomSymbols = [...get().customSymbols, symbol];
       set({ customSymbols: newCustomSymbols });
       if (typeof window !== 'undefined') {
-        localStorage.setItem('planify-custom-symbols', JSON.stringify(newCustomSymbols));
+        localStorage.setItem('KolayTahliye-custom-symbols', JSON.stringify(newCustomSymbols));
       }
     },
 
@@ -769,14 +745,14 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
           });
           saveElements(data.elements, get().projectId);
           if (typeof window !== 'undefined') {
-            localStorage.setItem('planify-scale', JSON.stringify(data.scaleConfig));
-            if (data.projectTemplate) localStorage.setItem('planify-template', data.projectTemplate);
-            if (data.templateLayoutId) localStorage.setItem('planify-template-layout-id', data.templateLayoutId);
-            else localStorage.removeItem('planify-template-layout-id');
-            if (data.templateState) localStorage.setItem('planify-template-state', JSON.stringify(data.templateState));
+            localStorage.setItem('KolayTahliye-scale', JSON.stringify(data.scaleConfig));
+            if (data.projectTemplate) localStorage.setItem('KolayTahliye-template', data.projectTemplate);
+            if (data.templateLayoutId) localStorage.setItem('KolayTahliye-template-layout-id', data.templateLayoutId);
+            else localStorage.removeItem('KolayTahliye-template-layout-id');
+            if (data.templateState) localStorage.setItem('KolayTahliye-template-state', JSON.stringify(data.templateState));
             saveTemplateModules(data.templateModules, get().projectId);
-            if (data.projectMetadata) localStorage.setItem('planify-project-metadata', JSON.stringify(data.projectMetadata));
-            if (data.pagePreset) localStorage.setItem('planify-preset', data.pagePreset);
+            if (data.projectMetadata) localStorage.setItem('KolayTahliye-project-metadata', JSON.stringify(data.projectMetadata));
+            if (data.pagePreset) localStorage.setItem('KolayTahliye-preset', data.pagePreset);
             saveLayers(data.layers, get().projectId);
           }
           toast.success('Proje başarıyla yüklendi');
@@ -800,7 +776,7 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
         canRedo: false,
       });
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('planify-elements');
+        localStorage.removeItem('KolayTahliye-elements');
       }
     },
 
@@ -847,12 +823,12 @@ export const useEditorStore = create<EditorState>()(subscribeWithSelector((set, 
     setLanguage: (language) => {
       set({ language });
       if (typeof window !== 'undefined') {
-        localStorage.setItem('planify-language', language);
+        localStorage.setItem('KolayTahliye-language', language);
       }
     },
     setOnboardingVisible: (visible) => set({ onboardingVisible: visible }),
     completeOnboarding: () => {
-      localStorage.setItem('planify-onboarding-done', 'true');
+      localStorage.setItem('KolayTahliye-onboarding-done', 'true');
       set({ hasCompletedOnboarding: true, onboardingVisible: false, tourVisible: true });
     },
     setTourVisible: (tourVisible) => set({ tourVisible }),

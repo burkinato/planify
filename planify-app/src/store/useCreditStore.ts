@@ -139,42 +139,25 @@ export const useCreditStore = create<CreditState>((set, get) => ({
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return false;
 
-      const currentBalance = get().balance;
-      if (currentBalance < amount) {
-        return false;
+      // RPC çağrısı ile server-side güvenli kredi düşme
+      const { data: success, error } = await supabase.rpc('deduct_credits_secure', {
+        p_amount: amount,
+        p_type: type,
+        p_description: description
+      });
+
+      if (error) throw error;
+
+      if (success) {
+        // State'i güncellemek için bakiyeyi tekrar çek
+        await get().fetchBalance();
+        await get().fetchTransactions();
+        return true;
       }
-
-      // 1. Transaction kaydı ekle
-      const { error: txError } = await supabase
-        .from('credit_transactions')
-        .insert({
-          user_id: session.user.id,
-          amount: -amount,
-          transaction_type: type,
-          description
-        });
-
-      if (txError) throw txError;
-
-      // 2. Bakiyeyi düş
-      const newBalance = currentBalance - amount;
-      const { error: updError } = await supabase
-        .from('user_credits')
-        .update({ 
-          balance: newBalance,
-          total_spent: get().transactions.reduce((acc, tx) => acc + (tx.amount < 0 ? Math.abs(tx.amount) : 0), 0) + amount 
-        })
-        .eq('user_id', session.user.id);
-
-      if (updError) throw updError;
-
-      // State'i güncelle
-      set({ balance: newBalance });
-      get().fetchTransactions();
       
-      return true;
+      return false;
     } catch (err) {
-      console.error('Kredi düşme hatası:', err);
+      console.error('Kredi düşme hatası (Secure RPC):', err);
       return false;
     }
   },

@@ -1,5 +1,5 @@
 -- ================================================================
--- Planify — Migration: Add new profile fields
+-- KolayTahliye — Migration: Add new profile fields
 -- Supabase SQL Editor'da çalıştırın
 -- ================================================================
 

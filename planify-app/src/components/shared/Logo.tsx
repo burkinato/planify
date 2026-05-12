@@ -1,8 +1,5 @@
-'use client';
-
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { LayoutGrid } from 'lucide-react';
 
 interface LogoProps {
   className?: string;
@@ -12,7 +9,33 @@ interface LogoProps {
 }
 
 /**
- * Planify Logo Component
+ * Custom Evacuation Icon (Door + Arrow)
+ */
+function EvacuationIcon({ className }: { className?: string }) {
+  return (
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2.5" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={className}
+    >
+      {/* Door Frame */}
+      <path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8" />
+      {/* Exit Arrow */}
+      <path d="M10 17l5-5-5-5" />
+      <path d="M15 12H3" />
+      {/* Standing Person (Abstract) */}
+      <circle cx="19" cy="5" r="1" fill="currentColor" stroke="none" />
+      <path d="M19 7v6" strokeWidth="2" />
+    </svg>
+  );
+}
+
+/**
+ * KolayTahliye Logo Component
  * Single point of management for branding.
  * Colors: White, Blue (#2563eb), Turquoise (#06b6d4)
  */
@@ -36,9 +59,9 @@ export function Logo({
   );
 
   const iconVariants = {
-    default: "bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 text-white shadow-blue-500/20",
-    white: "bg-white text-blue-600 shadow-xl shadow-black/5",
-    dark: "bg-slate-900 text-cyan-400 shadow-xl",
+    default: "bg-gradient-to-br from-primary-600 via-primary-500 to-amber-400 text-white shadow-primary-500/20",
+    white: "bg-white text-primary-600 shadow-xl shadow-black/5",
+    dark: "bg-slate-900 text-primary-500 shadow-xl",
     monochrome: "bg-slate-200 text-slate-800 shadow-none",
   };
 
@@ -55,23 +78,23 @@ export function Logo({
   };
 
   const suffixVariants = {
-    default: "bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent",
+    default: "bg-gradient-to-r from-primary-600 to-amber-500 bg-clip-text text-transparent",
     white: "text-white opacity-90",
-    dark: "text-cyan-500",
+    dark: "text-primary-500",
     monochrome: "opacity-60",
   };
 
   return (
     <div className={cn("flex items-center group", sizeMap[size].container, className)}>
       <div className={cn(iconBaseClasses, iconVariants[variant])}>
-        <LayoutGrid className="w-[60%] h-[60%]" strokeWidth={2.5} />
+        <EvacuationIcon className="w-[60%] h-[60%]" />
       </div>
-      
+
       {showText && (
         <span className={cn(textBaseClasses, textVariants[variant])}>
-          Plan
+          Kolay
           <span className={suffixVariants[variant]}>
-            ify
+            Tahliye
           </span>
         </span>
       )}

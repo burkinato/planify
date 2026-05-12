@@ -57,7 +57,7 @@ export default function ProfilePage() {
   });
 
   const isPro = profile?.subscription_tier === 'pro';
-  const planLabel = isPro ? 'Planify Premium' : 'Başlangıç Planı';
+  const planLabel = isPro ? 'KolayTahliye Premium' : 'Başlangıç Planı';
   const statusLabel = profile?.subscription_status === 'active' ? 'Aktif' : profile?.subscription_status || 'Aktif';
 
   useEffect(() => {
@@ -294,7 +294,7 @@ export default function ProfilePage() {
                 <div className="space-y-1">
                   <span className="text-sm font-semibold text-slate-900 dark:text-surface-100 transition-colors">İletişim İzni</span>
                   <p className="text-xs font-medium leading-relaxed text-slate-500">
-                    Planify sistem güncellemeleri, yasal mevzuat değişiklikleri ve yeni özellikler hakkında bilgilendirme e-postaları almak istiyorum.
+                    KolayTahliye sistem güncellemeleri, yasal mevzuat değişiklikleri ve yeni özellikler hakkında bilgilendirme e-postaları almak istiyorum.
                   </p>
                 </div>
               </label>

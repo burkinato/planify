@@ -1,6 +1,6 @@
 {
-  "name": "Planify",
-  "short_name": "Planify",
+  "name": "KolayTahliye",
+  "short_name": "KolayTahliye",
   "description": "Profesyonel acil durum tahliye planı çizim aracı.",
   "start_url": "/",
   "display": "standalone",

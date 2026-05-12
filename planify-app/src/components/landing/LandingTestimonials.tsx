@@ -5,7 +5,7 @@ const TESTIMONIALS = [
     name: 'Beta Kullanıcı',
     role: 'İSG Uzmanı',
     company: 'OSGB Firması',
-    quote: 'AutoCAD ile saatlerce uğraştığım tahliye planlarını Planify ile çok daha hızlı oluşturabiliyorum. ISO 7010 sembol kütüphanesi gerçekten işimi kolaylaştırıyor.',
+    quote: 'AutoCAD ile saatlerce uğraştığım tahliye planlarını KolayTahliye ile çok daha hızlı oluşturabiliyorum. ISO 7010 sembol kütüphanesi gerçekten işimi kolaylaştırıyor.',
     initials: 'BK',
     bg: 'bg-blue-600',
   },

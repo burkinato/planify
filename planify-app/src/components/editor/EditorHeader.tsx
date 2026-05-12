@@ -1,14 +1,16 @@
 'use client';
 
 import { ZoomOut, ZoomIn, Grid, Undo2, Redo2,
-  Keyboard, X, Eye, EyeOff, Download, FileImage, FileText, Layers, Pencil, Check, Sparkles, ArrowLeft, Moon, Sun
+  Keyboard, X, Eye, EyeOff, Download, FileImage, FileText, Layers, Pencil, Check, Sparkles, ArrowLeft, Moon, Sun,
+  Cloud, CloudOff, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/store/useEditorStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useProjectStore } from '@/store/useProjectStore';
 import { useProAccess } from '@/hooks/useProAccess';
 import { Logo } from '@/components/shared/Logo';
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import type { EditorTheme } from '@/types/editor';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -26,6 +28,34 @@ interface EditorHeaderProps {
   setMobileMenu: (m: 'tools' | 'properties' | null) => void;
 }
 
+function SyncIndicator({ status }: { status: 'saved' | 'saving' | 'error' | 'unsaved' | null }) {
+  const config = useMemo(() => {
+    switch (status) {
+      case 'saving':
+        return { icon: Loader2, text: 'Kaydediliyor...', color: 'text-amber-400', spin: true };
+      case 'saved':
+        return { icon: Cloud, text: 'Buluta Kaydedildi', color: 'text-emerald-500', spin: false };
+      case 'error':
+        return { icon: CloudOff, text: 'Bağlantı Hatası', color: 'text-rose-500', spin: false };
+      default:
+        return null;
+    }
+  }, [status]);
+
+  if (!config) return null;
+
+  const Icon = config.icon;
+
+  return (
+    <div className={cn("flex items-center gap-1.5 px-2 py-1 rounded-md bg-surface-950/50 border border-white/5 animate-in fade-in duration-300", config.color)}>
+      <Icon className={cn("w-3 h-3", config.spin && "animate-spin")} />
+      <span className="text-[9px] font-black uppercase tracking-widest hidden md:inline-block">
+        {config.text}
+      </span>
+    </div>
+  );
+}
+
 export function EditorHeader({ 
   projectId, isPreview, setIsPreview, exportImage, exportPdf, 
   onOpenTemplateModal, onOpenExportModal, mobileMenu, setMobileMenu
@@ -33,8 +63,24 @@ export function EditorHeader({
   const {
     zoom, setZoom, gridVisible, setGridVisible, undo, redo, canUndo, canRedo,
     scaleConfig, setScaleConfig, editorTheme, setEditorTheme,
-    language, setLanguage
-  } = useEditorStore();
+    language, setLanguage, syncStatus
+  } = useEditorStore(useShallow(state => ({
+    zoom: state.zoom,
+    setZoom: state.setZoom,
+    gridVisible: state.gridVisible,
+    setGridVisible: state.setGridVisible,
+    undo: state.undo,
+    redo: state.redo,
+    canUndo: state.canUndo,
+    canRedo: state.canRedo,
+    scaleConfig: state.scaleConfig,
+    setScaleConfig: state.setScaleConfig,
+    editorTheme: state.editorTheme,
+    setEditorTheme: state.setEditorTheme,
+    language: state.language,
+    setLanguage: state.setLanguage,
+    syncStatus: state.syncStatus
+  })));
   const { projects, updateProject } = useProjectStore();
   const { isPro } = useProAccess();
   
@@ -183,6 +229,8 @@ export function EditorHeader({
               <Pencil className="w-3 h-3 text-surface-400 opacity-0 group-hover:opacity-100 transition-all" />
             </button>
           )}
+
+          <SyncIndicator status={syncStatus} />
         </div>
 
 

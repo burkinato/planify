@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Check, Database, LayoutTemplate, Monitor, Smartphone, Sparkles, X,
-  Lock, ShieldCheck, Building2, Wrench, Palette, Filter,
-  ArrowRight, AlertCircle, MapPin, ChevronRight, Info
+  Check, Database, LayoutTemplate, Monitor, Smartphone, Sparkles, X, ShieldCheck, Building2, Wrench, Palette,
+  ArrowRight, MapPin, ChevronRight, Info
 } from 'lucide-react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { useProjectStore } from '@/store/useProjectStore';
@@ -142,9 +141,14 @@ export function TemplateSelectorModal({
     setPagePreset,
     setTemplateLayout,
     setProjectTemplate,
-  } = useEditorStore();
+  } = useEditorStore(useShallow(state => ({
+    activeTemplateLayout: state.activeTemplateLayout,
+    pagePreset: state.pagePreset,
+    setPagePreset: state.setPagePreset,
+    setTemplateLayout: state.setTemplateLayout,
+    setProjectTemplate: state.setProjectTemplate
+  })));
   const { templateLayouts, fetchTemplateLayouts } = useProjectStore();
-  const isPro = true;
 
   const [activeCategory, setActiveCategory] = useState('TUMU');
   const [localSelectedLayout, setLocalSelectedLayout] = useState<TemplateLayout | null>(

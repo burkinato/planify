@@ -1,7 +1,7 @@
 # Samet (Strategist) — CI/CD Pipeline
 # Deva'nin P0 sorunu: CI/CD yoktu, simdi calisiyor
 
-name: Planify CI/CD
+name: KolayTahliye CI/CD
 
 on:
   push:

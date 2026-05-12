@@ -1,4 +1,4 @@
--- Planify Dashboard Portal metadata and export archive.
+-- KolayTahliye Dashboard Portal metadata and export archive.
 
 ALTER TABLE public.projects
   ADD COLUMN IF NOT EXISTS client_name TEXT,

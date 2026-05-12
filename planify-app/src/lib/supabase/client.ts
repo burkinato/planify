@@ -2,28 +2,28 @@ import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 type SupabaseGlobal = typeof globalThis & {
-  __planifyBrowserClient?: SupabaseClient;
-  __planifyAdminBrowserClient?: SupabaseClient;
+  __KolayTahliyeBrowserClient?: SupabaseClient;
+  __KolayTahliyeAdminBrowserClient?: SupabaseClient;
 };
 
 export function createClient(isAdmin = false) {
   const root = globalThis as SupabaseGlobal;
 
-  if (!isAdmin && root.__planifyBrowserClient) {
-    return root.__planifyBrowserClient;
+  if (!isAdmin && root.__KolayTahliyeBrowserClient) {
+    return root.__KolayTahliyeBrowserClient;
   }
   
-  if (isAdmin && root.__planifyAdminBrowserClient) {
-    return root.__planifyAdminBrowserClient;
+  if (isAdmin && root.__KolayTahliyeAdminBrowserClient) {
+    return root.__KolayTahliyeAdminBrowserClient;
   }
 
   const client = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     isAdmin ? {
-      cookieOptions: { name: 'planify-admin-auth' },
+      cookieOptions: { name: 'KolayTahliye-admin-auth' },
       auth: { 
-        storageKey: 'planify-admin-auth',
+        storageKey: 'KolayTahliye-admin-auth',
         persistSession: true,
         autoRefreshToken: true
       }
@@ -31,9 +31,9 @@ export function createClient(isAdmin = false) {
   );
 
   if (isAdmin) {
-    root.__planifyAdminBrowserClient = client;
+    root.__KolayTahliyeAdminBrowserClient = client;
   } else {
-    root.__planifyBrowserClient = client;
+    root.__KolayTahliyeBrowserClient = client;
   }
 
   // Geliştirme ortamında React Strict Mode / Fast Refresh nedeniyle oluşan 

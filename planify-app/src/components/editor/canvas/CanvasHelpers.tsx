@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Group, Rect, Text, Image as KonvaImage } from 'react-konva';
+import { Group, Image as KonvaImage } from 'react-konva';
 
 // ── Hatch Pattern (Canvas-based) ──────────────────────────────────────────────
 
@@ -65,12 +65,12 @@ export const CustomSymbolImage = ({ src, size, isSelected }: { src: string, size
 
 // ── Watermark Group (Konva) ───────────────────────────────────────────────────
 
-export const WatermarkGroup = ({ width, height, tier, email }: { width: number; height: number; tier: string; email?: string }) => {
+export const WatermarkGroup = () => {
   return null;
 };
 
 // ── Branding Banner (Konva) ───────────────────────────────────────────────────
 
-export const BrandingBanner = ({ width, height, tier }: { width: number; height: number; tier: string }) => {
+export const BrandingBanner = () => {
   return null;
 };

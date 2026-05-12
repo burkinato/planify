@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
+import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';
-import { ChevronRight, X, Sparkles } from 'lucide-react';
+import { ChevronRight, Sparkles } from 'lucide-react';
 
 interface TourStep {
   target: string;
@@ -40,7 +41,13 @@ const TOUR_STEPS: TourStep[] = [
 ];
 
 export function EditorTour() {
-  const { tourVisible, tourStep, setTourVisible, setTourStep, language } = useEditorStore();
+  const { tourVisible, tourStep, setTourVisible, setTourStep, language } = useEditorStore(useShallow(state => ({
+    tourVisible: state.tourVisible,
+    tourStep: state.tourStep,
+    setTourVisible: state.setTourVisible,
+    setTourStep: state.setTourStep,
+    language: state.language
+  })));
   const [coords, setCoords] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
 
   useEffect(() => {

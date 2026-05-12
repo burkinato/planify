@@ -1,106 +1,81 @@
-# PLAN.md - Planify Profesyonel Sablon ve Modul Rework
+# KOLAYTAHLİYE — Güvenli, Suistimale Kapalı ve Türkiye Odaklı SaaS Planı
 
-## Ozet
+> **AI AGENT KESİN TALİMATI (CRITICAL DIRECTIVE):**
+> 1. Her görev sonunda `npm run lint && npm run build` ile testi zorunludur.
+> 2. Tasarım (UI/UX) "Premium Dark" kalacak ancak "KolayTahliye" olan tüm metinler, logolar ve tınılar "KolayTahliye" olarak güncellenecek.
+> 3. Suistimal önleme (Anti-Fraud) mekanizmaları her faza entegre edilecek.
 
-Planify editoru, mevcut sabit region sablonu yaklasimindan profesyonel, denetim odakli ve sag panelden surukle-birak kagit modulleriyle calisan bir sablon motoruna tasinir. Sol CAD araclari korunur; sag panel ise baslik, cizim alani, lejand, talimat, onay, QR, ekip, tehlike/utility ve vaziyet modullerini kagida yerlestirmek icin kullanilir.
+---
 
-Karar kilitleri:
+## 0. MARKA VE GÜVENLİK STRATEJİSİ (Anti-Fraud & Rebranding)
 
-- Kapsam: `Editor + Sablon`
-- DB stratejisi: kullanici/proje verilerini koru, resmi sablon/modul kataloglarini resetle
-- UX onceligi: sagdan surukle-birak sadece kagit modulleri icin; CAD nesneleri mevcut cizim araclariyla kalir
+**Marka:** KolayTahliye (Sloganı: "En Hızlı, En Güvenli Tahliye Planı Çözümü")
+**Monetizasyon:** Ücretsiz deneme YOK. Kullanıcı içeriği görebilir ama ilk çizimini kaydetmek/çıktı almak için paket almalıdır.
 
-## Temel Degisiklikler
+**🛡️ Suistimal Önleme Protokolleri:**
+- **Konaktif Oturum Kontrolü (Single Session):** Bir hesap aynı anda sadece bir IP/Cihaz üzerinden aktif olabilir. İkinci bir giriş olduğunda ilki otomatik sonlandırılır (Zorunlu Logout).
+- **IP & User-Agent Takibi:** Şüpheli (çok hızlı yer değiştiren veya VPN) girişler loglanır ve admin paneline "Riskli Kullanıcı" uyarısı düşer.
+- **Rate Limiting:** Export (Çıktı alma) ve Kaydetme işlemlerine saniyelik limitler konularak bot saldırıları engellenir.
+- **Kredi Suistimali:** Kredi harcama işlemleri Supabase RPC (Server-side) üzerinden yapılarak frontend manipülasyonu imkansız hale getirilir.
 
-- `template_layouts` resmi seedleri sifirlanir ve tek kaynakli, versiyonlu bir sablon katalogu kurulur.
-- Yeni `template_modules` mantigi eklenir: her modul tip, varsayilan icerik, onerilen boyut, denetim amaci, zorunluluk seviyesi ve renderer varyanti tasir.
-- `layout_json` v2 formatina gecilir: kagit olcusu, modul instancelari, cizim alani, z-index, kilit/resize/move ayarlari netlesir.
-- Mevcut projeler silinmez; eski `regions` yapisi v2 module instance yapisina migrate edilir.
-- `EditorCanvas` parcalanir: kagit renderer, Konva cizim alani, modul katmani, sag modul paleti, modul inspector ve export renderer ayrilir.
-- `TemplatePaperRenderer`, `ElementDispatcher`, `WallRenderer` gibi kullanilmayan parcalar aktif mimariye alinir veya tekillestirilir.
+---
 
-## Profesyonel Modul Sistemi
+## 1. AGENT 1: REBRANDING VE LOGO REWORK (Görsel Kimlik)
 
-Sag panelde `Denetim Modulleri` bulunur. Kullanici karti tutup kagida birakir, sonra tasir veya resize eder. Cizim alani ozel moduldur: tek instance olur ve CAD icerigi varsa silinemez.
+- [x] **1.1. Metin ve İsim Değişimi:**
+  - Tüm kod tabanında (Components, SEO, Metadata, Emails) "KolayTahliye" kelimesini "KolayTahliye" olarak değiştir.
+  - _Test:_ Tüm projede `grep` ile "KolayTahliye" araması yap, 0 sonuç kalmalı.
+- [x] **1.2. Logo ve Favicon:**
+  - Mevcut SVG logoları "KolayTahliye" tınısına uygun (Tahliye rotasını andıran oklar ve ev ikonu birleşimi) modernize et.
+  - Renk paletini bozmadan (Surface-950 tabanlı) logoyu güncelle.
+- [x] **1.3. Onboarding Kaldırma:**
+  - Yeni kullanıcılara kredi veren trigger'ları sil. Bakiye varsayılan 0 başlasın.
 
-Hazir modul seti:
+---
 
-- `Header`: logo, isyeri/proje adi, kat, revizyon, tarih
-- `DrawingArea`: Konva cizim alani, grid, export uyumu
-- `EmergencyCall`: 112 ve yerel acil numaralar
-- `EvacuationInstructions`: tahliye talimati
-- `FireInstructions`: yangin talimati
-- `Legend`: kullanilan rota/sembollerden otomatik lejand
-- `AssemblyMap`: toplanma alani/vaziyet gorseli
-- `ApprovalRevision`: hazirlayan, kontrol, onaylayan, tarih, revizyon
-- `EmergencyTeams`: sondurme, kurtarma, koruma, ilk yardim ekipleri
-- `HazardUtilities`: riskli alanlar, gaz/elektrik kesme noktalari, kimyasal/parlama ozel riskleri
-- `AccessibilityRefuge`: engelli/yasli/gebe refakat ve erisilebilir cikis bilgisi
-- `FireEquipmentInventory`: yangin sondurucu, dolap, alarm, hidrant listesi
-- `QrDocumentInfo`: QR, belge no, gecerlilik ve dijital imza alani
-- `Notes`: ozel notlar, ziyaretci/alt isveren bilgilendirme
+## 2. AGENT 2: GÜVENLİK VE OTURUM YÖNETİMİ (Anti-Fraud Logic)
 
-Hazir sablon koleksiyonu:
+- [x] **2.1. Single Session Entegrasyonu:**
+  - `useAuthStore.ts` ve Supabase `auth.onAuthStateChange` kullanarak son giriş yapılan cihazın `session_id`'sini `profiles` tablosuna yaz.
+  - Eğer mevcut `session_id` veritabanındakiyle eşleşmiyorsa kullanıcıyı logout yap.
+  - _Test:_ İki farklı tarayıcıdan aynı hesapla gir, ilk tarayıcının düştüğünü doğrula.
+- [x] **2.2. IP Loglama Sistemi:**
+  - Kullanıcının her login işleminde IP adresini ve User-Agent bilgisini `login_logs` tablosuna kaydet.
+- [x] **2.3. Server-Side Kredi Kontrolü:**
+  - Kredi düşme işlemini frontend'den (Zustand) alıp bir Supabase Veritabanı Fonksiyonuna (RPC) taşı.
+  - _Test:_ Frontend'den manuel kredi arttırmayı dene, veritabanının bunu reddettiğini gör.
 
-- `Denetim Minimal`: genis cizim alani, net onay ve lejand
-- `Kurumsal ISO`: logo/baslik agirlikli, resmi kurum dili
-- `Endustriyel Tesis`: tehlike/utility/fire equipment modulleri guclu
-- `Kamu / Okul`: talimat ve toplanma alani okunabilirligi yuksek
-- `AVM / Coklu Ziyaretci`: ziyaretci yonlendirme, primary/secondary route vurgusu
-- `Saglik / Erisilebilirlik`: refakat, erisilebilir cikis ve yardim noktalari one cikar
-- `Santiye / Gecici Alan`: vaziyet, dis toplanma, risk ve utility modulleri onde
-- `Premium Denetim`: QR, onay, revizyon, ekip ve checklist yogun
+---
 
-## Denetim Mantigi
+## 3. AGENT 3: ADMIN PANELİ (Gelişmiş Denetim)
 
-Uyumluluk kontrolu modul ve CAD iceriklerinden birlikte beslenir. Minimum denetim checklisti:
+- [x] **3.1. Güvenlik Dashboard'u:**
+  - "Şüpheli Girişler" listesi oluştur (Aynı gün 3'ten fazla farklı IP kullananlar).
+  - Kullanıcıyı "Banla" (Ban) butonunu aktif et.
+- [x] **3.2. Finansal Takip:**
+  - PayTR'den gelen başarılı ödemeleri, TRY bazlı paket satışlarını admin özet ekranında göster.
+- [x] **3.3. Manuel Müdahale:**
+  - Kullanıcı detay sayfasında; aktif oturumlarını gör, kredilerini yönet.
 
-- Baslik, isyeri adi, kat/bolum, tarih, revizyon, hazirlayan/onay bilgisi
-- En az bir cizim alani
-- En az bir tahliye rotasi
-- Primary/secondary cikis veya alternatif rota gostergesi
-- Buradasiniz isareti
-- Toplanma alani
-- Acil cikis sembolleri
-- Yangin ekipmani sembolu
-- Ilk yardim noktasi
-- Alarm/uyari sistemi bilgisi
-- Tehlikeli alanlardan uzak rota mantigi
-- Asansor kullanilmamasi uyarisi
-- Erisilebilir cikis/refakat bilgisi
-- Acil ekip ve iletisim bilgileri
-- Elektrik/gaz kesme noktalari, ozel risk alanlari
+---
 
-Kaynak dayanaklari:
+## 4. AGENT 4: FİYATLANDIRMA VE LİİMİTLER (TR Standartları)
 
-- [ISO 23601:2020](https://www.iso.org/standard/80678.html): escape/evacuation plan design principles
-- [ISO 7010:2019](https://www.iso.org/cms/%20render/live/en/sites/isoorg/contents/data/standard/07/24/72424.html?browse=tc): guvenlik isaretleri, renk/sekil standardi
-- [OSHA Floorplan Demo](https://osha.prod.pace.dol.gov/etools/evacuation-plans-procedures/eap/elements/floorplan-demo): primary/secondary exit, assembly area, current location, wheelchair access, no elevators
-- [OSHA EAP Minimum Requirements](https://www.osha.gov/etools/evacuation-plans-procedures/eap/minimum-requirements): tahliye, gorevli ekipler, sayim ve iletisim basliklari
-- [TR Acil Durum Yonetmeligi ornek metni](https://taskopru.meb.gov.tr/meb_iys_dosyalar/2023_01/09161423_Acil_Durumlar_Yonetmelik.pdf): kroki, ekipman, ilk yardim, kacis yollari, toplanma yerleri, ekip ve acil numara alanlari
+- [x] **4.1. TRY Bazlı Paketler:**
+  - 10 Kredi: 490 TL | 50 Kredi: 1.990 TL | 100 Kredi: 3.490 TL.
+  - PRO Üyelik (Aylık): 990 TL.
+  - _Test:_ `UpgradePage.tsx` içerisinde fiyatların ve paket içeriklerinin doğruluğunu kontrol et.
+- [x] **4.2. Sınırsız Paket Koruması:**
+  - PRO (Sınırsız) üyeler için günlük/aylık "Makul Kullanım Limiti" (Fair Usage Policy) belirle (Örn: Günlük max 50 export).
+  - Bu limit aşılırsa admin onayına düşür.
 
-## Uygulama ve Test Plani
+---
 
-- Once repo kokune bu icerik `PLAN.md` olarak eklenir.
-- Ardindan sablon/modul veri modeli olusturulur, resmi seedler resetlenir, eski projeler v2 yapiya donusturulur.
-- Editor UI'da sag modul paneli, modul drag/drop, resize/move, module inspector ve drawing-area odak davranisi eklenir.
-- Export hatti v2 kagit rendererdan uretir; PNG/PDF'de modul sinirlari, edit handlelari ve grid overlay cikmaz.
-- Dashboard template gallery yeni koleksiyonlari kart/preview olarak gosterir.
+## 5. AGENT 5: EDİTÖR VE DENETİM (ISO Standartları)
 
-Testler:
+- [x] **5.1. Sync Indicator:** Header'da "Kaydedildi" durumunu göster.
+- [x] **5.2. Live Compliance:** Sağ panelde ISO uyumluluk checklist'i (Buradasınız işareti, Rota kontrolü).
+- [x] **5.3. Layer UI:** Katman yönetimi panelini sol sidebar'a ekle.
 
-- `npm run lint`
-- `npm run build`
-- Eski proje acma: canvas, template state ve export bozulmamali
-- Yeni proje: sablon sec, modul surukle, cizim alanina gir, duvar/rota/sembol ciz, autosave, refresh, export
-- Sablon modulu: ekle, tasi, resize, sil, geri al/ileri al
-- Compliance: eksikler dogru uyari versin, tamamlaninca skor yukselsin
-- Mobile/tablet: sag panel drawer olarak calissin, kagit tasmasin
-- PDF/PNG: A3 yatay/dikey oranlari ve metin okunabilirligi dogrulansin
-
-## Varsayimlar
-
-- Kullanici, proje ve auth verileri korunacak; sadece resmi template/module kataloglari resetlenecek.
-- Sagdan surukle-birak v1'de kagit modulleri icin yapilacak; CAD nesneleri icin mevcut sol arac akisi korunacak.
-- Hukuki/denetim metinleri yardimci uyumluluk olarak sunulacak; uygulama resmi mevzuat danismanligi iddiasi tasimayacak.
-- Sablonlarin gorsel dili temiz, resmi, yuksek okunurluklu ve baski dostu olacak; suslu dashboard estetigi yerine denetmen guveni onceliklenecek.
+---
+> **İş Akışı Talimatı:** Her adımda ilgili Agent'ı çağır (invoke_agent) ve iş sonunda rapor iste. İlk adım: **1.1. Metin ve İsim Değişimi.**

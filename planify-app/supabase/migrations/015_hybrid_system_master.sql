@@ -1,5 +1,5 @@
 -- ================================================================
--- Planify — Migration: Hibrit Abonelik + Kredi Sistemi (MASTER)
+-- KolayTahliye — Migration: Hibrit Abonelik + Kredi Sistemi (MASTER)
 -- ================================================================
 -- Bu dosya 015, 016 ve 017 numaralı migration'ların birleştirilmiş halidir.
 -- Yeni sistem: $5/ay Abonelik + Proje başı 1 Kredi.
@@ -52,7 +52,7 @@ DELETE FROM public.plans WHERE slug NOT IN ('pro-monthly');
 UPDATE public.plans 
 SET price_usd = 5.00, 
     price_try = 225.00,
-    name = 'Planify Pro',
+    name = 'KolayTahliye Pro',
     features = '["1 Proje hakkı", "Filigransız çıktı", "HD Export", "Teknik Destek"]'::jsonb,
     is_active = true
 WHERE slug = 'pro-monthly';

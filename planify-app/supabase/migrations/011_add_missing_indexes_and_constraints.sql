@@ -1,4 +1,4 @@
--- Planify Migration 011: Add missing indexes and constraints (Bora P1 fixes)
+-- KolayTahliye Migration 011: Add missing indexes and constraints (Bora P1 fixes)
 -- Run this in your Supabase SQL Editor or via Supabase CLI
 
 -- 1. Add missing indexes for performance (Bora P1)

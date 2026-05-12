@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Archive, Coins, CreditCard, FolderKanban, LayoutDashboard, LogOut, Plus, Search, ShieldCheck, UserCircle, Sun, Moon, Sparkles, Bell, HelpCircle, BookOpen, Settings } from 'lucide-react';
+import { Archive, Coins, FolderKanban, LayoutDashboard, LogOut, Plus, Search, ShieldCheck, UserCircle, Sun, Moon, Sparkles, Bell, HelpCircle, BookOpen } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTheme } from 'next-themes';
 import { ClientOnly } from '@/components/shared/ClientOnly';

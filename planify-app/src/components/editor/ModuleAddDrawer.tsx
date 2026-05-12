@@ -1,19 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { 
   X, 
-  Blocks, 
   Info, 
   Search, 
-  Plus, 
-  Sparkles,
-  ChevronRight,
-  Layout
+  Plus,
+  ChevronRight
 } from 'lucide-react';
 import { useEditorStore } from '@/store/useEditorStore';
+import { useShallow } from 'zustand/react/shallow';
 import { MODULE_ICONS, MODULE_COLORS } from './modules/ModuleIconSet';
 import { MODULE_DEFINITIONS } from '@/lib/editor/templateLayouts';
 import { cn } from '@/lib/utils';
-import type { TemplateModuleType, TemplateModuleDefinition } from '@/types/editor';
 
 /* ────────────────────────────────────────────────────────────────────────
  *  ModuleAddDrawer — Yeni Modül Ekleme Paneli
@@ -26,7 +23,10 @@ interface Props {
 }
 
 export function ModuleAddDrawer({ isOpen, onClose }: Props) {
-  const { addTemplateModule, templateModules } = useEditorStore();
+  const { addTemplateModule, templateModules } = useEditorStore(useShallow(state => ({
+    addTemplateModule: state.addTemplateModule,
+    templateModules: state.templateModules
+  })));
   const [searchQuery, setSearchQuery] = useState('');
 
   // ESC ile kapatma

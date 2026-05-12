@@ -1,23 +1,16 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Blocks, ChevronRight, GripVertical, Plus, X, Pencil, Eye } from 'lucide-react';
-import { MODULE_DEFINITIONS } from '@/lib/editor/templateLayouts';
+import { useState } from 'react';
+import { Blocks, GripVertical, Plus, X, Pencil } from 'lucide-react';
 import { modulesToRegions } from '@/lib/editor/templateLayouts';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/store/useEditorStore';
+import { useShallow } from 'zustand/react/shallow';
 import { MODULE_ICONS, MODULE_COLORS } from './modules/ModuleIconSet';
 import { ModuleDispatcher } from './modules/ModuleDispatcher';
-import { ModuleEditDrawer } from './ModuleEditDrawer';
-import type { TemplateModuleRequirement, TemplateModuleType, TemplateModuleInstance } from '@/types/editor';
+import type { TemplateModuleType, TemplateModuleInstance } from '@/types/editor';
 
 /* ─── Constants ─── */
-
-const REQ_BADGE: Record<TemplateModuleRequirement, { text: string; cls: string }> = {
-  required:    { text: 'Zorunlu',   cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' },
-  recommended: { text: 'Önerilen',  cls: 'bg-amber-500/15 text-amber-400 border-amber-500/25' },
-  optional:    { text: 'Opsiyonel', cls: 'bg-slate-500/15 text-slate-400 border-slate-500/25' },
-};
 
 const MODULE_LABELS: Record<TemplateModuleType, string> = {
   Header: 'Başlık', Logo: 'Logo', DrawingArea: 'Çizim', EmergencyCall: 'Acil Çağrı',
@@ -52,7 +45,7 @@ interface TemplateModulePanelProps {
 
 /* ─── Hover Preview Tooltip ─── */
 
-function HoverPreview({ module, templateState }: { module: TemplateModuleInstance; templateState: any }) {
+function HoverPreview({ module, templateState }: { module: TemplateModuleInstance; templateState: Record<string, unknown> }) {
   const regions = modulesToRegions([module]);
   const region = regions[0];
   const content = templateState[module.id] || {};
@@ -109,7 +102,7 @@ function ModuleRow({ module, isSelected, onSelect, onEdit, templateState }: {
         onClick={onSelect}
         draggable
         onDragStart={e => {
-          e.dataTransfer.setData('application/planify-existing-module', module.id);
+          e.dataTransfer.setData('application/KolayTahliye-existing-module', module.id);
           e.dataTransfer.effectAllowed = 'move';
         }}
         className={cn(
@@ -176,18 +169,22 @@ export function TemplateModulePanel({ mobileMenu, setMobileMenu }: TemplateModul
     templateModules, selectedTemplateModuleId, templateState,
     setSelectedTemplateModuleId,
     isModuleEditDrawerOpen, setIsModuleEditDrawerOpen,
-    isModuleAddDrawerOpen, setIsModuleAddDrawerOpen,
+    setIsModuleAddDrawerOpen,
     setFocusedRegionId,
-  } = useEditorStore();
+  } = useEditorStore(useShallow(state => ({
+    templateModules: state.templateModules,
+    selectedTemplateModuleId: state.selectedTemplateModuleId,
+    templateState: state.templateState,
+    setSelectedTemplateModuleId: state.setSelectedTemplateModuleId,
+    isModuleEditDrawerOpen: state.isModuleEditDrawerOpen,
+    setIsModuleEditDrawerOpen: state.setIsModuleEditDrawerOpen,
+    setIsModuleAddDrawerOpen: state.setIsModuleAddDrawerOpen,
+    setFocusedRegionId: state.setFocusedRegionId
+  })));
 
   const handleOpenEdit = (moduleId: string) => {
     setFocusedRegionId(moduleId);
     setIsModuleEditDrawerOpen(true);
-  };
-
-  const handleCloseEdit = () => {
-    setIsModuleEditDrawerOpen(false);
-    setFocusedRegionId(null);
   };
 
   return (

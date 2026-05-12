@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Çerez Politikası | Planify',
-  description: 'Planify çerez politikası — çerez kullanımı ve tercihleriniz hakkında bilgilendirme.',
+  title: 'Çerez Politikası | KolayTahliye',
+  description: 'KolayTahliye çerez politikası — çerez kullanımı ve tercihleriniz hakkında bilgilendirme.',
 };
 
 export default function CookiesPage() {
@@ -44,7 +44,7 @@ export default function CookiesPage() {
       <p>Tarayıcı ayarlarınızdan çerezleri yönetebilir veya silebilirsiniz. Ancak zorunlu çerezlerin devre dışı bırakılması platformun düzgün çalışmasını engelleyebilir.</p>
 
       <h2>5. İletişim</h2>
-      <p>Çerez politikası hakkında sorularınız için: <a href="mailto:destek@planify.com.tr">destek@planify.com.tr</a></p>
+      <p>Çerez politikası hakkında sorularınız için: <a href="mailto:destek@KolayTahliye.com.tr">destek@KolayTahliye.com.tr</a></p>
     </>
   );
 }

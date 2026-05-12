@@ -60,6 +60,7 @@ interface ProjectState {
   updateProject: (id: string, data: Partial<Project>) => Promise<void>;
   recordProjectExport: (projectId: string, format: ProjectExport['format'], fileName: string) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
+  checkDailyExportLimit: () => Promise<boolean>;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -286,6 +287,40 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     } catch (error: unknown) {
       console.error('Delete project error:', error);
       set({ error: getErrorMessage(error) });
+    }
+  },
+
+  checkDailyExportLimit: async () => {
+    const supabase = createClient();
+    const authState = useAuthStore.getState();
+    const userId = authState.user?.id ?? authState.session?.user.id;
+    
+    if (!userId) return false;
+
+    // Sadece PRO kullanıcılara limit (Fair Usage Policy) koyalım.
+    // Free veya paketli kullanıcılar kredi düşerek ilerler.
+    if (authState.profile?.subscription_tier !== 'pro') return true;
+
+    try {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const { count, error } = await supabase
+        .from('project_exports')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('created_at', todayStart.toISOString());
+
+      if (error) {
+        console.error('Error checking export limit:', error);
+        return true; // Hata anında engellememek için true dönüyoruz
+      }
+
+      const MAX_DAILY_EXPORTS = 50;
+      return (count || 0) < MAX_DAILY_EXPORTS;
+    } catch (err) {
+      console.error('checkDailyExportLimit error:', err);
+      return true;
     }
   },
 }));

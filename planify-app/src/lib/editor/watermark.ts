@@ -22,7 +22,7 @@ export async function addWatermarkToPng(dataUrl: string): Promise<string> {
       ctx.font = `bold ${Math.max(48, img.width / 20)}px sans-serif`;
       ctx.textAlign = 'center';
 
-      const text = 'planify.com.tr';
+      const text = 'KolayTahliye.com.tr';
       const spacingX = img.width / 3;
       const spacingY = img.height / 4;
 
@@ -44,7 +44,7 @@ export async function addWatermarkToPng(dataUrl: string): Promise<string> {
       ctx.font = `bold ${Math.max(14, bannerH / 3)}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.fillText(
-        'Bu çıktı Planify ücretsiz sürümü ile oluşturulmuştur — planify.com.tr',
+        'Bu çıktı KolayTahliye ücretsiz sürümü ile oluşturulmuştur — KolayTahliye.com.tr',
         img.width / 2,
         img.height - bannerH / 3
       );

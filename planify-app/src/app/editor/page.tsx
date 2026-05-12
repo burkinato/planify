@@ -19,7 +19,7 @@ const EditorApp = dynamic(() => import('@/components/editor/EditorApp'), {
       </div>
       <div className="flex flex-col items-center gap-2">
         <div className="text-white font-black uppercase tracking-[0.2em] text-sm flex items-center gap-2">
-          Planify <span className="text-emerald-400">Editor</span>
+          KolayTahliye <span className="text-emerald-400">Editor</span>
         </div>
         <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest animate-pulse">
           Çalışma Alanı Hazırlanıyor...

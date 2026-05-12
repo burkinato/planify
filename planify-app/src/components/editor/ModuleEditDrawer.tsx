@@ -3,6 +3,7 @@
 import { X, Trash2, Move, Palette, Type, AlignLeft, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/store/useEditorStore';
+import { useShallow } from 'zustand/react/shallow';
 import { MODULE_ICONS, MODULE_COLORS } from './modules/ModuleIconSet';
 import { ModuleDispatcher } from './modules/ModuleDispatcher';
 import { ImageUp } from 'lucide-react';
@@ -40,8 +41,17 @@ export function ModuleEditDrawer({ isOpen, onClose }: Props) {
   const {
     templateModules, selectedTemplateModuleId, templateState,
     updateTemplateModule, removeTemplateModule, updateTemplateRegion,
-    setSelectedTemplateModuleId, projectMetadata, setProjectMetadata
-  } = useEditorStore();
+    projectMetadata, setProjectMetadata
+  } = useEditorStore(useShallow(state => ({
+    templateModules: state.templateModules,
+    selectedTemplateModuleId: state.selectedTemplateModuleId,
+    templateState: state.templateState,
+    updateTemplateModule: state.updateTemplateModule,
+    removeTemplateModule: state.removeTemplateModule,
+    updateTemplateRegion: state.updateTemplateRegion,
+    projectMetadata: state.projectMetadata,
+    setProjectMetadata: state.setProjectMetadata
+  })));
 
   const mod = templateModules.find(m => m.id === selectedTemplateModuleId) ?? null;
   const state = mod ? templateState[mod.id] || {} : {};
@@ -95,6 +105,7 @@ export function ModuleEditDrawer({ isOpen, onClose }: Props) {
               <label className="text-[8px] font-black uppercase tracking-wider text-slate-500 ml-1">Logo Görseli</label>
               {projectMetadata.logoUrl ? (
                 <div className="relative h-32 overflow-hidden rounded-xl border border-slate-700/60 bg-slate-900/40 p-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={projectMetadata.logoUrl} alt="Logo" className="h-full w-full object-contain" />
                 </div>
               ) : (

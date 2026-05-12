@@ -1,11 +1,11 @@
 'use client';
 
-import { CheckCircle2, Sparkles, Crown, Building2, Zap } from 'lucide-react';
+import { CheckCircle2, Crown, Building2, Zap } from 'lucide-react';
 import Link from 'next/link';
 
 const PACKAGES = [
   {
-    name: 'Planify Pro',
+    name: 'KolayTahliye Pro',
     credits: '1 Proje Hakkı',
     price: '$5',
     priceNote: '/ay',
@@ -63,7 +63,7 @@ const PACKAGES = [
 const FAQS = [
   {
     q: 'Sistem nasıl çalışır?',
-    a: 'Planify, $5/ay abonelik modeli ile çalışır. Abone olduğunuzda 1 proje oluşturma hakkı kazanırsınız. Daha fazla proje için kredi paketleri satın alabilirsiniz.',
+    a: 'KolayTahliye, $5/ay abonelik modeli ile çalışır. Abone olduğunuzda 1 proje oluşturma hakkı kazanırsınız. Daha fazla proje için kredi paketleri satın alabilirsiniz.',
   },
   {
     q: 'Satın aldığım kredilerin süresi doluyor mu?',
@@ -75,7 +75,7 @@ const FAQS = [
   },
   {
     q: 'Büyük ölçekli ofisler için toplu alım var mı?',
-    a: 'Evet. 10+ proje paketleri ve özel kurumsal teklifler için destek@planify.com.tr üzerinden iletişime geçebilirsiniz.',
+    a: 'Evet. 10+ proje paketleri ve özel kurumsal teklifler için destek@KolayTahliye.com.tr üzerinden iletişime geçebilirsiniz.',
   },
 ];
 

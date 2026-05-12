@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'KVKK Aydınlatma Metni | Planify',
+  title: 'KVKK Aydınlatma Metni | KolayTahliye',
   description: '6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında aydınlatma metni.',
 };
 
@@ -13,7 +13,7 @@ export default function KvkkPage() {
       <p className="text-sm text-slate-400">Son güncelleme: 10 Mayıs 2026</p>
 
       <h2>1. Veri Sorumlusu</h2>
-      <p>Planify platformu olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu (&ldquo;KVKK&rdquo;) kapsamında veri sorumlusu sıfatıyla kişisel verilerinizi işlemekteyiz.</p>
+      <p>KolayTahliye platformu olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu (&ldquo;KVKK&rdquo;) kapsamında veri sorumlusu sıfatıyla kişisel verilerinizi işlemekteyiz.</p>
 
       <h2>2. İşlenen Kişisel Veriler</h2>
       <table className="w-full text-sm">
@@ -65,7 +65,7 @@ export default function KvkkPage() {
       </ul>
 
       <h2>7. Başvuru</h2>
-      <p>Haklarınızı kullanmak için <a href="mailto:kvkk@planify.com.tr">kvkk@planify.com.tr</a> adresine yazılı olarak başvurabilirsiniz.</p>
+      <p>Haklarınızı kullanmak için <a href="mailto:kvkk@KolayTahliye.com.tr">kvkk@KolayTahliye.com.tr</a> adresine yazılı olarak başvurabilirsiniz.</p>
     </>
   );
 }

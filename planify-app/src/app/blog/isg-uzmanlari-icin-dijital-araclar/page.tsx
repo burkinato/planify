@@ -3,8 +3,8 @@ import { Metadata } from 'next';
 import { Check, X, Zap } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'İSG Uzmanları İçin Dijital Araçlar | Planify',
-  description: 'En iyi İSG yazılımları ve araçları karşılaştırması. AutoCAD vs Planify: Tahliye planı çizimi için hangi araç daha uygun?',
+  title: 'İSG Uzmanları İçin Dijital Araçlar | KolayTahliye',
+  description: 'En iyi İSG yazılımları ve araçları karşılaştırması. AutoCAD vs KolayTahliye: Tahliye planı çizimi için hangi araç daha uygun?',
   keywords: ['İSG yazılımları', 'tahliye planı çizim programı', 'iş güvenliği dijital dönüşüm', 'AutoCAD tahliye planı'],
 };
 
@@ -25,7 +25,7 @@ export default function ComparisonPage() {
             <tr className="bg-slate-50 border-b border-slate-200">
               <th className="p-4 font-black text-slate-900 uppercase text-xs">Özellik</th>
               <th className="p-4 font-black text-slate-900 uppercase text-xs">CAD Yazılımları</th>
-              <th className="p-4 font-black text-indigo-600 uppercase text-xs bg-indigo-50">Planify</th>
+              <th className="p-4 font-black text-indigo-600 uppercase text-xs bg-indigo-50">KolayTahliye</th>
             </tr>
           </thead>
           <tbody className="text-sm">
@@ -61,7 +61,7 @@ export default function ComparisonPage() {
       <div className="bg-gradient-to-br from-indigo-600 to-violet-700 p-10 rounded-[32px] text-white flex flex-col items-center text-center">
         <Zap className="w-12 h-12 mb-6 animate-pulse" />
         <h3 className="text-2xl font-black mb-4">Zamanınızı CAD Çizimlerine Harcamayın</h3>
-        <p className="text-indigo-100 mb-8 max-w-lg">Profesyonel İSG uzmanları arasına katılın ve Planify ile verimliliğinizi %80 artırın.</p>
+        <p className="text-indigo-100 mb-8 max-w-lg">Profesyonel İSG uzmanları arasına katılın ve KolayTahliye ile verimliliğinizi %80 artırın.</p>
         <a href="/register" className="px-10 py-4 bg-white text-indigo-600 text-sm font-black uppercase tracking-widest rounded-2xl hover:bg-slate-100 transition-all shadow-2xl">
           Ücretsiz Deneyin
         </a>

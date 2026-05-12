@@ -1,5 +1,5 @@
 -- ================================================================
--- Planify — Migration: Professional Subscription System
+-- KolayTahliye — Migration: Professional Subscription System
 -- ================================================================
 
 -- 1. Plans tablosu (Fiyat ve plan detayları)

@@ -1,5 +1,5 @@
 {
-  "name": "planify-app",
+  "name": "kolaytahliye-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -42,6 +42,7 @@
     "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "eslint-plugin-unused-imports": "^4.4.1",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
     "tailwind-merge": "^3.5.0",

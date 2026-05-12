@@ -1,7 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { ModuleCard } from './ModuleCard';
-import { ClipboardList } from 'lucide-react';
 import type { TemplateRegion, TemplateRegionState } from '@/types/editor';
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -82,7 +81,7 @@ export function ApprovalRevisionModule({ region, content, compact }: Props) {
         {/* ── Footer ── */}
         <div className="px-4 py-1.5 bg-slate-100/50 border-t border-slate-100 flex justify-between items-center shrink-0">
           <span className="text-[7px] font-bold text-slate-400 uppercase tracking-tighter italic">
-            © PLANIFY TECH — TÜM HAKLARI SAKLIDIR
+            © KOLAYTAHL�YE TECH — TÜM HAKLARI SAKLIDIR
           </span>
           <div className="flex gap-4">
             <span className="text-[7px] font-black text-slate-600 uppercase">ISO 23601</span>

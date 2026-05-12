@@ -4,7 +4,7 @@ export function JsonLd() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Planify",
+    "name": "KolayTahliye",
     "operatingSystem": "Web",
     "applicationCategory": "DesignApplication",
     "aggregateRating": {
@@ -20,7 +20,7 @@ export function JsonLd() {
     "description": "Profesyonel acil durum tahliye planı çizim aracı. İSG uzmanları için ISO 7010 ve ISO 23601 uyumlu planlar.",
     "author": {
       "@type": "Organization",
-      "name": "Planify"
+      "name": "KolayTahliye"
     }
   };
 

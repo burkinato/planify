@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Check, Clock, Edit3, FileText, Search, Trash2, X, MoreVertical, Building2, ChevronRight } from 'lucide-react';
+import { Check, Clock, Edit3, FileText, Search, Trash2, MoreVertical, Building2, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Project } from '@/store/useProjectStore';
 import type { ProjectAudit } from '@/lib/projects/compliance';
@@ -18,7 +18,7 @@ interface ProjectDossierGridProps {
   showSearch?: boolean;
   viewAllHref?: string;
   viewAllLabel?: string;
-  isCreating: boolean;
+  _isCreating: boolean;
   renamingId: string | null;
   renamingTitle: string;
   onSearchChange: (value: string) => void;
@@ -30,13 +30,6 @@ interface ProjectDossierGridProps {
   onCreate?: () => void;
 }
 
-const toneClasses: Record<ProjectAudit['statusTone'], string> = {
-  slate: 'bg-surface-800 text-surface-400',
-  amber: 'bg-amber-50 text-amber-600',
-  emerald: 'bg-emerald-50 text-emerald-600',
-  blue: 'bg-blue-50 text-blue-600',
-};
-
 export function ProjectDossierGrid({
   items,
   searchTerm,
@@ -46,7 +39,6 @@ export function ProjectDossierGrid({
   showSearch = true,
   viewAllHref,
   viewAllLabel = 'Tüm Projeleri Görüntüle',
-  isCreating,
   renamingId,
   renamingTitle,
   onSearchChange,

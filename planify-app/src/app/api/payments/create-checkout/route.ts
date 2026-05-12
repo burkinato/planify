@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient as createSupabaseJS } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/server';
 import { createPayTRToken, generateMerchantOid } from '@/lib/paytr';
 
 /**
  * PayTR Checkout Session Creator
  * 
  * Abonelik + Kredi Hibrit Sistem:
- * - type: 'subscription' → Planify Pro abonelik ($5/ay, 1 proje hakkı)
+ * - type: 'subscription' → KolayTahliye Pro abonelik ($5/ay, 1 proje hakkı)
  * - type: 'credit_package' → Ek kredi paketi satın alımı
  *
  * PayTR iFrame token oluşturur ve frontend'e döner.
@@ -15,7 +14,7 @@ import { createPayTRToken, generateMerchantOid } from '@/lib/paytr';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { packageId, planId, userId, userEmail, userName, type = 'credit_package' } = body;
+    const { packageId, userId, userEmail, userName, type = 'credit_package' } = body;
 
     // 1. Validate required fields
     if (!userId || !userEmail) {
@@ -139,7 +138,7 @@ export async function POST(request: Request) {
       merchantSalt,
       merchantOid,
       price: priceInKurus,
-      userName: userName || 'Planify User',
+      userName: userName || 'KolayTahliye User',
       userEmail,
       merchantOkUrl: `${appUrl}/dashboard/upgrade?status=success`,
       merchantFailUrl: `${appUrl}/dashboard/upgrade?status=failed`,

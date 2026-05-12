@@ -25,15 +25,15 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Planify — Acil Durum Tahliye Planı Editörü',
-    template: '%s | Planify'
+    default: 'KolayTahliye — Acil Durum Tahliye Planı Editörü',
+    template: '%s | KolayTahliye'
   },
   description: 'İş güvenliği uzmanları için profesyonel acil durum tahliye planı çizim aracı. Sürükle-bırak ile denetime hazır planlar oluşturun.',
   keywords: [
     'tahliye planı', 'acil durum', 'iş güvenliği', 'yangın', 'İSG', 'OHS', 
     'evacuation plan', 'tahliye krokisi', 'yangın planı çizim', 'ISO 7010', 'ISO 23601'
   ],
-  metadataBase: new URL('https://planify.com.tr'),
+  metadataBase: new URL('https://kolaytahliye.com'),
   alternates: {
     canonical: '/',
     languages: {
@@ -42,16 +42,16 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'Planify — Acil Durum Tahliye Planı Editörü',
+    title: 'KolayTahliye — Acil Durum Tahliye Planı Editörü',
     description: 'Sürükle-bırak ile denetime hazır ISO 7010 tahliye planları oluşturun. Profesyonel, hızlı ve standartlara uygun.',
-    url: 'https://planify.com.tr',
-    siteName: 'Planify',
+    url: 'https://kolaytahliye.com',
+    siteName: 'KolayTahliye',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Planify Editor',
+        alt: 'KolayTahliye Editor',
       },
     ],
     locale: 'tr_TR',
@@ -59,10 +59,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Planify — Acil Durum Tahliye Planı Editörü',
+    title: 'KolayTahliye — Acil Durum Tahliye Planı Editörü',
     description: 'Profesyonel tahliye planı çizim aracı. Sürükle-bırak ile denetime hazır planlar oluşturun.',
     images: ['/og-image.png'],
-    creator: '@planifytr',
+    creator: '@kolaytahliye',
   },
   robots: {
     index: true,

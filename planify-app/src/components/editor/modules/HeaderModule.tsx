@@ -1,9 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 import { useEditorStore } from '@/store/useEditorStore';
 import type { TemplateRegion, TemplateRegionState } from '@/types/editor';
-import { ShieldCheck } from 'lucide-react';
 
 /* ────────────────────────────────────────────────────────────────────────
  *  HeaderModule — Başlık / Kimlik Bandı
@@ -18,7 +16,7 @@ interface Props {
   compact?: boolean;
 }
 
-export function HeaderModule({ region, content, accent, compact }: Props) {
+export function HeaderModule({ region, content, accent }: Props) {
   const { projectMetadata, focusedRegionId, advancedType } = useEditorStore();
   const isRegionFocused = focusedRegionId === region.id;
   const headerColor = accent || '#008F4C';

@@ -1,5 +1,4 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
 import { ModuleCard } from './ModuleCard';
 import { Sparkles } from 'lucide-react';
 import { useEditorStore } from '@/store/useEditorStore';

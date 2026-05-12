@@ -25,6 +25,21 @@ export default function AdminDashboard() {
     entry_date: string;
   };
 
+  type AdminUser = {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+  };
+
+  type SuspiciousLogin = {
+    id: string;
+    ip_address: string;
+    user_agent: string;
+    created_at: string;
+    user_id: string;
+    profiles: AdminUser;
+  };
+
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalProjects: 0,
@@ -32,12 +47,8 @@ export default function AdminDashboard() {
     activeSubscriptions: 0,
   });
   const [recentTransactions, setRecentTransactions] = useState<FinanceTransaction[]>([]);
+  const [suspiciousLogins, setSuspiciousLogins] = useState<SuspiciousLogin[]>([]);
   const [loading, setLoading] = useState(true);
-  const [serverStats, setServerStats] = useState({
-    cpu: 12,
-    ram: 45,
-    storage: 24
-  });
 
   useEffect(() => {
     async function fetchData() {
@@ -48,17 +59,28 @@ export default function AdminDashboard() {
         { count: projectCount },
         { data: financeData },
         { count: subCount },
-        { data: recentFin }
+        { data: recentFin },
+        { data: logsData }
       ] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('projects').select('*', { count: 'exact', head: true }),
         supabase.from('admin_finance').select('amount, type'),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).neq('subscription_tier', 'free'),
-        supabase.from('admin_finance').select('*').order('entry_date', { ascending: false }).limit(5)
+        supabase.from('admin_finance').select('*').order('entry_date', { ascending: false }).limit(5),
+        supabase.from('login_logs')
+          .select(`
+            *,
+            profiles:user_id (id, full_name, email)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(5)
       ]);
 
       const revenue = financeData?.reduce((acc, curr) => {
-        return curr.type === 'revenue' ? acc + Number(curr.amount) : acc - Number(curr.amount);
+        // Assuming positive amount in credit_transactions means a purchase/revenue.
+        // If it's a monetary value, we add it. If it's just credits, we might need a separate finance table.
+        // For now, let's just sum positive amounts as a placeholder for revenue.
+        return Number(curr.amount) > 0 ? acc + Number(curr.amount) : acc;
       }, 0) || 0;
 
       setStats({
@@ -68,21 +90,11 @@ export default function AdminDashboard() {
         activeSubscriptions: subCount || 0,
       });
       setRecentTransactions(recentFin || []);
+      setSuspiciousLogins((logsData as unknown as SuspiciousLogin[]) || []);
       setLoading(false);
     }
 
     void fetchData();
-
-    // Subtle server stat fluctuation for "live" feel
-    const interval = setInterval(() => {
-      setServerStats(prev => ({
-        cpu: Math.max(5, Math.min(95, prev.cpu + (Math.random() * 4 - 2))),
-        ram: Math.max(10, Math.min(90, prev.ram + (Math.random() * 2 - 1))),
-        storage: prev.storage
-      }));
-    }, 3000);
-
-    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
@@ -93,7 +105,7 @@ export default function AdminDashboard() {
     <div className="space-y-8 animate-fade-in transition-colors duration-300">
       <div>
         <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">Genel Bakış</h1>
-        <p className="text-slate-500 font-medium mt-1">Planify sistem performansını ve büyümesini takip edin.</p>
+        <p className="text-slate-500 font-medium mt-1">KolayTahliye sistem performansını ve büyümesini takip edin.</p>
       </div>
 
       {/* Stats Grid */}
@@ -227,35 +239,37 @@ export default function AdminDashboard() {
 
         {/* Sidebar Area */}
         <div className="space-y-8">
-          <AdminCard title="Sunucu Durumu">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
-                  <span className="text-slate-400">CPU Kullanımı</span>
-                  <span className="text-slate-900 dark:text-white">{Math.round(serverStats.cpu)}%</span>
+          <AdminCard title="Şüpheli Girişler" description="Son oturum hareketleri">
+            <div className="space-y-4">
+              {suspiciousLogins.length > 0 ? (
+                suspiciousLogins.map((log) => (
+                  <div key={log.id} className="p-3 bg-white/5 border border-white/5 space-y-2">
+                    <div className="flex justify-between items-start">
+                      <p className="text-xs font-bold text-white leading-tight">
+                        {log.profiles?.full_name || log.profiles?.email || 'Bilinmeyen'}
+                      </p>
+                      <span className="text-[9px] font-black text-slate-500 uppercase">
+                        {new Date(log.created_at).toLocaleTimeString('tr-TR')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="px-1.5 py-0.5 bg-rose-500/10 border border-rose-500/20 text-[9px] font-black text-rose-400 uppercase">
+                        {log.ip_address}
+                      </div>
+                      <p className="text-[9px] text-slate-500 truncate flex-1">
+                        {log.user_agent}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-8 text-center text-slate-500 text-xs italic">
+                  Şüpheli hareket tespit edilmedi.
                 </div>
-                <div className="h-1 bg-white/5 overflow-hidden">
-                  <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${serverStats.cpu}%` }} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
-                  <span className="text-slate-400">Bellek</span>
-                  <span className="text-slate-900 dark:text-white">{Math.round(serverStats.ram)}%</span>
-                </div>
-                <div className="h-1 bg-white/5 overflow-hidden">
-                  <div className="h-full bg-amber-500 transition-all duration-1000" style={{ width: `${serverStats.ram}%` }} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
-                  <span className="text-slate-400">Depolama</span>
-                  <span className="text-slate-900 dark:text-white">{serverStats.storage.toFixed(1)} TB / 10 TB</span>
-                </div>
-                <div className="h-1 bg-white/5 overflow-hidden">
-                  <div className="h-full bg-primary-500 w-[24%]" />
-                </div>
-              </div>
+              )}
+              <button className="w-full py-2 bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all">
+                Tüm Logları Gör
+              </button>
             </div>
           </AdminCard>
 

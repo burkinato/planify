@@ -1,9 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type Konva from 'konva';
-import Link from 'next/link';
-import { Sparkles, X } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { EditorHeader } from './EditorHeader';
 import { EditorLeftSidebar } from './EditorLeftSidebar';
 import { EditorCanvas } from './EditorCanvas';
@@ -15,10 +14,12 @@ import { OnboardingWizard } from './onboarding/OnboardingWizard';
 import { EditorTour } from './onboarding/EditorTour';
 import { ModuleEditDrawer } from './ModuleEditDrawer';
 import { ModuleAddDrawer } from './ModuleAddDrawer';
+import { ComplianceWidget } from './ComplianceWidget';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
 import { useEditorStore } from '@/store/useEditorStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'sonner';
 import { FALLBACK_TEMPLATE_LAYOUTS } from '@/lib/editor/templateLayouts';
@@ -60,7 +61,6 @@ export default function EditorApp() {
   const [mobileMenu, setMobileMenu] = useState<'tools' | 'properties' | null>(null);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [showUpgradeBanner, setShowUpgradeBanner] = useState(true);
   const stageRef = useRef<Konva.Stage | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -75,32 +75,29 @@ export default function EditorApp() {
   const searchParams = useSearchParams();
   const projectId = searchParams.get('id');
   const templateSlug = searchParams.get('template');
-  const { projects, fetchProjects, templateLayouts, fetchTemplateLayouts, updateProject, recordProjectExport, isLoading: isProjectsLoading } = useProjectStore();
-  const {
-    loadProject, templateLayoutId, projectTemplate, setTemplateLayout,
-    elements, layers, activeTemplateLayout, scaleConfig, pagePreset, templateState,
-    templateModules, innerZoom, innerPan, setProjectId,
-    hasCompletedOnboarding, setOnboardingVisible,
-    isModuleEditDrawerOpen, setIsModuleEditDrawerOpen,
-    isModuleAddDrawerOpen, setIsModuleAddDrawerOpen,
-    setFocusedRegionId
-  } = useEditorStore();
+  const { fetchProjects, templateLayouts, fetchTemplateLayouts, updateProject, recordProjectExport, checkDailyExportLimit } = useProjectStore(useShallow(state => ({
+    projects: state.projects,
+    fetchProjects: state.fetchProjects,
+    templateLayouts: state.templateLayouts,
+    fetchTemplateLayouts: state.fetchTemplateLayouts,
+    updateProject: state.updateProject,
+    recordProjectExport: state.recordProjectExport,
+    checkDailyExportLimit: state.checkDailyExportLimit,
+    isLoading: state.isLoading
+  })));
 
-  useEffect(() => {
-    setProjectId(projectId);
-    // Show onboarding if not completed
-    if (!hasCompletedOnboarding) {
-      setOnboardingVisible(true);
-    }
-  }, [projectId, setProjectId, hasCompletedOnboarding, setOnboardingVisible]);
-  const { profile, user, isLoading } = useAuthStore();
+  const { profile, user, isLoading } = useAuthStore(useShallow(state => ({
+    profile: state.profile,
+    user: state.user,
+    isLoading: state.isLoading
+  })));
   const isPro = profile?.subscription_tier === 'pro';
   const router = useRouter();
 
   // Auth Guard: Redirect unauthenticated users
   useEffect(() => {
     if (!isLoading && !user && !profile) {
-      toast.error('Editörü kullanmak için giriş yapmalısınız.');
+      toast.error('EditÃ¶rÃ¼ kullanmak iÃ§in giriÅŸ yapmalÄ±sÄ±nÄ±z.');
       router.push('/login');
     }
   }, [user, profile, isLoading, router]);
@@ -164,12 +161,14 @@ export default function EditorApp() {
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, projects, loadProject, templateSlug, templateLayouts, hasLoadedProject]);
 
   useEffect(() => {
     const sourceLayouts = mergeTemplateSources(templateLayouts);
     const layout = sourceLayouts.find((tpl) => tpl.id === templateLayoutId || tpl.slug === projectTemplate);
     if (layout) setTemplateLayout(layout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templateLayouts, templateLayoutId, projectTemplate, setTemplateLayout]);
 
   useEffect(() => {
@@ -179,6 +178,8 @@ export default function EditorApp() {
       if (!hasLoadedProject) return;
 
       try {
+        const { setSyncStatus } = useEditorStore.getState();
+        
         const canvas_data = {
           elements,
           layers,
@@ -201,7 +202,15 @@ export default function EditorApp() {
           template_state: templateState,
         });
 
-        if (snapshot === lastSavedSnapshotRef.current) return;
+        if (snapshot === lastSavedSnapshotRef.current) {
+          // If no changes, set status to saved if not already
+          if (useEditorStore.getState().syncStatus !== 'saved') {
+            setSyncStatus('saved');
+          }
+          return;
+        }
+
+        setSyncStatus('saving');
 
         let thumbnail_url = undefined;
         // Only generate thumbnail every 30 seconds or if it's the first save
@@ -245,37 +254,34 @@ export default function EditorApp() {
         });
 
         lastSavedSnapshotRef.current = snapshot;
-
-        toast.success('Değişiklikler kaydedildi', {
-          id: 'autosave-status',
-          duration: 2000,
-          position: 'bottom-right',
-        });
+        setSyncStatus('saved');
       } catch (error: unknown) {
         console.error('Auto-save failed', error);
+        useEditorStore.getState().setSyncStatus('error');
       }
     }, 3000);
 
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elements, layers, templateLayoutId, pagePreset, templateState, templateModules, scaleConfig, projectId, updateProject, projectTemplate, templateLayouts, innerZoom, innerPan]);
 
   const validateCompliance = () => {
     const missing: string[] = [];
-    // E004 = Buradasınız işareti
+    // E004 = BuradasÄ±nÄ±z iÅŸareti
     if (!elements.some((el) => el.type === 'symbol' && el.symbolType === 'E004')) {
-      missing.push('Buradasınız işareti');
+      missing.push('BuradasÄ±nÄ±z iÅŸareti');
     }
-    // Tahliye rotası
+    // Tahliye rotasÄ±
     if (!elements.some((el) => el.type === 'route' && el.routeType === 'evacuation')) {
-      missing.push('Tahliye rotası');
+      missing.push('Tahliye rotasÄ±');
     }
-    // Lejand kontrolü
+    // Lejand kontrolÃ¼
     if (!activeTemplateLayout && !elements.some((el) => el.type === 'symbol')) {
       missing.push('Lejand/sembol bilgisi');
     }
 
     if (missing.length > 0) {
-      toast.warning(`ISO kontrol uyarısı: ${missing.join(', ')} eksik görünüyor.`);
+      toast.warning(`ISO kontrol uyarÄ±sÄ±: ${missing.join(', ')} eksik gÃ¶rÃ¼nÃ¼yor.`);
     }
   };
 
@@ -286,7 +292,7 @@ export default function EditorApp() {
       useEditorStore.getState().setEditorTheme('minimal');
       useEditorStore.getState().setFocusedRegionId(null);
       await waitForPaint();
-      const fileName = `planify-tahliye-plani.${format}`;
+      const fileName = `KolayTahliye-tahliye-plani.${format}`;
       if (activeTemplateLayout && containerRef.current) {
         const { toCanvas } = await import('html-to-image');
         containerRef.current.dataset.exportMode = 'true';
@@ -331,6 +337,15 @@ export default function EditorApp() {
   };
 
   const exportPdf = async () => {
+    const isWithinLimit = await checkDailyExportLimit();
+    if (!isWithinLimit) {
+      toast.error('GÃ¼nlÃ¼k dÄ±ÅŸa aktarÄ±m limitini aÅŸtÄ±nÄ±z.', {
+        description: 'Sistemi korumak amacÄ±yla gÃ¼nlÃ¼k limit uygulanmaktadÄ±r. LÃ¼tfen destek ekibiyle iletiÅŸime geÃ§in.',
+        duration: 5000,
+      });
+      return;
+    }
+
     validateCompliance();
     const { editorTheme: savedEditorTheme } = useEditorStore.getState();
     try {
@@ -384,7 +399,7 @@ export default function EditorApp() {
       const absoluteTimer = setTimeout(() => {
         if (isInitialLoading) {
           console.warn('Absolute fallback triggered: 3 seconds passed. Forcing preloader off.');
-          // eslint-disable-next-line react-hooks/set-state-in-effect
+           
       setIsInitialLoading(false);
           
           const currentProj = useProjectStore.getState().projects.find(p => p.id === projectId);
@@ -473,6 +488,7 @@ export default function EditorApp() {
 
         <OnboardingWizard />
         <EditorTour />
+        {!isPreview && <ComplianceWidget />}
 
         {/* Beautiful Overlay Preloader */}
         {showPreloader && (
@@ -489,7 +505,7 @@ export default function EditorApp() {
             </div>
             <div className="flex flex-col items-center gap-2">
               <div className="text-white font-black uppercase tracking-[0.2em] text-sm flex items-center gap-2">
-                Planify <span className="text-emerald-400">Editor</span>
+                KolayTahliye <span className="text-emerald-400">Editor</span>
               </div>
               <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest animate-pulse">
                 {isLoading ? 'Kullanıcı Doğrulanıyor...' : 'Çalışma Alanı Hazırlanıyor...'}

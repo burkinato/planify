@@ -8,7 +8,7 @@ export async function createClient(isAdmin = false) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookieOptions: isAdmin ? { name: 'planify-admin-auth' } : {},
+      cookieOptions: isAdmin ? { name: 'KolayTahliye-admin-auth' } : {},
       cookies: {
         getAll() {
           return cookieStore.getAll()

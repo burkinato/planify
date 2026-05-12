@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { AlertCircle, ArrowRight, CheckCircle2, ShieldCheck, Zap } from 'lucide-react';
+import { AlertCircle, ArrowRight, CheckCircle2, Zap } from 'lucide-react';
 import type { Project } from '@/store/useProjectStore';
 import type { ProjectAudit } from '@/lib/projects/compliance';
-import { cn } from '@/lib/utils';
 
 interface AuditActionPanelProps {
   items: Array<{ project: Project; audit: ProjectAudit }>;

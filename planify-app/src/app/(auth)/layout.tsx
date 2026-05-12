@@ -78,8 +78,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
           {/* Bottom Footer - Ensures it's not cut off */}
           <div className="shrink-0 mt-6 lg:mt-10 pt-4 flex items-center justify-between text-surface-500 text-[9px] font-bold uppercase tracking-widest border-t border-surface-600">
-            <p>© {new Date().getFullYear()} Planify</p>
-            <p>destek@planify.com.tr</p>
+            <p>© {new Date().getFullYear()} KolayTahliye</p>
+            <p>destek@KolayTahliye.com.tr</p>
           </div>
         </div>
       </div>
@@ -107,7 +107,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           {/* Mobile Footer Note */}
           <div className="md:hidden mt-auto pt-4 text-center shrink-0">
             <p className="text-[9px] text-surface-500 font-bold uppercase tracking-widest">
-              © {new Date().getFullYear()} Planify
+              © {new Date().getFullYear()} KolayTahliye
             </p>
           </div>
         </div>

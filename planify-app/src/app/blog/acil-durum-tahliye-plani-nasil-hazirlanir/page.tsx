@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { Clock, Tag, User } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Acil Durum Tahliye Planı Nasıl Hazırlanır? | Planify',
+  title: 'Acil Durum Tahliye Planı Nasıl Hazırlanır? | KolayTahliye',
   description: 'Adım adım acil durum tahliye planı hazırlama rehberi. ISO 23601 ve ISO 7010 standartlarına göre tahliye krokisi çizimi.',
   keywords: ['tahliye planı hazırlama', 'tahliye krokisi çizimi', 'acil durum planı', 'isg tahliye planı'],
 };
@@ -14,7 +14,7 @@ export default function BlogPost() {
       <div className="flex items-center gap-4 text-slate-400 text-xs font-black uppercase tracking-widest mb-8">
         <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> 6 Dakika Okuma</span>
         <span className="flex items-center gap-1.5"><Tag className="w-3.5 h-3.5" /> Rehber</span>
-        <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> Planify Ekibi</span>
+        <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> KolayTahliye Ekibi</span>
       </div>
 
       <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight mb-8">
@@ -52,9 +52,9 @@ export default function BlogPost() {
       </section>
 
       <section className="mb-12 bg-indigo-50 p-8 rounded-2xl border border-indigo-100">
-        <h3 className="text-xl font-black text-indigo-900 mb-4">Planify ile Hızlı Çözüm</h3>
+        <h3 className="text-xl font-black text-indigo-900 mb-4">KolayTahliye ile Hızlı Çözüm</h3>
         <p className="text-indigo-800/80 mb-6 font-medium">
-          Tüm bu standartları manuel olarak takip etmek yerine, Planify&apos;ın akıllı editörünü kullanarak ISO uyumlu planlarınızı otomatik olarak oluşturabilirsiniz.
+          Tüm bu standartları manuel olarak takip etmek yerine, KolayTahliye&apos;ın akıllı editörünü kullanarak ISO uyumlu planlarınızı otomatik olarak oluşturabilirsiniz.
         </p>
         <a href="/register" className="inline-block px-6 py-3 bg-indigo-600 text-white text-sm font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all">
           Hemen Çizmeye Başla

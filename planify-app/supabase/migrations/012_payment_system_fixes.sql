@@ -1,4 +1,4 @@
--- Planify Migration 012: Payment System Fixes (Samet — P0 Fix)
+-- KolayTahliye Migration 012: Payment System Fixes (Samet — P0 Fix)
 -- Run this in your Supabase SQL Editor or via Supabase CLI
 
 -- 1. Add merchant_oid column to payment_history (store PayTR's merchant_oid)

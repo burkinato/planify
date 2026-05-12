@@ -59,7 +59,6 @@ export function ModuleCard({
   compact = false,
 }: ModuleCardProps) {
   const IconComponent = MODULE_ICONS[moduleType];
-  const colors = MODULE_COLORS[moduleType];
   const headerStyle = TONE_HEADER_STYLES[tone] || TONE_HEADER_STYLES.neutral;
   const bodyStyle = TONE_BODY_STYLES[tone] || TONE_BODY_STYLES.neutral;
   const accentBar = TONE_ACCENT_BAR[tone] || TONE_ACCENT_BAR.neutral;

@@ -5,17 +5,14 @@ import type Konva from 'konva';
 import { 
   X, FileDown, Layers, Check, FileType, 
   Printer, Image as ImageIcon, Code, Sparkles,
-  ShieldCheck, AlertCircle, Info
+  ShieldCheck, Info
 } from 'lucide-react';
 import { useEditorStore, useShallow } from '@/store/useEditorStore';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { THEME_CONFIGS } from '@/types/editor';
-import { exportToPDF } from '@/lib/editor/export';
 import { addWatermarkToPng } from '@/lib/editor/watermark';
-import { useCreditStore } from '@/store/useCreditStore';
 import { trackEvent, TRACKING_EVENTS } from '@/lib/analytics/events';
-import { TRANSLATIONS } from '@/lib/editor/translations';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -57,10 +54,6 @@ export function ExportModal({
   const [isExporting, setIsExporting] = useState(false);
   const [quality, setQuality] = useState<'standard' | 'high' | 'ultra'>('high');
   const [bgMode, setBgMode] = useState<'minimal' | 'current' | 'transparent'>('minimal');
-
-  const { balance } = useCreditStore();
-
-
 
   if (!isOpen) return null;
 

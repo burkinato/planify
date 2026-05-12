@@ -1,4 +1,4 @@
--- Planify v2 professional template/module catalog.
+-- KolayTahliye v2 professional template/module catalog.
 -- Keeps users/projects intact and resets only official template/module catalog rows.
 
 ALTER TABLE public.template_layouts

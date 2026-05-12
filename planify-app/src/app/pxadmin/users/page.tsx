@@ -5,7 +5,6 @@ import { AdminCard } from '@/components/admin/AdminCard';
 import { 
   Search, 
   Filter, 
-  MoreVertical, 
   UserPlus, 
   Mail, 
   Calendar,
@@ -22,30 +21,92 @@ export default function UserManagement() {
     company: string | null;
     subscription_tier: 'free' | 'pro' | string | null;
     created_at: string;
+    is_banned: boolean;
+    credits: {
+      balance: number;
+    } | null;
   };
 
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
+
+  async function fetchUsers() {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(`
+        *,
+        credits:user_credits(balance)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      toast.error('Kullanıcılar yüklenirken hata oluştu.');
+    } else {
+      setUsers(data || []);
+    }
+    setLoading(false);
+  }
 
   useEffect(() => {
-    async function fetchUsers() {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        toast.error('Kullanıcılar yüklenirken hata oluştu.');
-      } else {
-        setUsers(data || []);
-      }
-      setLoading(false);
-    }
-
-    void fetchUsers();
+    const initFetch = async () => {
+      await fetchUsers();
+    };
+    void initFetch();
   }, []);
+
+  const handleManualCredit = async (userId: string, amount: number) => {
+    setIsActionLoading(userId);
+    const supabase = createClient();
+    try {
+      // Önce mevcut bakiyeyi alalım
+      const { data: creditData } = await supabase
+        .from('user_credits')
+        .select('balance')
+        .eq('user_id', userId)
+        .single();
+      
+      const newBalance = (creditData?.balance || 0) + amount;
+
+      const { error } = await supabase
+        .from('user_credits')
+        .update({ balance: newBalance })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      
+      toast.success(`${amount > 0 ? '+' : ''}${amount} Kredi başarıyla eklendi.`);
+      void fetchUsers();
+    } catch (err) {
+      console.error(err);
+      toast.error('Kredi eklenirken bir hata oluştu.');
+    } finally {
+      setIsActionLoading(null);
+    }
+  };
+
+  const handleBanToggle = async (userId: string, currentStatus: boolean) => {
+    setIsActionLoading(userId);
+    const supabase = createClient();
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_banned: !currentStatus })
+        .eq('id', userId);
+
+      if (error) throw error;
+      
+      toast.success(currentStatus ? 'Kullanıcı yasağı kaldırıldı.' : 'Kullanıcı yasaklandı.');
+      void fetchUsers();
+    } catch (err) {
+      console.error(err);
+      toast.error('İşlem başarısız.');
+    } finally {
+      setIsActionLoading(null);
+    }
+  };
 
   const filteredUsers = users.filter(user => 
     user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -137,16 +198,26 @@ export default function UserManagement() {
                       <p className="text-xs font-medium text-slate-300">{user.company || '—'}</p>
                     </td>
                     <td className="py-5">
-                      <span className="inline-flex items-center px-2 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
-                        Aktif
+                      <span className={cn(
+                        "inline-flex items-center px-2 py-1 text-[10px] font-black uppercase tracking-widest border",
+                        user.is_banned 
+                          ? "bg-rose-500/10 text-rose-400 border-rose-500/20" 
+                          : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                      )}>
+                        {user.is_banned ? 'Yasaklı' : 'Aktif'}
                       </span>
                     </td>
                     <td className="py-5">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className={user.subscription_tier === 'pro' ? "w-3 h-3 text-amber-400" : "w-3 h-3 text-slate-500"} />
-                        <span className={user.subscription_tier === 'pro' ? "text-xs font-black text-amber-400 uppercase" : "text-xs font-medium text-slate-400"}>
-                          {user.subscription_tier === 'pro' ? 'PRO' : 'FREE'}
-                        </span>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className={user.subscription_tier === 'pro' ? "w-3 h-3 text-amber-400" : "w-3 h-3 text-slate-500"} />
+                          <span className={user.subscription_tier === 'pro' ? "text-xs font-black text-amber-400 uppercase" : "text-xs font-medium text-slate-400"}>
+                            {user.subscription_tier === 'pro' ? 'PRO' : 'FREE'}
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">
+                          Bakiye: <span className="text-white">{user.credits?.balance || 0} Kredi</span>
+                        </p>
                       </div>
                     </td>
                     <td className="py-5">
@@ -156,9 +227,27 @@ export default function UserManagement() {
                       </p>
                     </td>
                     <td className="py-5 text-right">
-                      <button className="p-2 text-slate-500 hover:text-white hover:bg-white/5 transition-all">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => handleManualCredit(user.id, 10)}
+                          disabled={isActionLoading === user.id}
+                          className="px-2 py-1 bg-white/5 border border-white/10 text-[9px] font-black uppercase text-amber-500 hover:bg-amber-500/10 transition-all disabled:opacity-50"
+                        >
+                          +10 Kredi
+                        </button>
+                        <button 
+                          onClick={() => handleBanToggle(user.id, user.is_banned)}
+                          disabled={isActionLoading === user.id}
+                          className={cn(
+                            "px-2 py-1 border text-[9px] font-black uppercase transition-all disabled:opacity-50",
+                            user.is_banned 
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20" 
+                              : "bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20"
+                          )}
+                        >
+                          {user.is_banned ? 'Yasağı Kaldır' : 'Banla'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

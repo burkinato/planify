@@ -25,7 +25,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
         </article>
       </main>
       <footer className="border-t border-slate-200 bg-white py-8 text-center text-sm text-slate-400">
-        © {new Date().getFullYear()} Planify. Tüm hakları saklıdır.
+        © {new Date().getFullYear()} KolayTahliye. Tüm hakları saklıdır.
       </footer>
     </div>
   );

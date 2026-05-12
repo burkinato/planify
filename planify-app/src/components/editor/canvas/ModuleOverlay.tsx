@@ -1,7 +1,7 @@
 import React from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { cn } from '@/lib/utils';
-import { ImageUp, Trash2, Move } from 'lucide-react';
+import { Trash2, Move } from 'lucide-react';
 import { ISO_SYMBOLS } from '@/lib/editor/isoSymbols';
 import { calculateModuleSnap } from '@/lib/editor/moduleSnapping';
 import { SYMBOLS, type EditorElement, type TemplateRegion } from '@/types/editor';
@@ -17,20 +17,10 @@ function clampNumber(value: number | undefined, min: number, max: number) {
 
 export interface ModuleOverlayProps {
   paperRegions: TemplateRegion[];
-  mergedTemplateState: any;
+  mergedTemplateState: Record<string, unknown>;
   isPreview: boolean;
    
   stageHostRef: React.RefObject<HTMLDivElement | null>;
-  isLogoLoading: boolean;
-  uploadingRegionId: string | null;
-  projectMetadata: { logoUrl?: string };
-  setProjectMetadata: (data: { logoUrl?: string }) => void;
-  handleModuleResizePointerDown: (e: React.PointerEvent<HTMLDivElement>, regionId: string) => void;
-  handleProjectLogoUpload: (file: File | null) => Promise<void>;
-  handleRegionImageUpload: (regionId: string, file: File | null) => Promise<void>;
-  clearRegionImage: (regionId: string) => void;
-   
-  logoFileInputRef: React.RefObject<HTMLInputElement | null>;
   visibleElements: EditorElement[];
 }
 
@@ -39,15 +29,6 @@ export function ModuleOverlay({
   mergedTemplateState,
   isPreview,
   stageHostRef,
-  isLogoLoading,
-  uploadingRegionId,
-  projectMetadata,
-  setProjectMetadata,
-  handleModuleResizePointerDown,
-  handleProjectLogoUpload,
-  handleRegionImageUpload,
-  clearRegionImage,
-  logoFileInputRef,
   visibleElements
 }: ModuleOverlayProps) {
   const {
@@ -57,9 +38,7 @@ export function ModuleOverlay({
     selectedTemplateModuleId,
     setSelectedTemplateModuleId,
     updateTemplateModule,
-    updateTemplateRegion,
     removeTemplateModule,
-    templateState,
     selectedIds,
     setSelectedIds,
     language,
@@ -332,7 +311,10 @@ export function ModuleOverlay({
                 <>
                   <div className="h-full aspect-square flex items-center justify-center bg-white/10 border-r border-white/10 overflow-hidden">
                     {projectMetadata.logoUrl ? (
-                      <img src={projectMetadata.logoUrl} alt="Logo" className="max-w-[80%] max-h-[80%] object-contain" />
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={projectMetadata.logoUrl} alt="Logo" className="max-w-[80%] max-h-[80%] object-contain" />
+                      </>
                     ) : (
                       <svg className="w-1/2 h-1/2 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
                     )}
@@ -429,6 +411,7 @@ export function ModuleOverlay({
                           if (!src) return null;
                           return (
                             <div key={id} className="flex items-center gap-[3cqw] w-[45%] shrink-0">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={src} alt={name} className="w-[18cqw] max-w-[2.5cqh] aspect-square object-contain shadow-sm rounded-sm bg-white" />
                               <span className="font-bold text-slate-700 leading-tight flex-1 truncate" style={{ fontSize: 'max(11px, min(4cqw, 14cqh))' }}>{name}</span>
                             </div>

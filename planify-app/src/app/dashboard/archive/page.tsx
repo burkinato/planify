@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Archive, CheckCircle2, FileText, Loader2, TriangleAlert, FolderKanban } from 'lucide-react';
+import { FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProjectCreationModal, type ProjectCreationDraft } from '@/components/dashboard/ProjectCreationModal';
 import { ProjectDossierGrid } from '@/components/dashboard/ProjectDossierGrid';
@@ -98,21 +98,6 @@ function ArchivePortal() {
       return text.includes(q);
     });
   }, [auditItems, searchTerm]);
-
-  const readyCount = useMemo(
-    () => auditItems.filter(({ audit }) => audit.status === 'ready' || audit.status === 'exported').length,
-    [auditItems]
-  );
-
-  const missingCount = useMemo(
-    () => auditItems.reduce((total, item) => total + item.audit.missing.length, 0),
-    [auditItems]
-  );
-
-  const exportedCount = useMemo(
-    () => projects.filter((project) => Boolean(project.last_exported_at)).length,
-    [projects]
-  );
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -253,35 +238,4 @@ function ArchivePortal() {
   );
 }
 
-function ArchiveMetric({
-  icon,
-  label,
-  value,
-  tone = 'default',
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  tone?: 'default' | 'success' | 'warning' | 'blue';
-}) {
-  const toneMap = {
-    success: { bg: 'bg-emerald-50 text-emerald-600', border: 'border-emerald-100' },
-    warning: { bg: 'bg-amber-50 text-amber-600', border: 'border-amber-100' },
-    blue: { bg: 'bg-blue-50 text-blue-600', border: 'border-blue-100' },
-    default: { bg: 'bg-slate-50 text-slate-500', border: 'border-slate-100' },
-  };
 
-  const currentTone = toneMap[tone];
-
-  return (
-    <div className="bg-white dark:bg-surface-950 border border-slate-200/60 dark:border-surface-600/20 rounded-2xl p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-all duration-300">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${currentTone.bg} ${currentTone.border} shrink-0`}>
-        {icon}
-      </div>
-      <div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-surface-400 leading-none mb-1">{label}</p>
-        <p className="text-2xl font-black text-surface-900 dark:text-surface-100 tracking-tight leading-none">{value}</p>
-      </div>
-    </div>
-  );
-}

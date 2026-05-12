@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Gizlilik Politikası | Planify',
-  description: 'Planify gizlilik politikası — kişisel verilerin korunması ve kullanımı hakkında bilgilendirme.',
+  title: 'Gizlilik Politikası | KolayTahliye',
+  description: 'KolayTahliye gizlilik politikası — kişisel verilerin korunması ve kullanımı hakkında bilgilendirme.',
 };
 
 export default function PrivacyPage() {
@@ -12,12 +12,12 @@ export default function PrivacyPage() {
       <p className="text-sm text-slate-400">Son güncelleme: 10 Mayıs 2026</p>
 
       <h2>1. Toplanan Veriler</h2>
-      <p>Planify aşağıdaki kişisel verileri toplar:</p>
+      <p>KolayTahliye aşağıdaki kişisel verileri toplar:</p>
       <ul>
         <li><strong>Hesap Bilgileri:</strong> Ad, soyad, e-posta adresi, şifre (hash&apos;lenmiş)</li>
         <li><strong>Profil Bilgileri:</strong> Unvan, kurum adı (opsiyonel)</li>
         <li><strong>Kullanım Verileri:</strong> Oluşturulan projeler, kullanılan özellikler, oturum süreleri</li>
-        <li><strong>Ödeme Bilgileri:</strong> Ödeme işlemleri PayTR aracılığıyla güvenli şekilde gerçekleştirilir. Kredi kartı bilgileri Planify tarafından saklanmaz.</li>
+        <li><strong>Ödeme Bilgileri:</strong> Ödeme işlemleri PayTR aracılığıyla güvenli şekilde gerçekleştirilir. Kredi kartı bilgileri KolayTahliye tarafından saklanmaz.</li>
       </ul>
 
       <h2>2. Veri Kullanım Amaçları</h2>
@@ -47,7 +47,7 @@ export default function PrivacyPage() {
       </ul>
 
       <h2>7. İletişim</h2>
-      <p>Gizlilik politikası hakkında sorularınız için: <a href="mailto:destek@planify.com.tr">destek@planify.com.tr</a></p>
+      <p>Gizlilik politikası hakkında sorularınız için: <a href="mailto:destek@KolayTahliye.com.tr">destek@KolayTahliye.com.tr</a></p>
     </>
   );
 }

@@ -137,7 +137,7 @@ export default function LandingShowcase() {
           <span className="inline-block text-sm font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-1.5 rounded-full">
             Uygulama Görüntüleri
           </span>
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900">Planify&apos;ı Keşfedin</h2>
+          <h2 className="text-3xl md:text-5xl font-black text-slate-900">KolayTahliye&apos;ı Keşfedin</h2>
           <p className="text-lg text-slate-500 max-w-xl mx-auto">Güçlü editörden zengin sembol kütüphanesine, mükemmel PDF çıktısına kadar her şey burada.</p>
         </div>
 
@@ -184,7 +184,7 @@ export default function LandingShowcase() {
               <div className="w-3 h-3 rounded-full bg-green-400" />
               <div className="flex-1 flex justify-center">
                 <div className="bg-white rounded px-3 py-0.5 text-[11px] text-slate-400 border border-slate-200 w-44 text-center">
-                  app.planify.com.tr
+                  app.KolayTahliye.com.tr
                 </div>
               </div>
             </div>

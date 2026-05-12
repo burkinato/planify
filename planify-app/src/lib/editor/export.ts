@@ -72,7 +72,7 @@ export async function exportToPDF(
       pdf.setTextColor(100, 100, 100);
 
       // Repeat watermark text diagonally across the page
-      const watermarkText = 'planify.com.tr';
+      const watermarkText = 'KolayTahliye.com.tr';
       const angle = -35;
       const spacingX = 120;
       const spacingY = 80;
@@ -91,12 +91,12 @@ export async function exportToPDF(
       pdf.rect(0, pdfHeight - 10, pdfWidth, 10, 'F');
       pdf.setFontSize(9);
       pdf.setTextColor(255, 255, 255);
-      pdf.text('Bu çıktı Planify ücretsiz sürümü ile oluşturulmuştur. Filigransız çıktı için: planify.com.tr', pdfWidth / 2, pdfHeight - 4, { align: 'center' });
+      pdf.text('Bu çıktı KolayTahliye ücretsiz sürümü ile oluşturulmuştur. Filigransız çıktı için: KolayTahliye.com.tr', pdfWidth / 2, pdfHeight - 4, { align: 'center' });
     } else {
       // Pro user - subtle credit only
       pdf.setFontSize(7);
       pdf.setTextColor(180, 180, 180);
-      pdf.text('Planify ile oluşturulmuştur — planify.com.tr', margin + 2, pdfHeight - 2);
+      pdf.text('KolayTahliye ile oluşturulmuştur — KolayTahliye.com.tr', margin + 2, pdfHeight - 2);
     }
     
     const today = new Date().toLocaleDateString('tr-TR');

@@ -29,7 +29,7 @@ function EditorPreview() {
           <div className="w-3 h-3 rounded-full bg-[#27c93f] shadow-sm" />
           <div className="flex-1 flex justify-center">
             <div className="bg-white/80 rounded-md px-3 py-1 text-[11px] font-medium text-slate-500 border border-slate-200/80 w-56 text-center shadow-sm">
-              <span className="opacity-50">https://</span>app.planify.com.tr
+              <span className="opacity-50">https://</span>app.KolayTahliye.com.tr
             </div>
           </div>
         </div>

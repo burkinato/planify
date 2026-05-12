@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const RECOVERY_KEY = 'planify:chunk-load-recovery';
+const RECOVERY_KEY = 'KolayTahliye:chunk-load-recovery';
 
 function isChunkLoadIssue(value: unknown) {
   if (!value) {

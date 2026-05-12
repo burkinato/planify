@@ -182,7 +182,7 @@
   "projectMetadata": {
     "name": "PROJE DOSYASI",
     "author": "",
-    "date": "10.05.2026",
+    "date": "11.05.2026",
     "revision": "00",
     "floor": "",
     "scale": "100"
@@ -196,5 +196,5 @@
   "invalidChildren": [],
   "invalidChildrenText": null,
   "location": "http://localhost:3000/editor?id=303c4f2d-4997-4342-a050-7949574fe134",
-  "capturedAt": "2026-05-10T20:25:21.851Z"
+  "capturedAt": "2026-05-11T15:17:49.544Z"
 }

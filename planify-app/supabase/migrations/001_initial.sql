@@ -1,4 +1,4 @@
--- Planify Initial Database Schema
+-- KolayTahliye Initial Database Schema
 -- Run this in your Supabase SQL Editor
 
 -- 1. Create Profiles Table (extends auth.users)

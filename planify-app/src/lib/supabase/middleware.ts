@@ -37,7 +37,7 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookieOptions: isAdminPath ? { name: 'planify-admin-auth' } : {},
+      cookieOptions: isAdminPath ? { name: 'KolayTahliye-admin-auth' } : {},
       cookies: {
         getAll() {
           return request.cookies.getAll()
@@ -161,7 +161,7 @@ function withNoStoreHeaders(response: NextResponse) {
 
 function clearAuthCookies(response: NextResponse, request: NextRequest, isAdmin = false) {
   const activeCookie = isAdmin ? ADMIN_AUTH_SESSION_COOKIE_NAME : AUTH_SESSION_COOKIE_NAME
-  const authCookiePrefix = isAdmin ? 'sb-planify-admin' : getSupabaseAuthCookiePrefix()
+  const authCookiePrefix = isAdmin ? 'sb-KolayTahliye-admin' : getSupabaseAuthCookiePrefix()
 
   for (const { name } of request.cookies.getAll()) {
     const isAuthCookie = isAdmin

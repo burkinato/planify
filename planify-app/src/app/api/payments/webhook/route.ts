@@ -1,6 +1,5 @@
 import { createClient as createSupabaseJS } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/server';
-import { verifyPayTRWebhookHash, generateMerchantOid } from '@/lib/paytr';
+import { verifyPayTRWebhookHash } from '@/lib/paytr';
 
 /**
  * PayTR Webhook/Notification Handler
@@ -99,7 +98,7 @@ export async function POST(request: Request) {
         // Abonelik ödemesi: 1 proje kredisi + subscription aktif et
         creditsToAdd = 1;
         transactionType = 'subscription';
-        transactionDescription = 'Planify Pro abonelik — 1 Proje Hakkı';
+        transactionDescription = 'KolayTahliye Pro abonelik — 1 Proje Hakkı';
 
         // Subscription oluştur/güncelle
         const now = new Date();

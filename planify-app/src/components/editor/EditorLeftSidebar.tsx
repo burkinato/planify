@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import {
   MousePointer2, PenTool, Type, ArrowRight, Trash2, Plus,
-  DoorOpen as DoorIcon, Scaling, MoveUp, Box, Upload, Save, Loader2
+  DoorOpen as DoorIcon, Scaling, MoveUp, Box, Upload, Save, Loader2,
+  Eye, EyeOff, Lock, Unlock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/store/useEditorStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useProjectStore } from '@/store/useProjectStore';
 import { SYMBOLS, SymbolCategory } from '@/types/editor';
 import { ISO_SYMBOLS } from '@/lib/editor/isoSymbols';
@@ -76,7 +78,30 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
   const [activeTab, setActiveTab] = useState<'tools' | 'library'>('tools');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const { tool, setTool, selectedSymbol, setSelectedSymbol, clearAll, customSymbols, addCustomSymbol, addElement, focusedRegionId, language } = useEditorStore();
+  const {
+    tool, setTool, selectedSymbol, setSelectedSymbol, clearAll,
+    customSymbols, addCustomSymbol, focusedRegionId, language,
+    layers, addLayer, removeLayer, setActiveLayer, activeLayerId,
+    toggleLayerVisibility, toggleLayerLock
+  } = useEditorStore(useShallow(state => ({
+    tool: state.tool,
+    setTool: state.setTool,
+    selectedSymbol: state.selectedSymbol,
+    setSelectedSymbol: state.setSelectedSymbol,
+    clearAll: state.clearAll,
+    customSymbols: state.customSymbols,
+    addCustomSymbol: state.addCustomSymbol,
+    addElement: state.addElement,
+    focusedRegionId: state.focusedRegionId,
+    language: state.language,
+    layers: state.layers,
+    addLayer: state.addLayer,
+    removeLayer: state.removeLayer,
+    setActiveLayer: state.setActiveLayer,
+    activeLayerId: state.activeLayerId,
+    toggleLayerVisibility: state.toggleLayerVisibility,
+    toggleLayerLock: state.toggleLayerLock
+  })));
   const t = TRANSLATIONS[language || 'tr'];
   const CATEGORY_NAMES = language === 'en' ? CATEGORY_NAMES_EN : CATEGORY_NAMES_TR;
   const { updateProject } = useProjectStore();
@@ -172,7 +197,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
       <div className="p-4 border-b border-surface-600 flex justify-between items-center bg-surface-950">
         <div>
           <h1 className="text-base font-black tracking-tight text-surface-200">
-            Planify {isPro && <span className="text-primary-500 font-medium text-xs ml-1">Pro</span>}
+            KolayTahliye {isPro && <span className="text-primary-500 font-medium text-xs ml-1">Pro</span>}
           </h1>
           <p className="text-[9px] text-surface-400 uppercase tracking-[0.2em] mt-0.5 font-bold">Tahliye Planı Editörü</p>
         </div>
@@ -205,6 +230,17 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
         >
           {t.ui.symbols}
         </button>
+        <button
+          onClick={() => setActiveTab('layers')}
+          className={cn(
+            "flex-1 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-all",
+            activeTab === 'layers'
+              ? "bg-surface-800 text-surface-200"
+              : "text-surface-400 hover:text-surface-300"
+          )}
+        >
+          Katmanlar
+        </button>
       </div>
 
       {/* Compliance Checker */}
@@ -214,7 +250,7 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
-        {activeTab === 'tools' ? (
+        {activeTab === 'tools' && (
           <>
             <section>
               <label className="text-[9px] uppercase font-black text-surface-400 tracking-[0.15em] block mb-3 px-1">
@@ -256,7 +292,9 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
               </button>
             </section>
           </>
-        ) : (
+        )}
+
+        {activeTab === 'library' && (
           <section>
             {Object.entries(CATEGORY_NAMES).map(([catId, catName]) => {
               const catSymbols = SYMBOLS.filter(s => s.category === catId);
@@ -331,6 +369,74 @@ export function EditorLeftSidebar({ mobileMenu, setMobileMenu }: EditorLeftSideb
                 <span>{language === 'en' ? 'Add New Symbol' : 'Yeni Sembol Ekle'}</span>
                 <input type="file" accept="image/svg+xml,image/png,image/jpeg" className="hidden" onChange={handleFileUpload} />
               </label>
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'layers' && (
+          <section className="space-y-2">
+            <div className="flex items-center justify-between px-1 mb-4">
+              <label className="text-[9px] uppercase font-black text-surface-400 tracking-[0.15em]">
+                Katman Yönetimi
+              </label>
+              <button 
+                onClick={() => addLayer(`Yeni Katman ${layers.length + 1}`)}
+                className="text-primary-500 hover:text-primary-400 p-1 bg-primary-500/10 hover:bg-primary-500/20 rounded"
+                title="Yeni Katman"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              {/* Layers are rendered in reverse order so visually top is conceptually top */}
+              {[...layers].reverse().map(layer => (
+                <div 
+                  key={layer.id}
+                  onClick={() => setActiveLayer(layer.id)}
+                  className={cn(
+                    "flex items-center gap-2 p-2 rounded-lg border transition-all cursor-pointer group",
+                    activeLayerId === layer.id 
+                      ? "bg-primary-500/10 border-primary-500/30" 
+                      : "bg-surface-950 border-surface-600 hover:border-surface-500 hover:bg-surface-800"
+                  )}
+                >
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); toggleLayerVisibility(layer.id); }}
+                      className={cn("p-1 rounded transition-colors", layer.visible ? "text-surface-300 hover:text-white" : "text-surface-600 hover:text-surface-400")}
+                      title={layer.visible ? "Gizle" : "Göster"}
+                    >
+                      {layer.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); toggleLayerLock(layer.id); }}
+                      className={cn("p-1 rounded transition-colors", layer.locked ? "text-rose-400 hover:text-rose-300" : "text-surface-600 hover:text-surface-400")}
+                      title={layer.locked ? "Kilidi Aç" : "Kilitle"}
+                    >
+                      {layer.locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+
+                  <div className="flex-1 truncate">
+                    <span className={cn("text-[11px] font-bold", activeLayerId === layer.id ? "text-primary-400" : "text-surface-300")}>
+                      {layer.name}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    {layer.id !== 'default' && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); removeLayer(layer.id); }}
+                        className="p-1 text-surface-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors"
+                        title="Sil"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
         )}

@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { Info, FileCheck, Shield } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'ISO 23601 Nedir? Tahliye Planı Standartları | Planify',
+  title: 'ISO 23601 Nedir? Tahliye Planı Standartları | KolayTahliye',
   description: 'ISO 23601 standardı hakkında her şey. Tahliye planı çizimi, ölçeklendirme ve renk standartları kılavuzu.',
   keywords: ['ISO 23601', 'tahliye planı standardı', 'acil durum levha standartları', 'ISG yönetmelik'],
 };
@@ -16,7 +16,7 @@ export default function IsoGuide() {
       </h1>
 
       <p className="lead text-xl text-slate-500 font-medium leading-relaxed mb-12">
-        ISO 23601, acil durumlarda binada bulunan kişilerin güvenli bir şekilde tahliye edilmesini sağlamak amacıyla hazırlanan "Tahliye Planları" için uluslararası tasarım prensiplerini belirleyen standarttır.
+        ISO 23601, acil durumlarda binada bulunan kişilerin güvenli bir şekilde tahliye edilmesini sağlamak amacıyla hazırlanan &quot;Tahliye Planları&quot; için uluslararası tasarım prensiplerini belirleyen standarttır.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
@@ -44,7 +44,7 @@ export default function IsoGuide() {
             <div className="w-8 h-8 shrink-0 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-sm">1</div>
             <div>
               <h4 className="font-black text-slate-900">Ölçeklendirme</h4>
-              <p className="text-slate-600 text-sm">Büyük tesisler için 1:250, küçük alanlar için 1:100 ölçek önerilir. Planify bu ölçekleri otomatik hesaplar.</p>
+              <p className="text-slate-600 text-sm">Büyük tesisler için 1:250, küçük alanlar için 1:100 ölçek önerilir. KolayTahliye bu ölçekleri otomatik hesaplar.</p>
             </div>
           </div>
           <div className="flex gap-4">
@@ -66,7 +66,7 @@ export default function IsoGuide() {
 
       <section className="mb-12 bg-slate-900 p-10 rounded-[32px] text-white">
         <h3 className="text-2xl font-black mb-4">ISO Uyumluluk Testini Geçiyor musunuz?</h3>
-        <p className="text-slate-400 mb-8 font-medium">Mevcut planlarınızın standartlara uygunluğunu Planify Compliance Checker ile ücretsiz test edebilirsiniz.</p>
+        <p className="text-slate-400 mb-8 font-medium">Mevcut planlarınızın standartlara uygunluğunu KolayTahliye Compliance Checker ile ücretsiz test edebilirsiniz.</p>
         <a href="/register" className="inline-block px-8 py-4 bg-indigo-600 text-white text-sm font-black uppercase tracking-widest rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20">
           Hemen Test Et
         </a>
