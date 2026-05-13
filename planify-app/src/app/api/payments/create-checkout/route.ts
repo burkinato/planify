@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient as createSupabaseJS } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/server';
 import { createPayTRToken, generateMerchantOid } from '@/lib/paytr';
 
 /**
@@ -16,7 +17,20 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { packageId, userId, userEmail, userName, type = 'credit_package' } = body;
 
-    // 1. Validate required fields
+    // 1. Validate auth session to prevent impersonation
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Ensure the requested userId matches the authenticated user
+    if (userId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden: User ID mismatch' }, { status: 403 });
+    }
+
+    // 2. Validate required fields
     if (!userId || !userEmail) {
       return NextResponse.json(
         { error: 'Missing required fields: userId, userEmail' },

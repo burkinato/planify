@@ -2,6 +2,71 @@
 
 import React, { useState, useEffect } from 'react';
 import { Group, Image as KonvaImage } from 'react-konva';
+import { renderToStaticMarkup } from 'react-dom/server';
+import * as LucideIcons from 'lucide-react';
+import { SYMBOLS } from '@/types/editor';
+
+// ── Vector Symbol Generator ───────────────────────────────────────────────────
+
+const iconCache: Record<string, string> = {};
+
+export const getVectorSymbolDataUrl = (symbolId: string, customColor?: string) => {
+  const cacheKey = `${symbolId}-${customColor || 'default'}`;
+  if (iconCache[cacheKey]) return iconCache[cacheKey];
+
+  const sym = SYMBOLS.find(s => s.id === symbolId);
+  if (!sym) return null;
+
+  const IconComponent = sym.iconName ? (LucideIcons as any)[sym.iconName] : LucideIcons.HelpCircle;
+  if (!IconComponent) return null;
+
+  const bgColor = customColor || sym.color;
+  const isWhiteIcon = sym.shape !== 'none' && sym.category !== 'W_TEHLIKE';
+  const iconColor = isWhiteIcon ? '#ffffff' : (sym.category === 'W_TEHLIKE' ? '#000000' : bgColor);
+
+  let bgMarkup = '';
+  if (sym.shape === 'circle') {
+    if (sym.category === 'P_YASAK') {
+      // Red circle with white inside and slash
+      bgMarkup = `
+        <circle cx="50" cy="50" r="45" fill="#ffffff" stroke="${bgColor}" stroke-width="10" />
+        <line x1="20" y1="20" x2="80" y2="80" stroke="${bgColor}" stroke-width="10" />
+      `;
+    } else {
+      bgMarkup = `<circle cx="50" cy="50" r="48" fill="${bgColor}" />`;
+    }
+  } else if (sym.shape === 'square') {
+    if (sym.category === 'W_TEHLIKE') {
+      // Yellow triangle with black border
+      bgMarkup = `
+        <polygon points="50,10 90,85 10,85" fill="${bgColor}" stroke="#000000" stroke-width="6" stroke-linejoin="round" />
+      `;
+    } else {
+      bgMarkup = `<rect width="100" height="100" rx="12" fill="${bgColor}" />`;
+    }
+  }
+
+  // Lucide SVG inner paths
+  const rawSvg = renderToStaticMarkup(<IconComponent color={iconColor} size={24} strokeWidth={2.5} />);
+  const innerPaths = rawSvg.replace(/<svg[^>]*>/, '').replace(/<\/svg>/, '');
+
+  // For triangles, push the icon slightly down
+  const yOffset = sym.category === 'W_TEHLIKE' ? 30 : 25;
+  const xOffset = 25;
+
+  const fullSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+      ${bgMarkup}
+      <g transform="translate(${xOffset}, ${yOffset}) scale(2.08)">
+        ${innerPaths}
+      </g>
+    </svg>
+  `;
+
+  const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(fullSvg.trim())}`;
+  iconCache[cacheKey] = dataUrl;
+  return dataUrl;
+};
 
 // ── Hatch Pattern (Canvas-based) ──────────────────────────────────────────────
 
@@ -49,10 +114,17 @@ export function LegendItem({ color, label, type = 'line' }: { color: string; lab
 
 export const CustomSymbolImage = ({ src, size, isSelected }: { src: string, size: number, isSelected: boolean }) => {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
+  
   useEffect(() => {
+    let isMounted = true;
     const img = new window.Image();
     img.src = src;
-    img.onload = () => setImage(img);
+    img.onload = () => {
+      if (isMounted) setImage(img);
+    };
+    return () => {
+      isMounted = false;
+    };
   }, [src]);
 
   const r = size / 2;

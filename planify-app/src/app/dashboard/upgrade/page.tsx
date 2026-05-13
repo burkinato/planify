@@ -1,294 +1,256 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { 
-  Check, 
-  Coins, 
-  Loader2, 
-  Shield,
-  ArrowRight,
-  Crown,
-  Zap,
-  Package,
-  TrendingUp
-} from 'lucide-react';
+import { Loader2, Shield } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useCreditStore } from '@/store/useCreditStore';
+import { useCreditStore, CREDIT_COSTS } from '@/store/useCreditStore';
 import { toast } from 'sonner';
 
 /** Abonelik fiyatı (TRY) */
 export const SUBSCRIPTION_PRICE_TRY = 990;
 
 export default function UpgradePage() {
-  // const router = useRouter();
   const { user, isInitialized } = useAuthStore();
-  const { balance, hasActiveSubscription, packages, isLoading, fetchBalance, fetchPackages, fetchTransactions } = useCreditStore();
+  const { balance, hasActiveSubscription, packages, isLoading, fetchBalance, fetchPackages } = useCreditStore();
   
-  const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [iframeToken, setIframeToken] = useState<string | null>(null);
 
   useEffect(() => {
     if (isInitialized && user) {
       void fetchBalance();
       void fetchPackages();
-      void fetchTransactions();
     }
-  }, [isInitialized, user, fetchBalance, fetchPackages, fetchTransactions]);
+  }, [isInitialized, user, fetchBalance, fetchPackages]);
 
-  const handlePurchase = async (pkgId: string) => {
-    const pkg = packages.find(p => p.id === pkgId);
-    if (!pkg || !user) return;
+  useEffect(() => {
+    if (iframeToken) {
+      const script = document.createElement('script');
+      script.src = 'https://www.paytr.com/js/iframeResizer.min.js';
+      script.async = true;
+      document.body.appendChild(script);
 
-    setIsProcessing(true);
-    try {
-      toast.info('Ödeme sistemi altyapısı güncellenmektedir.', {
-        description: `${pkg.name} paketi (${pkg.credits} Proje Hakkı) için işlemler yakında aktif olacaktır.`,
-      });
-    } catch {
-      toast.error('İşlem sırasında bir hata oluştu.');
-    } finally {
-      setIsProcessing(false);
+      return () => {
+        if (document.body.contains(script)) {
+          document.body.removeChild(script);
+        }
+      };
     }
-  };
+  }, [iframeToken]);
 
-  const handleSubscribe = async () => {
+  const initiatePayment = async (type: 'subscription' | 'credit_package', packageId?: string) => {
     if (!user) return;
     setIsProcessing(true);
+    setIframeToken(null);
     try {
-      toast.info('Abonelik sistemi altyapısı güncellenmektedir.', {
-        description: `KolayTahliye Premium aboneliği (₺${SUBSCRIPTION_PRICE_TRY}/ay) yakında aktif edilecektir.`,
+      const res = await fetch('/api/payments/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          userEmail: user.email,
+          userName: user.user_metadata?.full_name || 'KolayTahliye User',
+          type,
+          packageId
+        })
       });
-    } catch {
-      toast.error('İşlem sırasında bir hata oluştu.');
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Ödeme başlatılamadı.');
+      }
+
+      setIframeToken(data.token);
+    } catch (err: any) {
+      toast.error(err.message || 'Ödeme başlatılırken bir hata oluştu.');
     } finally {
       setIsProcessing(false);
     }
   };
+
+  const handlePurchase = (pkgId: string) => initiatePayment('credit_package', pkgId);
+  const handleSubscribe = () => initiatePayment('subscription');
 
   if (!isInitialized) {
     return (
-      <div className="min-h-[420px] flex items-center justify-center">
-        <div className="relative">
-          <div className="absolute inset-0 bg-primary-500/20 blur-xl rounded-full" />
-          <Loader2 className="w-8 h-8 text-primary-500 animate-spin relative z-10" />
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (iframeToken) {
+    return (
+      <div className="animate-in fade-in space-y-4 max-w-4xl mx-auto">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-emerald-500" />
+            <h2 className="text-base font-bold text-slate-900">Güvenli Ödeme</h2>
+          </div>
+          <button 
+             onClick={() => setIframeToken(null)}
+             className="text-sm font-medium text-slate-500 hover:text-slate-800"
+          >
+             İptal Et
+          </button>
+        </div>
+        <div className="w-full bg-white border border-slate-200 rounded-xl overflow-hidden min-h-[500px] relative">
+          <iframe 
+             src={`https://www.paytr.com/odeme/guvenli/${iframeToken}`} 
+             id="paytriframe" 
+             frameBorder="0" 
+             scrolling="no" 
+             className="w-full h-full min-h-[500px] relative z-10"
+          ></iframe>
         </div>
       </div>
     );
   }
 
-  // Per-project price savings vs subscription or single credit
-  const getDiscount = (credits: number, priceTry: number) => {
-    const perProject = priceTry / credits;
-    // Assuming base price of 1 credit is higher than package average
-    const basePrice = 49; // 490 TL / 10
-    if (perProject >= basePrice) return 0;
-    return Math.round(((basePrice - perProject) / basePrice) * 100);
-  };
-
-  const getPackageIcon = (credits: number) => {
-    if (credits >= 100) return Crown;
-    if (credits >= 50) return TrendingUp;
-    if (credits >= 10) return Zap;
-    return Package;
-  };
-
   return (
-    <div className="animate-fade-in font-sans space-y-12 pb-12">
-      {/* Header Area - Clean & Unboxed */}
-      <div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-surface-400 mb-2">
-          KOLAYTAHLİYE PORTALI
-        </p>
-        <h1 className="text-2xl font-black tracking-tight text-surface-100">Planlar & Paketler</h1>
+    <div className="animate-in fade-in space-y-6 max-w-5xl mx-auto">
+      {/* HERO */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Aboneliğiniz
+          </h2>
+          <p className="text-slate-500 mt-1 text-sm">
+            Kredilerinizi yönetin veya PRO üyeliğe geçin.
+          </p>
+        </div>
+
+        <div className="bg-white border border-[#edf0f5] rounded-2xl px-5 py-4 shadow-[0_1px_2px_rgba(16,24,40,.04)] min-w-[160px] flex items-center justify-between gap-4">
+          <div>
+             <div className="text-slate-500 text-xs font-medium">
+               Mevcut Bakiye
+             </div>
+             <div className="text-2xl font-bold text-slate-900">
+               {balance}
+             </div>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-8 items-start">
-        {/* Main Column */}
-        <div className="space-y-12">
-          
-          {/* PREMIUM SUBSCRIPTION CARD */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary-500/10 rounded-2xl flex items-center justify-center border border-primary-500/20">
-                <Crown className="w-6 h-6 text-primary-500" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-surface-100">KolayTahliye PRO</h3>
-                <p className="text-[13px] font-medium text-surface-500 mt-0.5">Sınırsız proje ve kurumsal özelliklerle tam profesyonel deneyim.</p>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-surface-900 to-surface-950 border border-primary-500/30 rounded-3xl p-8 relative overflow-hidden group">
-              {/* Decorative Blur */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/10 blur-[100px] -mr-32 -mt-32 rounded-full group-hover:bg-primary-500/20 transition-colors duration-700" />
-              
-              <div className="relative z-10 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 items-center">
-                <div className="space-y-6">
-                  <div className="inline-flex items-center px-3 py-1 bg-primary-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full">
-                    EN POPÜLER SEÇENEK
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                    {[
-                      'Sınırsız Proje Oluşturma',
-                      'Filigransız HD PDF Çıktısı',
-                      'Özel Firma Logosu & Antet',
-                      'Tüm Premium Şablonlar',
-                      'ISO 7010 Tam Kütüphane',
-                      'Öncelikli Teknik Destek'
-                    ].map((feature) => (
-                      <div key={feature} className="flex items-center gap-3">
-                        <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                          <Check className="w-3 h-3 text-emerald-500" />
-                        </div>
-                        <span className="text-sm font-medium text-surface-200">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="p-8 bg-surface-800/50 backdrop-blur-md border border-white/5 rounded-2xl flex flex-col items-center text-center space-y-6 min-w-[240px]">
-                  <div>
-                    <span className="text-5xl font-black tracking-tighter text-white">₺{SUBSCRIPTION_PRICE_TRY}</span>
-                    <span className="text-sm font-bold text-surface-500 uppercase tracking-widest ml-2">/ AY</span>
-                  </div>
-                  
-                  <button 
-                    onClick={handleSubscribe}
-                    className="w-full py-4 bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-xl shadow-primary-600/20 transition-all active:scale-[0.98]"
-                  >
-                    HEMEN ABONE OL
-                  </button>
-                  
-                  <p className="text-[10px] font-bold text-surface-500 uppercase tracking-tight">İstediğiniz zaman iptal edebilirsiniz.</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* CREDIT PACKAGES */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20">
-                <Coins className="w-6 h-6 text-amber-500" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-surface-100">Freelancer Kredi Paketleri</h3>
-                <p className="text-[13px] font-medium text-surface-500 mt-0.5">Sadece ihtiyacınız kadar proje kredisi alın, süresiz kullanın.</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-52 bg-surface-900 border border-surface-600/50 rounded-2xl dash-shimmer" />
-                ))
-              ) : packages.length > 0 ? (
-                packages.map((pkg) => {
-                  const discount = getDiscount(pkg.credits, pkg.price_try);
-                  const Icon = getPackageIcon(pkg.credits);
-                  const perProjectPrice = (pkg.price_try / pkg.credits).toFixed(0);
-                  
-                  return (
-                    <div 
-                      key={pkg.id}
-                      onClick={() => setSelectedPackage(pkg.id)}
-                      className={cn(
-                        "bg-surface-950 border rounded-2xl p-6 cursor-pointer flex flex-col justify-between transition-all hover:border-surface-400 hover:shadow-lg group",
-                        selectedPackage === pkg.id ? "border-surface-300 shadow-md" : "border-surface-600/50 shadow-sm"
-                      )}
-                    >
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-surface-900 rounded-lg flex items-center justify-center border border-surface-600/50 group-hover:border-amber-500/30 transition-colors">
-                            <Icon className="w-5 h-5 text-amber-500" />
-                          </div>
-                          <div>
-                            <h4 className="text-base font-bold text-surface-100">{pkg.name}</h4>
-                            <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mt-0.5">
-                              {pkg.credits} Proje Hakkı
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-3xl font-black tracking-tighter text-surface-100">
-                              ₺{pkg.price_try.toLocaleString('tr-TR')}
-                            </span>
-                            {discount > 0 && (
-                              <span className="text-[9px] font-black text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
-                                % {discount} Tasarruf
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[10px] font-bold text-surface-500 uppercase tracking-widest self-end">
-                            ₺{perProjectPrice} / Proje
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="mt-5 pt-4 border-t border-surface-600/30">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handlePurchase(pkg.id); }}
-                          disabled={isProcessing}
-                          className="w-full h-10 bg-surface-900 border border-surface-600 text-surface-300 hover:bg-surface-800 hover:text-surface-100 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
-                        >
-                          Paketi Seç
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="col-span-full py-16 bg-surface-950 border border-surface-600/50 rounded-2xl flex flex-col items-center justify-center text-center space-y-4">
-                  <Coins className="w-8 h-8 text-surface-500" />
-                  <p className="text-sm font-medium text-surface-400">Aktif bir kredi paketi bulunmuyor.</p>
-                </div>
-              )}
-            </div>
-          </section>
+      {/* INFO BAR */}
+      <div className="bg-white border border-[#edf0f5] rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,.04)] p-4 flex flex-wrap items-center justify-between gap-4 sm:gap-6">
+        <div className="flex-1 min-w-[120px]">
+          <div className="text-sm font-semibold text-slate-900">Proje Oluşturma</div>
+          <div className="text-slate-500 text-xs mt-0.5">{CREDIT_COSTS.PROJECT_CREATE} Kredi</div>
         </div>
+        
+        <div className="hidden sm:block w-px h-8 bg-slate-100"></div>
+        
+        <div className="flex-1 min-w-[120px]">
+          <div className="text-sm font-semibold text-slate-900">PDF Çıktısı</div>
+          <div className="text-slate-500 text-xs mt-0.5">{CREDIT_COSTS.PDF_EXPORT} Kredi</div>
+        </div>
+        
+        <div className="hidden sm:block w-px h-8 bg-slate-100"></div>
+        
+        <div className="flex-1 min-w-[120px]">
+          <div className="text-sm font-semibold text-slate-900">PNG Çıktısı</div>
+          <div className="text-slate-500 text-xs mt-0.5">{CREDIT_COSTS.PNG_EXPORT} Kredi</div>
+        </div>
+        
+        <div className="hidden sm:block w-px h-8 bg-slate-100"></div>
+        
+        <div className="flex-1 min-w-[120px]">
+          <div className="text-sm font-semibold text-slate-900">Premium Şablon</div>
+          <div className="text-slate-500 text-xs mt-0.5">{CREDIT_COSTS.PREMIUM_TEMPLATE} Kredi</div>
+        </div>
+      </div>
 
-        {/* Side Panel */}
-        <div className="space-y-4 sticky top-24">
-          <div className="p-6 bg-surface-900/50 border border-surface-600/30 rounded-2xl space-y-4">
-            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">ÖZET</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-surface-400 font-medium">Mevcut Bakiyeniz</span>
-                <span className="text-white font-black uppercase tracking-tighter">{balance} Kredi</span>
+      {/* GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* PRO */}
+        <div className="bg-gradient-to-b from-[#ffffff] to-[#fafcff] border-[1.5px] border-blue-500 rounded-3xl p-6 flex flex-col">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="text-xl font-bold text-slate-900">
+                PRO Abonelik
               </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-surface-400 font-medium">Abonelik Durumu</span>
-                <span className={cn(
-                  "font-black uppercase tracking-tighter",
-                  hasActiveSubscription ? "text-primary-500" : "text-slate-500"
-                )}>
-                  {hasActiveSubscription ? 'Premium' : 'Standart'}
-                </span>
+              <p className="text-sm text-slate-500 mt-1">
+                Tüm işlemler sınırsız ve ücretsiz.
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-slate-900">
+                ₺{SUBSCRIPTION_PRICE_TRY}
+              </div>
+              <div className="text-xs text-slate-400 font-medium">
+                / aylık
               </div>
             </div>
           </div>
 
-          <div className="p-6 bg-white border border-surface-600/30 rounded-2xl space-y-4 shadow-sm">
-            <h4 className="text-[11px] font-black text-surface-400 uppercase tracking-widest flex items-center gap-2">
-              <Shield className="w-4 h-4" /> KURUMSAL DESTEK
-            </h4>
-            <p className="text-xs font-medium text-surface-500 leading-relaxed">
-              Yüksek hacimli kurumsal alımlar, özel faturalandırma ve ödeme konuları için KolayTahliye destek ekibinizle doğrudan iletişime geçebilirsiniz.
+          <div className="space-y-3 mt-8 flex-1">
+            {[
+              'Sınırsız proje oluşturma',
+              'Sınırsız PDF / PNG çıktısı',
+              'Premium şablon erişimi',
+              'ISO 7010 ikon kütüphanesi',
+              'Öncelikli teknik destek'
+            ].map((feature, idx) => (
+              <div key={idx} className="flex items-center text-sm text-slate-700">
+                <span className="mr-2.5 text-blue-500 font-medium">✓</span> {feature}
+              </div>
+            ))}
+          </div>
+
+          <button 
+            onClick={handleSubscribe}
+            disabled={isProcessing || hasActiveSubscription}
+            className="w-full h-11 rounded-xl text-sm font-semibold mt-8 bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
+            {hasActiveSubscription ? 'Aktif Abonelik' : 'PRO Aboneliğe Geç'}
+          </button>
+        </div>
+
+        {/* CREDIT */}
+        <div className="bg-white border border-[#edf0f5] rounded-3xl p-6 flex flex-col shadow-[0_1px_2px_rgba(16,24,40,.02)]">
+          <div className="mb-6">
+            <div className="text-xl font-bold text-slate-900">
+              Kredi Paketleri
+            </div>
+            <p className="text-sm text-slate-500 mt-1">
+              İhtiyacınız oldukça kredi satın alın.
             </p>
-            <button className="text-[10px] font-bold uppercase tracking-widest text-blue-500 hover:text-blue-600 flex items-center gap-1.5 pt-2">
-              DESTEK TALEBİ OLUŞTUR <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+          </div>
+
+          <div className="space-y-3 flex-1">
+            {isLoading ? (
+              <div className="py-8 text-center text-sm text-slate-400">Paketler Yükleniyor...</div>
+            ) : packages.length > 0 ? (
+              packages.map((pkg) => (
+                <div key={pkg.id} className="border border-slate-200 rounded-2xl p-4 flex items-center justify-between hover:border-slate-300 transition-colors">
+                  <div>
+                    <div className="text-base font-bold text-slate-900">
+                      {pkg.credits} Kredi
+                    </div>
+                    <div className="text-sm text-slate-500 mt-0.5">
+                      ₺{pkg.price_try}
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => handlePurchase(pkg.id)}
+                    disabled={isProcessing || hasActiveSubscription}
+                    className="h-9 px-4 rounded-xl text-sm font-medium bg-[#f5f8ff] text-blue-600 hover:bg-[#edf3ff] transition-colors disabled:opacity-50 flex items-center justify-center"
+                  >
+                    Satın Al
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center text-sm text-slate-400">Paket bulunmuyor.</div>
+            )}
           </div>
         </div>
+
       </div>
     </div>
   );
 }
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ');
-}
-

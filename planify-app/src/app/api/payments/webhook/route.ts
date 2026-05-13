@@ -11,15 +11,11 @@ import { verifyPayTRWebhookHash } from '@/lib/paytr';
  * PayTR ödeme sonucunu bu endpoint'e POST olarak bildirir.
  * Başarılı ödeme geldiğinde:
  * 1. Hash doğrulaması yap
- * 2. Duplicate kontrolü yap (idempotency)
- * 3. Kredi ekle + gerekiyorsa subscription aktif et
+ * 2. Duplicate kontrolü yap (idempotency - DB üzerinden)
+ * 3. Kredi ekle + gerekiyorsa subscription aktif et (RPC ile güvenli)
  * 4. Payment history kaydını güncelle
  * 5. PayTR'ye "OK" yanıtı dön
  */
-
-// In-memory cache for processed webhooks (for idempotency)
-// In production, use Redis or a database table
-const processedWebhooks = new Set<string>();
 
 export async function POST(request: Request) {
   try {
@@ -58,12 +54,6 @@ export async function POST(request: Request) {
       return new Response('PAYTR_IFRAME_FAILED REASON: bad hash', { status: 403 });
     }
 
-    // 2. Idempotency Check
-    if (processedWebhooks.has(merchantOid)) {
-      console.log('PayTR Webhook: Duplicate detected, already processed:', merchantOid);
-      return new Response('OK', { status: 200 });
-    }
-
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -73,6 +63,21 @@ export async function POST(request: Request) {
     }
 
     const supabaseAdmin = createSupabaseJS(supabaseUrl, supabaseServiceKey);
+
+    // 2. Idempotency Check using Database
+    const { error: idempotencyError } = await supabaseAdmin
+      .from('processed_webhooks')
+      .insert({ id: merchantOid });
+      
+    if (idempotencyError) {
+      // If error is unique violation (code 23505), it's already processed
+      if (idempotencyError.code === '23505') {
+         console.log('PayTR Webhook: Duplicate detected, already processed:', merchantOid);
+         return new Response('OK', { status: 200 });
+      }
+      console.error('Idempotency check failed:', idempotencyError);
+      return new Response('ERROR', { status: 500 });
+    }
 
     // 3. Get payment history record
     const { data: paymentRecord, error: fetchError } = await supabaseAdmin
@@ -162,26 +167,11 @@ export async function POST(request: Request) {
         return new Response('TRANSACTION_ERROR', { status: 500 });
       }
 
-      // Read current balance
-      const { data: creditData } = await supabaseAdmin
-        .from('user_credits')
-        .select('balance, total_purchased')
-        .eq('user_id', userId)
-        .single();
-
-      // Upsert balance
-      const currentBalance = creditData?.balance || 0;
-      const currentTotal = creditData?.total_purchased || 0;
-      
+      // Use Atomic RPC to safely increment balance
       const { error: subError } = await supabaseAdmin
-        .from('user_credits')
-        .upsert({
-          user_id: userId,
-          balance: currentBalance + creditsToAdd,
-          total_purchased: currentTotal + creditsToAdd,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id',
+        .rpc('increment_user_credits', {
+          p_user_id: userId,
+          p_amount: creditsToAdd
         });
 
       if (subError) {
@@ -198,9 +188,6 @@ export async function POST(request: Request) {
           completed_at: now.toISOString(),
         })
         .eq('merchant_oid', merchantOid);
-
-      // Mark as processed (idempotency)
-      processedWebhooks.add(merchantOid);
 
       console.log('PayTR Webhook: Payment success processed', {
         merchantOid,

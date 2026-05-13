@@ -4,9 +4,10 @@ import React from 'react';
 import type Konva from 'konva';
 import { Group, Rect, Line, Text } from 'react-konva';
 import type { CustomSymbol, EditorElement, EditorTheme, EditorTool, LayerDef, THEME_CONFIGS } from '@/types/editor';
-import { ISO_SYMBOLS } from '@/lib/editor/isoSymbols';
+// import { ISO_SYMBOLS } from '@/lib/editor/isoSymbols'; // Removed as we use dynamic vector icons now
 import { SYMBOLS } from '@/types/editor';
 import { StairRenderer, ElevatorRenderer, ColumnRenderer, DoorRenderer, WindowRenderer } from './ElementRenderers';
+import { getVectorSymbolDataUrl } from './CanvasHelpers';
 
 interface ElementDispatcherProps {
   elements: EditorElement[];
@@ -98,7 +99,12 @@ export const ElementDispatcher = React.memo(({
         if (el.type === 'symbol') {
           const sym = SYMBOLS.find(s => s.id === el.symbolType);
           const customSym = customSymbols.find(cs => cs.id === el.symbolType);
-          const isoDataUrl = el.symbolType ? ISO_SYMBOLS[el.symbolType] : null;
+          
+          // Generate vector SVG dynamically based on ISO standard colors and shapes using Lucide React
+          const vectorDataUrl = el.symbolType && !customSym 
+            ? getVectorSymbolDataUrl(el.symbolType, el.color) 
+            : null;
+
           const sWidth = el.width || 36;
           return (
             <Group
@@ -109,9 +115,10 @@ export const ElementDispatcher = React.memo(({
             >
               {customSym ? (
                 <CustomSymbolImage src={customSym.dataUrl} size={sWidth} isSelected={isSelected} />
-              ) : isoDataUrl ? (
-                <CustomSymbolImage src={isoDataUrl} size={sWidth} isSelected={isSelected} />
+              ) : vectorDataUrl ? (
+                <CustomSymbolImage src={vectorDataUrl} size={sWidth} isSelected={isSelected} />
               ) : (
+                // Fallback for completely unknown symbols without custom config
                 renderCorporateIcon(el.symbolType || 'exit', sWidth, el.color || sym?.color || '#ef4444', isSelected)
               )}
               {isSelected && <Rect width={sWidth + 8} height={sWidth + 8} x={-sWidth / 2 - 4} y={-sWidth / 2 - 4} stroke={themeConfig.accent} strokeWidth={2} dash={[4, 2]} />}

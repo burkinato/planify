@@ -3,8 +3,15 @@ import { createClient } from '@/lib/supabase/client';
 
 const supabase = createClient();
 
-/** 1 kredi = 1 proje oluşturma hakkı */
-export const PROJECT_CREDIT_COST = 1;
+/** Mikro-Kredi Maliyet Tablosu */
+export const CREDIT_COSTS = {
+  PROJECT_CREATE: 50,
+  PDF_EXPORT: 10,
+  PNG_EXPORT: 5,
+  PREMIUM_TEMPLATE: 20
+} as const;
+
+export type CreditActionType = keyof typeof CREDIT_COSTS;
 
 /** Abonelik fiyatı (USD) */
 export const SUBSCRIPTION_PRICE_USD = 5;
@@ -38,8 +45,9 @@ interface CreditState {
   fetchBalance: () => Promise<void>;
   fetchPackages: () => Promise<void>;
   fetchTransactions: () => Promise<void>;
-  deductCredits: (amount: number, type: string, description: string) => Promise<boolean>;
-  canCreateProject: () => boolean;
+  deductCredits: (action: CreditActionType | string, amount: number, description: string) => Promise<boolean>;
+  canAfford: (cost: number) => boolean;
+  canCreateProject: () => boolean; // Geriye dönük uyumluluk için (canAfford(CREDIT_COSTS.PROJECT_CREATE) sarmalayıcısı)
 }
 
 export const useCreditStore = create<CreditState>((set, get) => ({
@@ -59,7 +67,6 @@ export const useCreditStore = create<CreditState>((set, get) => ({
         return;
       }
 
-      // maybeSingle() kullanıyoruz ki satır yoksa hata fırlatmasın
       const { data, error } = await supabase
         .from('user_credits')
         .select('balance, has_active_subscription')
@@ -77,12 +84,12 @@ export const useCreditStore = create<CreditState>((set, get) => ({
         // Eğer kullanıcı için kredi satırı yoksa oluştur (onboarding)
         const { data: newData, error: insertError } = await supabase
           .from('user_credits')
-          .insert({ user_id: session.user.id, balance: 0, has_active_subscription: false })
+          .insert({ user_id: session.user.id, balance: 500, has_active_subscription: false })
           .select()
           .single();
         
         if (!insertError && newData) {
-          set({ balance: 0, hasActiveSubscription: false });
+          set({ balance: 500, hasActiveSubscription: false });
         }
       }
     } catch (err) {
@@ -134,7 +141,7 @@ export const useCreditStore = create<CreditState>((set, get) => ({
     }
   },
 
-  deductCredits: async (amount: number, type: string, description: string) => {
+  deductCredits: async (action: CreditActionType | string, amount: number, description: string) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return false;
@@ -142,7 +149,7 @@ export const useCreditStore = create<CreditState>((set, get) => ({
       // RPC çağrısı ile server-side güvenli kredi düşme
       const { data: success, error } = await supabase.rpc('deduct_credits_secure', {
         p_amount: amount,
-        p_type: type,
+        p_type: action,
         p_description: description
       });
 
@@ -162,9 +169,19 @@ export const useCreditStore = create<CreditState>((set, get) => ({
     }
   },
 
-  /** Proje oluşturma hakkı var mı? (abonelik veya kredi) */
+  canAfford: (cost: number) => {
+    const { balance, hasActiveSubscription } = get();
+    // Eğer aboneliği varsa her işlemi karşılayabilir mi yoksa sadece bazılarını mı?
+    // Şimdilik aboneliği olanlar için bakiye kontrolünü pass geçmiyoruz, 
+    // Çünkü premium şablonlar abone olanlara ücretsiz olabilir ancak kredi harcamaları devam edebilir.
+    // Hibrit mantığı UI ve işlem esnasında handle edeceğiz. Temel olarak bakiye yetiyor mu diye bakarız.
+    return balance >= cost;
+  },
+
+  /** Proje oluşturma hakkı var mı? (Geriye dönük uyumluluk) */
   canCreateProject: () => {
-    const { balance } = get();
-    return balance >= PROJECT_CREDIT_COST;
+    const { balance, hasActiveSubscription } = get();
+    if (hasActiveSubscription) return true; // Abonelere sınırsız proje hakkı veriyoruz
+    return balance >= CREDIT_COSTS.PROJECT_CREATE;
   }
 }));

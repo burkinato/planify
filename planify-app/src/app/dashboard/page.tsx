@@ -11,7 +11,7 @@ import { TemplateSelectorModal } from '@/components/editor/TemplateSelectorModal
 import { analyzeProjectCompliance } from '@/lib/projects/compliance';
 import { useAuthStore } from '@/store/useAuthStore';
 import { type Project, useProjectStore } from '@/store/useProjectStore';
-import { useCreditStore } from '@/store/useCreditStore';
+import { useCreditStore, CREDIT_COSTS } from '@/store/useCreditStore';
 import type { PagePreset, TemplateLayout } from '@/types/editor';
 
 const DEFAULT_DRAFT: ProjectCreationDraft = {
@@ -132,13 +132,13 @@ function DashboardPortal() {
     setShowTemplateModal(false);
 
     try {
-      // Kredi kontrolü (1 kredi = 1 proje hakkı = $5)
-      const { deductCredits, canCreateProject } = useCreditStore.getState();
-      const CREDIT_COST = 1; // 1 proje = 1 kredi
+      // Kredi kontrolü (Mikro Kredi Mimarisi)
+      const { deductCredits, canCreateProject, hasActiveSubscription, balance } = useCreditStore.getState();
+      const CREDIT_COST = CREDIT_COSTS.PROJECT_CREATE;
       
       if (!canCreateProject()) {
-        toast.error('Yeni proje oluşturmak için yeterli hakkınız bulunmuyor.', {
-          description: 'Aboneliğinizi başlatın veya ek paket satın alın.',
+        toast.error(`Yetersiz Bakiye (${balance} Kredi)`, {
+          description: `Yeni proje oluşturmak ${CREDIT_COST} kredi gerektirir. Aboneliğinizi başlatın veya paket satın alın.`,
           action: {
             label: 'Paketlere Göz At',
             onClick: () => router.push('/dashboard/upgrade')
@@ -148,11 +148,14 @@ function DashboardPortal() {
         return;
       }
 
-      // Kredi düşme işlemi
-      const success = await deductCredits(CREDIT_COST, 'project_creation', `${draft.title} projesi oluşturuldu`);
+      // Kredi düşme işlemi (PRO abone değilse)
+      let success = true;
+      if (!hasActiveSubscription && CREDIT_COST > 0) {
+        success = await deductCredits('PROJECT_CREATE', CREDIT_COST, `${draft.title} projesi oluşturuldu`);
+      }
       
       if (!success) {
-        toast.error('İşlem başarısız oldu, lütfen tekrar deneyin.');
+        toast.error('Kredi düşülürken hata oluştu, lütfen tekrar deneyin.');
         setIsCreating(false);
         return;
       }

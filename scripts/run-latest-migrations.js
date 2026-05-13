@@ -26,9 +26,7 @@ async function runLatestMigrations() {
       console.log('Connected to', pooler);
 
       const migrationsToRun = [
-        '016_security_and_anti_fraud.sql',
-        '017_admin_crm_extension.sql',
-        '018_fix_login_logs_rls.sql'
+        '020_micro_credit_system.sql'
       ];
 
       for (const file of migrationsToRun) {

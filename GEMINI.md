@@ -54,3 +54,8 @@ The application follows a "Dark Mode Default" aesthetic with premium, glassmorph
 - **Design Consistency:** When creating a new UI component, mimic the exact class structures (tracking, font weights, colors) found in `src/components/dashboard/ProjectDossierGrid.tsx` or `PortalSidePanel.tsx`.
 - **No Hacks:** Avoid overriding CSS specificity with `!important` unless dealing with strict third-party overrides (like the PDF export system attributes).
 - **Token & Context Efficiency:** Always prioritize token efficiency. Do not read entire monolithic files if a targeted `grep_search` or reading a specific line range will suffice. Keep your responses and tool outputs concise to preserve the context window.
+
+## 7. Ruflo Multi-Agent Orchestration (OpenRouter)
+- **Integration:** This project integrates **Ruflo** (Claude Flow) as a multi-agent orchestration platform. The swarm environment is configured in the `.claude` and `.claude-flow` directories.
+- **Provider & Model:** It uses **OpenRouter** as the provider and `qwen/qwen-2.5-coder-32b-instruct:free` as the primary model.
+- **Gemini's Role (Delegation):** Gemini CLI acts as the primary orchestrator/manager. For massive, repetitive, or background tasks, Gemini MUST utilize Ruflo agents via shell commands (e.g., `npx ruflo task create ...`, `npx ruflo status`) to delegate work to the agent swarm. This prevents blocking the main context window. Gemini should automatically remember this system exists and is ready to accept commands via `npx ruflo`.

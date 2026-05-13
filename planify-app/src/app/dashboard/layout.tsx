@@ -27,13 +27,6 @@ export default function DashboardLayout({
     fetchTransactions();
   }, [fetchBalance, fetchTransactions]);
 
-  // Subscription Guard
-  useEffect(() => {
-    if (isInitialized && !hasActiveSubscription && !pathname.includes('/dashboard/upgrade')) {
-      router.replace('/dashboard/upgrade');
-    }
-  }, [isInitialized, hasActiveSubscription, pathname, router]);
-
   type MenuItem = {
     href: string;
     label: string;

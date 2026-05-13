@@ -5,14 +5,16 @@ import type Konva from 'konva';
 import { 
   X, FileDown, Layers, Check, FileType, 
   Printer, Image as ImageIcon, Code, Sparkles,
-  ShieldCheck, Info
+  ShieldCheck, Info, Coins
 } from 'lucide-react';
 import { useEditorStore, useShallow } from '@/store/useEditorStore';
+import { useCreditStore, CREDIT_COSTS } from '@/store/useCreditStore';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { THEME_CONFIGS } from '@/types/editor';
 import { addWatermarkToPng } from '@/lib/editor/watermark';
 import { trackEvent, TRACKING_EVENTS } from '@/lib/analytics/events';
+import { useRouter } from 'next/navigation';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -41,6 +43,7 @@ export function ExportModal({
   projectName,
   onExportComplete
 }: ExportModalProps) {
+  const router = useRouter();
   const { layers, activeTemplateLayout, projectMetadata, language, setLanguage } = useEditorStore(useShallow(s => ({
     layers: s.layers,
     activeTemplateLayout: s.activeTemplateLayout,
@@ -48,6 +51,8 @@ export function ExportModal({
     language: s.language,
     setLanguage: s.setLanguage,
   })));
+
+  const { hasActiveSubscription, canAfford, deductCredits, balance } = useCreditStore();
 
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('pdf');
   const [selectedLayers, setSelectedLayers] = useState<Set<string>>(new Set(layers.map(l => l.id)));
@@ -68,23 +73,35 @@ export function ExportModal({
     setSelectedLayers(next);
   };
 
+  const currentCost = selectedFormat === 'pdf' ? CREDIT_COSTS.PDF_EXPORT : (selectedFormat === 'png' ? CREDIT_COSTS.PNG_EXPORT : 0);
+
   const handleExport = async () => {
-    // Yeni hibrit modelde proje başına ödeme yapıldığından,
-    // export her zaman filigransız (Pro) olarak yapılır.
+    // 1. Maliyet ve Bakiye Kontrolü
+    if (!hasActiveSubscription && !canAfford(currentCost)) {
+      toast.error(`Yetersiz bakiye! Bu işlem ${currentCost} kredi gerektiriyor. (Mevcut: ${balance})`, {
+        action: {
+          label: 'Kredi Al',
+          onClick: () => router.push('/dashboard/upgrade')
+        }
+      });
+      return;
+    }
+
     setIsExporting(true);
-    const exportAsPro = true; // Proje oluşturulurken kredi harcanmıştır
-    // Capture inner zoom/pan before the try block so they're accessible in finally
+    // Export her zaman Pro kalitesinde (Filigransız) yapılır çünkü kredi harcanıyor
+    const exportAsPro = true; 
+    
     const { innerZoom: savedInnerZoom, innerPan: savedInnerPan, editorTheme: savedEditorTheme } = useEditorStore.getState();
+    let exportSuccess = false;
+    let exportedFormatStr = '';
+
     try {
       if (bgMode === 'minimal' || bgMode === 'transparent') {
-        // Temporarily force 'minimal' theme for clean export or transparent background
         useEditorStore.getState().setEditorTheme('minimal');
       }
 
-      // 1. Store original visibility
       const originalVisibility = layers.map(l => ({ id: l.id, visible: l.visible }));
 
-      // 2. Temporarily set visibility for export
       const { toggleLayerVisibility } = useEditorStore.getState();
       layers.forEach(l => {
         const shouldBeVisible = selectedLayers.has(l.id);
@@ -93,15 +110,12 @@ export function ExportModal({
         }
       });
 
-      // 3. Trigger Export
       useEditorStore.getState().setFocusedRegionId(null);
-
-      // Reset inner zoom/pan so the full drawing area is captured at 1:1 scale.
-      // Without this, exports capture whatever zoom level the user was editing at.
       useEditorStore.getState().setInnerZoom(1);
       useEditorStore.getState().setInnerPan({ x: 0, y: 0 });
 
       await waitForPaint();
+      
       if (selectedFormat === 'pdf') {
         const fileName = `${(projectName || projectMetadata.name).replace(/\s+/g, '-')}.pdf`;
         const { exportToPDF } = await import('@/lib/editor/export');
@@ -115,6 +129,8 @@ export function ExportModal({
           bgMode
         );
         await onExportComplete?.('pdf', fileName);
+        exportSuccess = true;
+        exportedFormatStr = 'PDF_EXPORT';
       } else if (selectedFormat === 'png') {
         if (activeTemplateLayout && containerRef.current) {
           const pixelRatio = quality === 'ultra' ? 4 : quality === 'high' ? 3 : 2;
@@ -143,6 +159,8 @@ export function ExportModal({
           link.href = dataUrl;
           link.click();
           await onExportComplete?.('png', fileName);
+          exportSuccess = true;
+          exportedFormatStr = 'PNG_EXPORT';
         } else if (!stageRef.current) {
           toast.error('Tuval hazır değil. Lütfen tekrar deneyin.');
           return;
@@ -160,12 +178,15 @@ export function ExportModal({
           link.href = dataURL;
           link.click();
           await onExportComplete?.('png', fileName);
+          exportSuccess = true;
+          exportedFormatStr = 'PNG_EXPORT';
         }
       } else if (selectedFormat === 'svg') {
-        toast.info('SVG dışa aktarma yakında eklenecek. Şimdilik PDF (Vektörel) kullanın.');
+        toast.info('SVG dışa aktarma yakında eklenecek.');
+        return;
       }
 
-      // 4. Restore visibility
+      // Restore visibility
       originalVisibility.forEach(l => {
         const current = useEditorStore.getState().layers.find(cl => cl.id === l.id);
         if (current && current.visible !== l.visible) {
@@ -173,23 +194,38 @@ export function ExportModal({
         }
       });
 
-      toast.success('Dışa aktarma tamamlandı.');
       trackEvent(TRACKING_EVENTS.EXPORT_COMPLETE, {
         format: selectedFormat,
         quality: quality,
         project_name: projectName || projectMetadata.name,
         is_pro: true
       });
-      onClose();
+      
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Dışa aktarma sırasında bir hata oluştu.');
+      exportSuccess = false;
     } finally {
-      // Always restore inner zoom/pan to pre-export state
       useEditorStore.getState().setInnerZoom(savedInnerZoom);
       useEditorStore.getState().setInnerPan(savedInnerPan);
       useEditorStore.getState().setEditorTheme(savedEditorTheme);
       setIsExporting(false);
+      
+      if (exportSuccess) {
+        if (!hasActiveSubscription && currentCost > 0) {
+          // Kredi düşme işlemi
+          const success = await deductCredits(exportedFormatStr, currentCost, `${selectedFormat.toUpperCase()} Çıktı Alındı`);
+          if (success) {
+            toast.success(`Dışa aktarma tamamlandı.`, {
+              description: `-${currentCost} Kredi (Kalan: ${balance - currentCost})`,
+              icon: <Coins className="w-5 h-5 text-amber-500" />
+            });
+          }
+        } else {
+          toast.success('Dışa aktarma tamamlandı (PRO).');
+        }
+        onClose();
+      }
     }
   };
 
@@ -213,36 +249,10 @@ export function ExportModal({
             </button>
           </div>
 
-          {/* Language Selection */}
-          <div className="space-y-4">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5" /> {language === 'en' ? 'Output Language' : 'Çıktı Dili'}
-            </h3>
-            <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
-              {(['tr', 'en'] as const).map(lang => (
-                <button
-                  key={lang}
-                  onClick={() => setLanguage(lang)}
-                  className={cn(
-                    "flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
-                    language === lang 
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "text-slate-400 hover:text-slate-600"
-                  )}
-                >
-                  {lang === 'tr' ? 'Türkçe (TR)' : 'English (EN)'}
-                </button>
-              ))}
-            </div>
-            <p className="text-[9px] text-slate-400 font-bold uppercase leading-relaxed">
-              {language === 'en' ? '★ Module headers and symbols will be exported in English.' : '★ Modül başlıkları ve sembol isimleri Türkçe olarak dışa aktarılacak.'}
-            </p>
-          </div>
-
           {/* Format Selection */}
           <div className="space-y-4">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-              <FileType className="w-3.5 h-3.5" /> {language === 'en' ? 'File Format' : 'Dosya Formatı'}
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center justify-between">
+              <span className="flex items-center gap-2"><FileType className="w-3.5 h-3.5" /> {language === 'en' ? 'File Format' : 'Dosya Formatı'}</span>
             </h3>
             <div className="grid grid-cols-3 gap-3">
               {(['pdf', 'png', 'svg'] as const).map(f => (
@@ -250,7 +260,7 @@ export function ExportModal({
                   key={f}
                   onClick={() => setSelectedFormat(f)}
                   className={cn(
-                    "flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all",
+                    "flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all relative",
                     selectedFormat === f 
                       ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md"
                       : "border-slate-100 bg-white text-slate-400 hover:border-slate-200"
@@ -260,6 +270,12 @@ export function ExportModal({
                   {f === 'png' && <ImageIcon className="w-6 h-6" />}
                   {f === 'svg' && <Code className="w-6 h-6" />}
                   <span className="text-[10px] font-black uppercase tracking-widest">{f}</span>
+                  {!hasActiveSubscription && f !== 'svg' && (
+                    <div className="absolute -top-2 -right-2 bg-amber-100 border border-amber-200 text-amber-700 text-[9px] font-black px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                      <Coins className="w-2.5 h-2.5" /> 
+                      {f === 'pdf' ? CREDIT_COSTS.PDF_EXPORT : CREDIT_COSTS.PNG_EXPORT}
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
@@ -314,11 +330,6 @@ export function ExportModal({
                 </button>
               ))}
             </div>
-            <p className="text-[9px] text-slate-400 font-bold uppercase leading-relaxed">
-              {quality === 'ultra' ? '★ En yüksek vektörel hassasiyet ve keskinlik (Yavaş).' : 
-               quality === 'high' ? '★ Profesyonel baskı için optimize edilmiş (Önerilen).' : 
-               '★ Hızlı önizleme ve dijital paylaşım için.'}
-            </p>
           </div>
 
           {/* Background Mode */}
@@ -344,11 +355,6 @@ export function ExportModal({
                 </button>
               ))}
             </div>
-            <p className="text-[9px] text-slate-400 font-bold uppercase leading-relaxed">
-              {bgMode === 'transparent' ? '★ Arka planı tamamen şeffaf yapar (PDF\'lerde beyaz çıkar).' : 
-               bgMode === 'minimal' ? '★ Her zaman minimal temiz beyaz arka planla çıktı alır.' : 
-               '★ Şu anki çalışma temanızı çıktıya yansıtır.'}
-            </p>
           </div>
         </div>
 
@@ -366,78 +372,56 @@ export function ExportModal({
                   <p className="text-[9px] font-black text-slate-300 uppercase">Şablon</p>
                   <p className="text-xs font-black text-slate-800 uppercase">{activeTemplateLayout?.name || 'Serbest Çizim'}</p>
                 </div>
-                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1">
-                  <p className="text-[9px] font-black text-slate-300 uppercase">Ölçek</p>
-                  <p className="text-xs font-black text-slate-800 uppercase">1:1 HASSASİYET AKTİF</p>
-                </div>
               </div>
             </div>
 
             <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100 space-y-2">
-              <div className="flex items-center gap-2 text-indigo-700">
-                <ShieldCheck className="w-4 h-4" />
-                <span className="text-[10px] font-black uppercase tracking-wider">ISO Uyumluluk</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-indigo-700">
+                  <Coins className="w-4 h-4" />
+                  <span className="text-[10px] font-black uppercase tracking-wider">İşlem Bedeli</span>
+                </div>
+                {!hasActiveSubscription && (
+                  <span className="text-sm font-black text-indigo-700">{currentCost} Kredi</span>
+                )}
               </div>
-              <p className="text-[10px] text-indigo-600/70 font-bold leading-relaxed uppercase">
-                Çıktınız ISO 23601 standartlarına uygun antet ve sembolojiyi içerecek şekilde hazırlanacak.
+              <p className="text-[10px] text-indigo-600/70 font-bold leading-relaxed uppercase mt-1">
+                {hasActiveSubscription 
+                  ? 'PRO üye olduğunuz için sınırsız ve ücretsiz çıktı alabilirsiniz.' 
+                  : `Mevcut Bakiyeniz: ${balance} Kredi`}
               </p>
             </div>
           </div>
 
           <div className="mt-8 space-y-3">
-            {isPro ? (
-              <button
-                onClick={() => handleExport()}
-                disabled={isExporting}
-                className={cn(
-                  "w-full py-5 rounded-[20px] text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl",
-                  isExporting 
-                    ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                    : "bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-1 active:scale-95"
-                )}
-              >
-                {isExporting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-                    İŞLENİYOR...
-                  </>
-                ) : (
-                  <>
-                    <FileDown className="w-4 h-4" />
-                    ŞİMDİ İNDİR (PRO)
-                  </>
-                )}
-              </button>
-            ) : (
-              <div className="space-y-3">
-                <button
-                  onClick={() => handleExport()}
-                  disabled={isExporting}
-                  className={cn(
-                    "w-full py-5 rounded-[20px] text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl",
-                    isExporting 
-                      ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                      : "bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-1 active:scale-95"
-                  )}
-                >
-                  {isExporting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-                      İŞLENİYOR...
-                    </>
-                  ) : (
-                    <>
-                      <FileDown className="w-4 h-4" />
-                      ŞİMDİ İNDİR
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
+            <button
+              onClick={() => handleExport()}
+              disabled={isExporting}
+              className={cn(
+                "w-full py-5 rounded-[20px] text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl",
+                isExporting 
+                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  : "bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-1 active:scale-95"
+              )}
+            >
+              {isExporting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                  İŞLENİYOR...
+                </>
+              ) : (
+                <>
+                  <FileDown className="w-4 h-4" />
+                  ŞİMDİ İNDİR {hasActiveSubscription ? '(PRO)' : ''}
+                </>
+              )}
+            </button>
             
             <div className="flex items-center justify-center gap-2 text-slate-400 pt-2">
                <Info className="w-3 h-3" />
-               <span className="text-[8px] font-black uppercase tracking-widest">Yüksek çözünürlüklü vektörel çıktı</span>
+               <span className="text-[8px] font-black uppercase tracking-widest">
+                 {hasActiveSubscription ? 'Yüksek çözünürlüklü vektörel çıktı' : 'Bakiyenizden anında düşülecektir'}
+               </span>
             </div>
           </div>
         </div>
