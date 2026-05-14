@@ -16,7 +16,7 @@ export default function LandingTrustBar() {
     <section className="py-12 px-6 bg-white border-y border-slate-100">
       <div className="max-w-6xl mx-auto">
         <p className="text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.25em] mb-8">
-          Türkiye'deki Profesyoneller Tarafından Tercih Ediliyor
+          OSGB, saglik, egitim ve saha ekipleri icin tasarlandi
         </p>
         <div className="grid grid-cols-3 md:grid-cols-6 gap-6">
           {SECTORS.map(({ icon: Icon, label }) => (
@@ -31,10 +31,10 @@ export default function LandingTrustBar() {
           ))}
         </div>
         <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <Stat value="500+" label="Aktif Kullanıcı" />
-          <Stat value="3.000+" label="Hazırlanan Plan" />
-          <Stat value="180+" label="Sembol Kütüphanesi" />
-          <Stat value="%99,8" label="Uptime SLA" />
+          <Stat value="500" label="Hediye Kredi" />
+          <Stat value="10 dk" label="Ilk Plan Hedefi" />
+          <Stat value="180+" label="Sembol Kutuphanesi" />
+          <Stat value="KDV Dahil" label="Seffaf Fiyat" />
         </div>
       </div>
     </section>

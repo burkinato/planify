@@ -44,8 +44,8 @@ export default function LandingNav() {
               <Link href="/login" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
                 Giriş Yap
               </Link>
-              <Link href="/register" className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-bold rounded-xl shadow-md shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5 transition-all">
-                Kayıt Ol
+              <Link href="/register?next=/dashboard?new=1" className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-bold rounded-xl shadow-md shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                Ucretsiz Basla
               </Link>
             </>
           )}
@@ -76,8 +76,8 @@ export default function LandingNav() {
                 <Link href="/login" onClick={() => setOpen(false)} className="flex-1 text-center text-sm font-semibold text-slate-700 border border-slate-200 rounded-xl py-2.5">
                   Giriş Yap
                 </Link>
-                <Link href="/register" onClick={() => setOpen(false)} className="flex-1 text-center text-sm font-bold text-white bg-blue-600 rounded-xl py-2.5">
-                  Kayıt Ol
+                <Link href="/register?next=/dashboard?new=1" onClick={() => setOpen(false)} className="flex-1 text-center text-sm font-bold text-white bg-blue-600 rounded-xl py-2.5">
+                  Ucretsiz Basla
                 </Link>
               </>
             )}

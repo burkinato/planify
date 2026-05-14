@@ -136,7 +136,7 @@ export default function LandingHero() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500" />
               </span>
-              Yeni Nesil Tahliye Planı Mimarı
+              10 dakikada ilk tahliye planinizi olusturun
             </div>
 
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] text-slate-900">
@@ -147,22 +147,34 @@ export default function LandingHero() {
             </h1>
 
             <p className="text-lg md:text-xl text-slate-600 leading-relaxed font-medium max-w-xl">
-              İSG uzmanları ve mimarlar için geliştirilmiş akıllı CAD motoru. Hiçbir çizim tecrübesi gerektirmeden, ISO 7010 uyumlu ve baskıya hazır tahliye planları oluşturun.
+              ISG uzmanlari, OSGB'ler ve mimarlik ekipleri icin gelistirilmis hizli plan motoru. Cizim tecrubesi olmadan, ISO uyumlu ve baskiya hazir tahliye planlarini dakikalar icinde olusturun, PDF alin ve musterinizle paylasin.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-2">
               {user ? (
                 <Link href="/dashboard" className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-xl shadow-primary-500/20 hover:shadow-2xl hover:shadow-primary-500/30 hover:-translate-y-0.5 transition-all duration-300">
-                  Dashboard&apos;a Git <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  Dashboard'a Git <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               ) : (
-                <Link href="/register" className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-slate-900 text-white font-bold rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-0.5 transition-all duration-300">
-                  Ücretsiz Çizmeye Başla <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <Link href="/register?next=/dashboard?new=1" className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-slate-900 text-white font-bold rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-0.5 transition-all duration-300">
+                  Ucretsiz Basla ve Ilk Projeni Ac <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               )}
               <a href="#showcase" className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/50 backdrop-blur-md text-slate-700 font-bold rounded-2xl border border-slate-200 hover:bg-white hover:border-slate-300 transition-all shadow-sm">
                 <PlayCircle className="w-5 h-5 text-primary-600" /> Nasıl Çalışır?
               </a>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 max-w-2xl">
+              {[
+                'Kayitla 500 kredi ve ilk proje akisi',
+                'Filigransiz export icin Pro veya kredi modeli',
+                'KDV dahil faturalandirma ve PayTR odeme',
+              ].map((item) => (
+                <div key={item} className="rounded-2xl border border-slate-200/70 bg-white/70 backdrop-blur-sm px-4 py-3 text-[12px] font-semibold text-slate-700 shadow-sm">
+                  {item}
+                </div>
+              ))}
             </div>
 
             <div className="flex items-center gap-8 pt-6 border-t border-slate-200/60">
@@ -182,7 +194,7 @@ export default function LandingHero() {
                     <svg key={star} className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
                   ))}
                 </div>
-                <p className="text-[13px] font-medium text-slate-600">500+ İSG profesyoneli tarafından sevildi</p>
+                <p className="text-[13px] font-medium text-slate-600">500+ ISG profesyoneli tarafindan kullaniliyor</p>
               </div>
             </div>
           </div>

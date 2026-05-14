@@ -23,13 +23,13 @@ interface Tier {
 const TIERS: Tier[] = [
   {
     name: 'Ücretsiz',
-    description: 'Hemen denemek isteyenler için. Kayıtla 500 kredi hediye.',
+    description: 'Hemen denemek isteyenler icin. Kayitla 500 kredi ve ilk proje akisi hazir.',
     icon: Sparkles,
     monthlyPrice: 0,
     annualPrice: 0,
     priceSuffix: '',
     features: [
-      'Hoş geldin: 500 kredi (≈ 10 proje)',
+      'Hos geldin: 500 kredi (yaklasik 10 proje)',
       'ISO 23601 sembol kütüphanesi',
       'PDF çıktı (filigranlı)',
       'Tek kullanıcı',
@@ -39,14 +39,14 @@ const TIERS: Tier[] = [
   },
   {
     name: 'Pro',
-    description: 'Bireysel İSG uzmanları ve mimarlık ofisleri için.',
+    description: 'Bireysel ISG uzmanlari ve mimarlik ofisleri icin en hizli satisa hazir plan.',
     icon: Crown,
     monthlyPrice: 249,
     annualPrice: 2388, // ~199/ay × 12 — %20 indirim
     priceSuffix: '/ay',
     features: [
-      'Sınırsız proje oluşturma',
-      'Filigransız profesyonel PDF',
+      'Sinirsiz proje olusturma',
+      'Filigransiz profesyonel PDF',
       'Premium şablonlar (kat, alarm, ışıklı)',
       'e-Arşiv fatura (KDV dahil)',
       'Öncelikli destek (1 iş günü)',
@@ -142,7 +142,14 @@ export default function LandingPricing() {
           </span>
           <h2 className="text-3xl md:text-5xl font-black text-slate-900">Her Bütçeye Uygun Bir Plan</h2>
           <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-            Tüm fiyatlar Türk Lirası ve <strong className="text-slate-700">KDV dahildir</strong>. 9 taksite kadar bölme imkanı, KVKK ve e-Arşiv uyumlu.
+            Tum fiyatlar Turk Lirasi ve <strong className="text-slate-700">KDV dahildir</strong>. Ucretsiz baslayin, ihtiyaciniz arttiginda Pro'ya gecin veya kredi satin alin.
+          </p>
+        </div>
+
+        <div className="mb-8 rounded-3xl border border-emerald-200 bg-emerald-50 px-6 py-5 text-center shadow-sm">
+          <p className="text-sm font-black uppercase tracking-[0.18em] text-emerald-700">Launch Teklifi</p>
+          <p className="mt-2 text-base font-semibold text-emerald-900">
+            En hizli baslangic: Ucretsiz hesap ac, ilk projeni olustur, export ihtiyacinda Pro'ya gec.
           </p>
         </div>
 
@@ -253,7 +260,7 @@ export default function LandingPricing() {
                 </ul>
 
                 <Link
-                  href={tier.href}
+                  href={tier.name === 'Ücretsiz' ? '/register?next=/dashboard?new=1' : tier.href}
                   className={`block w-full py-3 text-center rounded-2xl font-bold transition-all text-[13px] ${
                     tier.popular
                       ? 'bg-white text-blue-600 hover:bg-blue-50 shadow-md'
@@ -327,7 +334,7 @@ export default function LandingPricing() {
                   href="/register"
                   className="block w-full py-2.5 text-center rounded-xl text-[13px] font-bold bg-slate-50 border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-white transition-all"
                 >
-                  Satın Al
+                  Krediyi Hesaba Yukle
                 </Link>
               </div>
             ))}

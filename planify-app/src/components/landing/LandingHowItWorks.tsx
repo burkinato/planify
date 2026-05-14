@@ -4,7 +4,7 @@ const STEPS = [
     color: 'from-primary-500 to-primary-600',
     textColor: 'text-primary-600',
     title: 'Kayıt Olun',
-    desc: 'Kredi kartı olmadan 7 günlük ücretsiz deneme başlatın. Sadece e-posta adresiniz yeterli.',
+    desc: 'Kredi karti gerektirmeden hesap acin, 500 krediyle ilk proje akisina girin.',
     badge: '2 dakika',
   },
   {
@@ -12,7 +12,7 @@ const STEPS = [
     color: 'from-violet-500 to-violet-600',
     textColor: 'text-violet-600',
     title: 'Planınızı Çizin',
-    desc: 'Sürükle-bırak editörle duvar, kapı, pencere ve ISO 7010 sembollerini ekleyin. Anında ölçüm görün.',
+    desc: 'Sablon secin, duvar ve sembolleri yerlestirin, musteriniz icin hazir bir plan cikisi olusturun.',
     badge: 'Çok Kolay',
   },
   {
@@ -20,7 +20,7 @@ const STEPS = [
     color: 'from-cyan-500 to-cyan-600',
     textColor: 'text-cyan-600',
     title: 'PDF Alın',
-    desc: 'Tek tıkla A3/A4 antetli, denetime hazır vektörel PDF çıktısı alın ve kaydedin.',
+    desc: 'Tek tikla A3 veya A4 PDF alin, denetim veya musteri paylasimi icin ciktiyi hazirlayin.',
     badge: '1 Tıklama',
   },
 ];
@@ -35,7 +35,7 @@ export default function LandingHowItWorks() {
           </span>
           <h2 className="text-3xl md:text-5xl font-black text-slate-900">3 Adımda Denetime Hazır</h2>
           <p className="text-lg text-slate-500 max-w-xl mx-auto">
-            Karmaşık kurulumlar yok. Sertifika gerektirmez. Sadece giriş yapın ve çizmeye başlayın.
+            Karmasik kurulum yok. Hesap acin, ilk projeyi olusturun ve ihtiyaciniz oldugunda Pro'ya gecin.
           </p>
         </div>
 

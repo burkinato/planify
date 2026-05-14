@@ -77,6 +77,18 @@ export function ProjectCreationModal({ draft, onChange, onCancel, onSubmit }: Pr
               <Input label="Kat / Bölüm" value={draft.floorName} onChange={(value) => update('floorName', value)} placeholder="Örn: Zemin Kat" />
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                '1. Proje kimligini girin',
+                '2. Hazir sablon secin',
+                '3. Editor acilsin ve export alin',
+              ].map((step) => (
+                <div key={step} className="rounded-2xl border border-surface-600/50 bg-surface-900/40 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.14em] text-surface-300">
+                  {step}
+                </div>
+              ))}
+            </div>
+
             {/* Hint Box - Soft Style */}
             <div className="dash-card bg-surface-900/50 p-6 flex items-start gap-4 group">
               <div className="w-12 h-12 bg-surface-950 rounded-xl flex items-center justify-center border border-surface-600/50 shadow-inner shrink-0 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 group-hover:border-primary-500/30">
@@ -85,7 +97,7 @@ export function ProjectCreationModal({ draft, onChange, onCancel, onSubmit }: Pr
               <div className="space-y-1.5 pt-0.5">
                 <p className="text-[11px] font-black text-surface-100 uppercase tracking-widest">ISO 23601 Uyumlu Dökümantasyon</p>
                 <p className="text-[11px] font-medium text-surface-400 leading-relaxed">
-                  Burada girdiğiniz veriler, oluşturulacak PDF çıktılarının bilgi bloklarında ve sistem içerisindeki proje listelerinde <strong className="text-surface-300 font-bold">otomatik olarak</strong> kullanılacaktır.
+                  Burada girdiginiz veriler PDF bilgi bloklarinda, proje listelerinde ve musterinizle paylasacaginiz ciktilarda <strong className="text-surface-300 font-bold">otomatik olarak</strong> kullanilacaktir.
                 </p>
               </div>
             </div>

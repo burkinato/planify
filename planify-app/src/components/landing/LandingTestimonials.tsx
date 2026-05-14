@@ -2,27 +2,27 @@ import { FileText, Users, Award, Star, Sparkles } from 'lucide-react';
 
 const TESTIMONIALS = [
   {
-    name: 'Beta Kullanıcı',
-    role: 'İSG Uzmanı',
-    company: 'OSGB Firması',
-    quote: 'AutoCAD ile saatlerce uğraştığım tahliye planlarını KolayTahliye ile çok daha hızlı oluşturabiliyorum. ISO 7010 sembol kütüphanesi gerçekten işimi kolaylaştırıyor.',
-    initials: 'BK',
+    name: 'Erken Erişim Geri Bildirimi',
+    role: 'ISG Uzmani',
+    company: 'OSGB',
+    quote: 'Ilk izlenim olarak en guclu taraf hizli baslangic. Musteriye gosterilecek duzeyde plan cikisini cok daha kisa surede hazirlayabildik.',
+    initials: 'EE',
     bg: 'bg-blue-600',
   },
   {
-    name: 'Beta Kullanıcı',
+    name: 'Erken Erişim Geri Bildirimi',
     role: 'Mimar',
-    company: 'Mimarlık Ofisi',
-    quote: 'Müşterilerime sunduğum tahliye planlarının profesyonel görünümü sayesinde güven oluşturuyorum. Hazır şablonlar ve otomatik lejant özelliği büyük kolaylık.',
-    initials: 'BK',
+    company: 'Mimarlik Ofisi',
+    quote: 'Hazir sablonlar ve daha net export akisi, teklif surecinde urunun degerini hizli gostermeyi sagliyor.',
+    initials: 'EE',
     bg: 'bg-violet-600',
   },
   {
-    name: 'Beta Kullanıcı',
-    role: 'Yangın Güvenlik Danışmanı',
-    company: 'Güvenlik Firması',
-    quote: 'Modüler şablon sistemi sayesinde farklı tesis tipleri için hızlıca plan oluşturabiliyorum. Uyumluluk denetim aracı çok kullanışlı.',
-    initials: 'BK',
+    name: 'Erken Erişim Geri Bildirimi',
+    role: 'Yangin Guvenlik Danismani',
+    company: 'Guvenlik Firmasi',
+    quote: 'Farkli tesis tipleri icin ayni akista ilerlemek ve musteriyi bekletmeden PDF almak ciddi zaman kazandiriyor.',
+    initials: 'EE',
     bg: 'bg-cyan-600',
   },
 ];
@@ -42,13 +42,13 @@ export default function LandingTestimonials() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16 space-y-4">
             <span className="inline-block text-sm font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-1.5 rounded-full">
-              Beta Kullanıcı Görüşleri
+              Erken Erisim Notlari
             </span>
             <h2 className="text-3xl md:text-5xl font-black text-slate-900">
-              Erken Erişimcilerden Geri Bildirimler
+              Satisa Cikis Oncesi Ilk Geri Bildirimler
             </h2>
             <p className="text-lg text-slate-500 max-w-xl mx-auto">
-              Beta sürecimizde platformumuzu test eden İSG uzmanları ve mimarlardan ilk izlenimler.
+              Bunlar dogrulanmis referans listesi degil, urunun erken kullanim asamasinda toplanan ilk geri bildirimlerdir.
             </p>
           </div>
 
