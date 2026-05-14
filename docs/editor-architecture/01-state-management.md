@@ -51,7 +51,10 @@ When creating or modifying features that change elements:
 - Use `updateElementsBatch(updates)` when modifying multiple elements at once (e.g., moving a wall and its attached doors/windows simultaneously).
 
 ## Persistence Layer
-Changes to the store are written to `localStorage` using a debounce mechanism (500ms delay) to prevent UI freezing.
-In `EditorApp.tsx`, an auto-save loop periodically (every 3s) serializes the store and pushes it to Supabase via `updateProject(projectId, ...)`.
 
-Always ensure any new state property that needs persistence is added to the `loadProject` and initialization logics within `useEditorStore.ts`.
+Planify uses a **Supabase-First** persistence model (see ADR 001). 
+- **Source of Truth**: The Supabase `projects` table is the definitive state.
+- **Auto-Save**: `EditorApp.tsx` maintains a 3-second debounced sync loop to Supabase.
+- **Cache**: `localStorage` acts only as a secondary cache for crash recovery and immediate UI feedback.
+
+Always ensure any new state property that needs persistence is added to the `loadProject` logic and the auto-save payload.

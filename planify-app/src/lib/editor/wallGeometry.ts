@@ -155,7 +155,7 @@ export const connectedEndpointUpdates = (
   return updates;
 };
 
-export const buildWallMoveUpdates = (wall: WallElement, walls: WallElement[], dx: number, dy: number) => {
+export const buildWallMoveUpdates = (wall: WallElement, walls: WallElement[], dx: number, dy: number): Record<string, Partial<WallElement>> => {
   const originalPoints = wallPoints(wall);
   const nextPoints = moveWallPoints(originalPoints, dx, dy);
   const originalEndpoints = wallEndpoints(wall);
@@ -164,10 +164,13 @@ export const buildWallMoveUpdates = (wall: WallElement, walls: WallElement[], dx
     { x: nextPoints[2], y: nextPoints[3] },
   ];
 
-  return [
-    { id: wall.id, changes: { points: nextPoints, x: 0, y: 0 } },
-    ...connectedEndpointUpdates(walls, wall.id, originalEndpoints, nextEndpoints),
-  ];
+  const result: Record<string, Partial<WallElement>> = {
+    [wall.id]: { points: nextPoints, x: 0, y: 0 },
+  };
+  for (const update of connectedEndpointUpdates(walls, wall.id, originalEndpoints, nextEndpoints)) {
+    result[update.id] = update.changes as Partial<WallElement>;
+  }
+  return result;
 };
 
 export const buildWallEndpointUpdates = (

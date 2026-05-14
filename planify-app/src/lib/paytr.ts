@@ -69,8 +69,8 @@ export async function createPayTRToken(params: PayTRTokenRequest): Promise<PayTR
     timeout_limit: timeoutLimit.toString(),
     merchant_key: merchantKey,
     paytr_token: paytrToken,
-    no_installment: '0',
-    max_installment: '0',
+    no_installment: '0',     // 0 = taksit izinli, 1 = sadece tek çekim
+    max_installment: '9',    // En fazla 9 taksit — TR kart pazarı standardı
     currency_code: 'TL',
   });
 

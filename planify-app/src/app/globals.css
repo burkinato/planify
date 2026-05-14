@@ -1,55 +1,65 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════
+   Dark mode is class-based (driven by next-themes attribute="class").
+   Without this, Tailwind's dark: prefix would only respond to OS
+   preference, ignoring the user's toggle.
+   ═══════════════════════════════════════════════════════════════ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  /* Primary — Electric Orange (Updated from Blue) */
-  --color-primary-50: #fff7ed;
-  --color-primary-100: #ffedd5;
-  --color-primary-200: #fed7aa;
-  --color-primary-300: #fdba74;
-  --color-primary-400: #fb923c;
-  --color-primary-500: #f97316;
-  --color-primary-600: #ea580c;
-  --color-primary-700: #c2410c;
-  --color-primary-800: #9a3412;
-  --color-primary-900: #7c2d12;
+  /* ═══════════════════════════════════════════════════════════════
+     BRAND PALETTE — Blue SaaS (Single Source of Truth)
+     ═══════════════════════════════════════════════════════════════ */
+  --color-primary-50:  #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb; /* Brand anchor */
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
 
-  /* VibeCode Surface (Dark Mode Default) */
-  --color-surface-950: #1e1e1e; /* Editor BG */
-  --color-surface-900: #252526; /* Sidebar/Panel BG */
-  --color-surface-800: #2d2d30; /* Activity Bar */
-  --color-surface-700: #333333; /* Tab active / Hover BG */
-  --color-surface-600: #3c3c3c; /* Border / Input Border */
-  --color-surface-500: #454545; /* Border Hover */
-  --color-surface-400: #555555; /* Placeholder */
-  --color-surface-300: #858585; /* Secondary Text */
-  --color-surface-200: #cccccc; /* Primary Text */
+  /* ═══════════════════════════════════════════════════════════════
+     SURFACE SCALE (Dark Mode = Default Values)
+     Each token is overridden in `.light` for light mode.
+     ═══════════════════════════════════════════════════════════════ */
+  --color-surface-950: #1e1e1e; /* App canvas BG */
+  --color-surface-900: #252526; /* Card / Panel BG */
+  --color-surface-800: #2d2d30; /* Elevated / Hover BG */
+  --color-surface-700: #333333; /* Active / Selected BG */
+  --color-surface-600: #3c3c3c; /* Border default */
+  --color-surface-500: #454545; /* Border strong / Hover */
+  --color-surface-400: #6b6b6b; /* Muted text (WCAG-tuned: was #555555 → fails AA) */
+  --color-surface-300: #9b9b9b; /* Secondary text */
+  --color-surface-200: #d4d4d4; /* Primary text */
+  --color-surface-100: #f0f0f0; /* High-emphasis text */
 
-  /* VibeCode Surface (Light Mode Toggle) */
-  --color-surface-light-950: #ffffff; /* Editor BG */
-  --color-surface-light-900: #f3f3f3; /* Sidebar/Panel BG */
-  --color-surface-light-800: #ececec; /* Hover */
-  --color-surface-light-700: #e4e4e4;
-  --color-surface-light-600: #cecece; /* Border */
-  --color-surface-light-500: #b8b8b8; /* Border Hover */
-  --color-surface-light-400: #6f6f6f; /* Secondary Text */
-  --color-surface-light-300: #3b3b3b; /* Primary Text */
+  /* ═══════════════════════════════════════════════════════════════
+     USAGE GUIDE (single convention, no aliasing maze):
+       Backgrounds:  bg-surface-950 (canvas) → bg-surface-900 (card)
+                     → bg-surface-800 (elevated) → bg-surface-700 (active)
+       Borders:      border-surface-600 (default) → border-surface-500 (hover)
+       Text:         text-surface-100 (heading) → text-surface-200 (body)
+                     → text-surface-300 (caption) → text-surface-400 (muted)
+       Brand:        bg-primary-600, text-primary-600, border-primary-600
+     Both surface-N and primary-N auto-flip light/dark via `.light`.
+     Components write ONE class (no dark: prefix needed).
+     ═══════════════════════════════════════════════════════════════ */
 
-  /* Primary Accent - VS Code Blue */
-  --color-primary-400: #4daafc;
-  --color-primary-500: #007acc;
-  --color-primary-600: #006bb3;
-
-  /* Safety Colors */
+  /* Safety / Status Colors */
   --color-safety-green: #10b981;
   --color-safety-red: #ef4444;
-  --color-safety-blue: #007acc;
+  --color-safety-blue: #3b82f6;
   --color-safety-amber: #f59e0b;
 
   /* Border Radius */
-  --radius-sm: 0.25rem; /* VS Code is usually less rounded */
+  --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
@@ -94,21 +104,29 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.light body {
-  background: var(--color-surface-light-950);
-  color: var(--color-surface-light-300);
-}
-
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE OVERRIDES
+   Same token names, different values. Components reference tokens
+   (bg-canvas, text-secondary, etc.) and theme switches automatically.
+   ═══════════════════════════════════════════════════════════════ */
 .light {
-  --color-surface-950: var(--color-surface-light-950);
-  --color-surface-900: var(--color-surface-light-900);
-  --color-surface-800: var(--color-surface-light-800);
-  --color-surface-700: var(--color-surface-light-700);
-  --color-surface-600: var(--color-surface-light-600);
-  --color-surface-500: var(--color-surface-light-500);
-  --color-surface-400: var(--color-surface-light-400);
-  --color-surface-300: var(--color-surface-light-300);
-  --color-surface-200: var(--color-surface-light-300); /* Dark text for light mode */
+  --color-surface-950: #ffffff; /* App canvas */
+  --color-surface-900: #f8fafc; /* Card/panel — slate-50 */
+  --color-surface-800: #f1f5f9; /* Hover — slate-100 */
+  --color-surface-700: #e2e8f0; /* Active — slate-200 */
+  --color-surface-600: #cbd5e1; /* Border default — slate-300 */
+  --color-surface-500: #94a3b8; /* Border strong — slate-400 */
+  --color-surface-400: #64748b; /* Muted text — slate-500 (AA on white) */
+  --color-surface-300: #475569; /* Tertiary text — slate-600 */
+  --color-surface-200: #334155; /* Secondary text — slate-700 */
+  --color-surface-100: #0f172a; /* Primary text — slate-900 */
+
+  /* Light-mode-specific border tokens (slate tints instead of white alpha) */
+  --color-border-default: rgba(15, 23, 42, 0.08);
+  --color-border-strong: rgba(15, 23, 42, 0.14);
+
+  /* Light-mode sunken (subtle off-white) */
+  --color-sunken: #f8fafc;
 }
 
 /* Glass Effect */
@@ -145,8 +163,8 @@ body {
 
 /* Glow Effects */
 .glow-primary {
-  box-shadow: 0 0 20px rgba(249, 115, 22, 0.15),
-              0 0 60px rgba(249, 115, 22, 0.05);
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.15),
+              0 0 60px rgba(37, 99, 235, 0.05);
 }
 
 .glow-accent {
@@ -167,7 +185,7 @@ body {
 }
 
 .shadow-glow-primary {
-  box-shadow: 0 0 15px rgba(249, 115, 22, 0.25), 0 0 5px rgba(249, 115, 22, 0.1);
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.25), 0 0 5px rgba(37, 99, 235, 0.1);
 }
 
 /* Animations */
@@ -187,8 +205,8 @@ body {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 8px rgba(249, 115, 22, 0.2); }
-  50% { box-shadow: 0 0 20px rgba(249, 115, 22, 0.4); }
+  0%, 100% { box-shadow: 0 0 8px rgba(37, 99, 235, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); }
 }
 
 @keyframes pulse-slow {
@@ -539,19 +557,21 @@ html {
 .dash-glass {
   background: linear-gradient(
     135deg,
-    rgba(37, 37, 38, 0.85) 0%,
-    rgba(30, 30, 30, 0.92) 100%
+    rgba(45, 45, 48, 0.78) 0%,
+    rgba(37, 37, 38, 0.85) 100%
   );
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .light .dash-glass {
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.9) 0%,
-    rgba(243, 243, 243, 0.95) 100%
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(248, 250, 252, 0.96) 100%
   );
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 /* Dashboard Sidebar Gradient */
@@ -595,7 +615,7 @@ html {
   height: 60%;
   border-radius: 0 4px 4px 0;
   background: linear-gradient(180deg, var(--color-primary-400), var(--color-primary-600));
-  box-shadow: 0 0 12px rgba(249, 115, 22, 0.4);
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
 }
 
 /* Stagger Animation */
@@ -646,7 +666,7 @@ html {
   opacity: 1;
 }
 
-.dash-metric-glow[data-glow="primary"]::after { background: rgba(249, 115, 22, 0.08); }
+.dash-metric-glow[data-glow="primary"]::after { background: rgba(37, 99, 235, 0.08); }
 .dash-metric-glow[data-glow="emerald"]::after { background: rgba(16, 185, 129, 0.08); }
 .dash-metric-glow[data-glow="amber"]::after { background: rgba(245, 158, 11, 0.08); }
 .dash-metric-glow[data-glow="indigo"]::after { background: rgba(99, 102, 241, 0.08); }
@@ -663,7 +683,7 @@ html {
   inset: 0;
   background: linear-gradient(
     135deg,
-    rgba(249, 115, 22, 0.03) 0%,
+    rgba(37, 99, 235, 0.03) 0%,
     transparent 60%
   );
   pointer-events: none;

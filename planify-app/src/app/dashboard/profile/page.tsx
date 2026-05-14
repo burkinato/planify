@@ -114,8 +114,9 @@ export default function ProfilePage() {
       setProfile({
         ...(profile ?? {
           id: user.id,
-          subscription_tier: 'free',
+          subscription_tier: 'free' as const,
           subscription_status: 'active',
+          last_session_id: null,
         }),
         ...updates,
       });

@@ -13,8 +13,24 @@ export const CREDIT_COSTS = {
 
 export type CreditActionType = keyof typeof CREDIT_COSTS;
 
-/** Abonelik fiyatı (USD) */
-export const SUBSCRIPTION_PRICE_USD = 5;
+/**
+ * Abonelik fiyat tablosu — TRY native, KDV dahil.
+ * Yıllık fiyat aylık × 12 değil, %20 indirimli sabit fiyat.
+ * Faz 3.2'de subscription_plans tablosundan dinamik çekilecek.
+ */
+export type SubscriptionTier = 'free' | 'pro' | 'team' | 'enterprise';
+export type BillingPeriod = 'monthly' | 'annual';
+
+export const SUBSCRIPTION_PRICES_TRY: Record<Exclude<SubscriptionTier, 'free' | 'enterprise'>, Record<BillingPeriod, number>> = {
+  pro:  { monthly: 249, annual: 2388 },  // ≈ ₺199/ay yıllık
+  team: { monthly: 549, annual: 5268 },  // ≈ ₺439/ay yıllık
+} as const;
+
+export function getSubscriptionPrice(tier: SubscriptionTier, period: BillingPeriod): number | null {
+  if (tier === 'free') return 0;
+  if (tier === 'enterprise') return null; // Quote-based
+  return SUBSCRIPTION_PRICES_TRY[tier][period];
+}
 
 export interface CreditPackage {
   id: string;

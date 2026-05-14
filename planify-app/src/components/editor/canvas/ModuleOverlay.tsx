@@ -175,7 +175,8 @@ export function ModuleOverlay({
     <>
       {/* Non-drawing regions (header, instruction, etc.) */}
       {paperRegions.filter((region) => region.type !== 'drawing').map((region) => {
-        const content = mergedTemplateState[region.id] || {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const content = (mergedTemplateState[region.id] || {}) as any;
         const selectedTemplateModule = selectedTemplateModuleId === region.id;
         const focused = focusedRegionId === region.id || selectedTemplateModule;
         const dimmed = !!focusedRegionId && !focused;

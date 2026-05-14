@@ -189,6 +189,65 @@ export async function POST(request: Request) {
         })
         .eq('merchant_oid', merchantOid);
 
+      // ─── KDV ayrıştırma + Fatura kaydı (Faz 3.4) ──────────────────────
+      // totalAmount PayTR'den kuruş cinsinden gelir (e.g. "24900" = ₺249.00)
+      try {
+        const grossTRY = Number(totalAmount) / 100;
+        if (grossTRY > 0 && Number.isFinite(grossTRY)) {
+          // Aktif KDV oranını çek (varsayılan %20)
+          const { data: taxRow } = await supabaseAdmin
+            .from('tax_rates')
+            .select('rate')
+            .eq('country', 'TR')
+            .eq('is_default', true)
+            .maybeSingle();
+          const taxRate = taxRow?.rate ?? 0.20;
+
+          const netAmount = Number((grossTRY / (1 + taxRate)).toFixed(2));
+          const taxAmount = Number((grossTRY - netAmount).toFixed(2));
+
+          // Müşteri profil bilgilerini al
+          const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('full_name, company, phone')
+            .eq('id', userId)
+            .maybeSingle();
+
+          const { data: userEmail } = await supabaseAdmin.auth.admin.getUserById(userId);
+
+          // Fatura numarası üret (RPC)
+          const { data: invoiceNoResult } = await supabaseAdmin.rpc('generate_invoice_no');
+          const invoiceNo = invoiceNoResult || `KT-${now.getFullYear()}-${Date.now().toString().slice(-6)}`;
+
+          const { error: invoiceError } = await supabaseAdmin
+            .from('invoices')
+            .insert({
+              user_id: userId,
+              invoice_no: invoiceNo,
+              description: transactionDescription,
+              net_amount_try: netAmount,
+              tax_amount_try: taxAmount,
+              total_amount_try: grossTRY,
+              tax_rate: taxRate,
+              currency: 'TRY',
+              customer_name: profile?.full_name || 'KolayTahliye User',
+              customer_email: userEmail?.user?.email || '',
+              einvoice_status: 'pending',
+              payment_provider: 'paytr',
+              provider_payment_id: merchantOid,
+            });
+
+          if (invoiceError) {
+            // Fatura oluşturulamasa bile ödeme başarılı sayılır; manuel olarak çözülür.
+            console.error('Invoice creation failed (non-blocking):', invoiceError);
+          } else {
+            console.log('Invoice created:', invoiceNo, 'net:', netAmount, 'tax:', taxAmount);
+          }
+        }
+      } catch (invoiceErr) {
+        console.error('Invoice flow error (non-blocking):', invoiceErr);
+      }
+
       console.log('PayTR Webhook: Payment success processed', {
         merchantOid,
         userId,

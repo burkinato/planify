@@ -71,6 +71,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [keepActive, setKeepActive] = useState(true);
+  const [kvkkConsent, setKvkkConsent] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -91,6 +92,10 @@ export default function RegisterPage() {
   }, []);
 
   const handleOAuth = async (provider: 'google' | 'linkedin_oidc') => {
+    if (!kvkkConsent) {
+      setError('OAuth ile devam etmek için KVKK Aydınlatma Metni\'ni onaylamalısınız.');
+      return;
+    }
     setError(null);
     setOauthLoading(provider === 'google' ? 'google' : 'linkedin');
     activateBrowserSession(keepActive ? 'persistent' : 'session');
@@ -114,6 +119,11 @@ export default function RegisterPage() {
 
     if (formData.password.length < 8) {
       setError('Şifre en az 8 karakter olmalıdır.');
+      return;
+    }
+
+    if (!kvkkConsent) {
+      setError('Devam etmek için KVKK Aydınlatma Metni\'ni onaylamalısınız.');
       return;
     }
 
@@ -324,6 +334,31 @@ export default function RegisterPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-1.5 py-1">
+          {/* KVKK Açık Rıza — Zorunlu (KVKK madde 5/1) */}
+          <label className={`relative flex items-start gap-3 p-2 rounded border cursor-pointer transition-all group ${
+            kvkkConsent ? 'border-primary-500/60 bg-primary-500/5' : 'border-red-500/40 bg-red-500/5'
+          }`}>
+            <input
+              type="checkbox"
+              checked={kvkkConsent}
+              onChange={(e) => setKvkkConsent(e.target.checked)}
+              disabled={isDisabled}
+              required
+              aria-required="true"
+              className="w-3.5 h-3.5 rounded border-surface-600 text-primary-500 focus:ring-primary-500/20 bg-surface-950 transition-all mt-0.5 shrink-0"
+            />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-surface-200 leading-tight">
+                <Link href="/legal/kvkk" target="_blank" className="text-primary-400 underline hover:text-primary-300">KVKK Aydınlatma Metni</Link>
+                {' '}ile{' '}
+                <Link href="/legal/pre-contract" target="_blank" className="text-primary-400 underline hover:text-primary-300">Ön Bilgilendirme Formu</Link>
+                {"'nu okudum, kişisel verilerimin işlenmesini onaylıyorum."}
+                <span className="text-red-400 ml-0.5">*</span>
+              </span>
+              <span className="text-[9px] text-surface-500 font-medium leading-tight mt-0.5">Zorunlu · 6698 sayılı Kanun kapsamında açık rıza</span>
+            </div>
+          </label>
+
           <label className="relative flex items-center justify-between p-2 rounded border border-surface-600 bg-surface-900/50 cursor-pointer hover:border-primary-500/50 hover:bg-primary-500/5 transition-all group">
             <div className="flex items-center gap-3">
               <input
@@ -351,7 +386,7 @@ export default function RegisterPage() {
               />
               <div className="flex flex-col">
                 <span className="text-[10px] font-bold text-surface-300 uppercase tracking-tight">Gelişmelerden Haber Al</span>
-                <span className="text-[9px] text-surface-500 font-bold leading-tight group-hover:text-surface-400 transition-colors">Yenilikler ve fırsatlar hakkında e-posta almayı kabul ediyorum</span>
+                <span className="text-[9px] text-surface-500 font-bold leading-tight group-hover:text-surface-400 transition-colors">Yenilikler ve fırsatlar hakkında e-posta almayı kabul ediyorum (opsiyonel)</span>
               </div>
             </div>
           </label>
@@ -359,18 +394,16 @@ export default function RegisterPage() {
 
         <button
           type="submit"
-          disabled={isDisabled}
-          className="w-full py-2.5 bg-primary-500 text-white rounded font-bold text-xs hover:bg-primary-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-primary-500/10"
+          disabled={isDisabled || !kvkkConsent}
+          className="w-full py-2.5 bg-primary-500 text-white rounded font-bold text-xs hover:bg-primary-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center justify-center gap-2 shadow-lg shadow-primary-500/10"
         >
           {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           {loading ? 'İşleniyor...' : 'Hesap Oluştur'}
         </button>
 
         <p className="text-center text-[9px] text-surface-500 leading-tight">
-          Kayıt olarak{' '}
-          <a href="#" className="text-primary-500 font-bold">Koşulları</a>
-          {' '}ve{' '}
-          <a href="#" className="text-primary-500 font-bold">Gizliliği</a>
+          Hesabınız oluşturulduğunda{' '}
+          <Link href="/legal/terms" target="_blank" className="text-primary-500 font-bold">Kullanım Koşullarını</Link>
           {' '}kabul etmiş olursunuz.
         </p>
       </form>

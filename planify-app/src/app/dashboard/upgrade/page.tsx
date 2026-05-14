@@ -3,11 +3,14 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Shield } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useCreditStore, CREDIT_COSTS } from '@/store/useCreditStore';
+import { useCreditStore, CREDIT_COSTS, getSubscriptionPrice } from '@/store/useCreditStore';
 import { toast } from 'sonner';
 
-/** Abonelik fiyatı (TRY) */
-export const SUBSCRIPTION_PRICE_TRY = 990;
+/**
+ * Pro aylık abonelik fiyatı (TRY, KDV dahil) — TRY-native fiyat tablosundan çekilir.
+ * Yıllık plan ve diğer tier'lar (Team/Enterprise) landing pricing sayfasında.
+ */
+const PRO_MONTHLY_TRY = getSubscriptionPrice('pro', 'monthly') ?? 249;
 
 export default function UpgradePage() {
   const { user, isInitialized } = useAuthStore();
@@ -178,10 +181,10 @@ export default function UpgradePage() {
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-slate-900">
-                ₺{SUBSCRIPTION_PRICE_TRY}
+                ₺{PRO_MONTHLY_TRY}
               </div>
               <div className="text-xs text-slate-400 font-medium">
-                / aylık
+                / aylık · KDV dahil
               </div>
             </div>
           </div>

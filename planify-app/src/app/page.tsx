@@ -4,6 +4,14 @@ import LandingHero from '@/components/landing/LandingHero';
 
 // Above-fold: loaded eagerly (LandingNav + LandingHero)
 // Below-fold: lazily loaded to speed up initial render / LCP
+const LandingTrustBar = dynamic(() => import('@/components/landing/LandingTrustBar'), {
+  loading: () => <div className="py-12 bg-white" />,
+});
+
+const LandingVideoDemo = dynamic(() => import('@/components/landing/LandingVideoDemo'), {
+  loading: () => <div className="py-20 bg-slate-50" />,
+});
+
 const LandingFeatures = dynamic(() => import('@/components/landing/LandingFeatures'), {
   loading: () => <div className="py-32 bg-[#FAFAFC]" />,
 });
@@ -14,6 +22,14 @@ const LandingShowcase = dynamic(() => import('@/components/landing/LandingShowca
 
 const LandingHowItWorks = dynamic(() => import('@/components/landing/LandingHowItWorks'), {
   loading: () => <div className="py-20 bg-slate-50" />,
+});
+
+const LandingCompare = dynamic(() => import('@/components/landing/LandingCompare'), {
+  loading: () => <div className="py-24 bg-white" />,
+});
+
+const LandingIntegrations = dynamic(() => import('@/components/landing/LandingIntegrations'), {
+  loading: () => <div className="py-24 bg-slate-50" />,
 });
 
 const LandingTestimonials = dynamic(() => import('@/components/landing/LandingTestimonials'), {
@@ -37,9 +53,13 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-100">
       <LandingNav />
       <LandingHero />
+      <LandingTrustBar />
+      <LandingVideoDemo />
       <LandingFeatures />
       <LandingShowcase />
       <LandingHowItWorks />
+      <LandingCompare />
+      <LandingIntegrations />
       <LandingTestimonials />
       <LandingPricing />
       <LandingBlog />

@@ -94,8 +94,8 @@ export default function RootLayout({
           <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_ID} />
         )}
       </head>
-      <body className="antialiased font-sans bg-white dark:bg-[#1e1e1e] text-slate-900 dark:text-[#cccccc]" suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <body className="antialiased font-sans bg-surface-950 text-surface-100" suppressHydrationWarning>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <ChunkLoadRecovery />
           <AuthProvider>
             <JsonLd />

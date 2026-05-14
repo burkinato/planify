@@ -33,6 +33,7 @@ const DEBUG_PROFILE: Profile = {
   subscription_tier: 'free',
   subscription_status: 'active',
   marketing_consent: false,
+  last_session_id: null,
 };
 
 const DEBUG_ELEMENTS: EditorElement[] = [

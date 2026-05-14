@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export default function UserManagement() {
   type AdminUser = {
